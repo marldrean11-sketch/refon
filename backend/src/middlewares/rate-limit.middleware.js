@@ -30,3 +30,5 @@ function createLimiter({ windowMs, limit }) {
 export const authLimiter = createLimiter({ windowMs: fifteenMinutes, limit: 10 })
 
 export const inquiryLimiter = createLimiter({ windowMs: tenMinutes, limit: 5 })
+
+export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 })

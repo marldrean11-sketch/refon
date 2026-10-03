@@ -23,13 +23,17 @@ export function RouteEffects() {
                 ? 'Seller dashboard · ReFon'
                 : location.pathname === '/seller/inquiries'
                   ? 'Inquiry inbox · ReFon'
-                  : location.pathname.startsWith('/seller/')
-                    ? 'Seller listing workspace · ReFon'
-                    : location.pathname === '/admin'
-                      ? 'Admin dashboard · ReFon'
-                      : location.pathname === '/forbidden'
-                        ? 'Access restricted · ReFon'
-                        : 'Page not found · ReFon'
+                  : location.pathname === '/saved'
+                    ? 'Saved listings · ReFon'
+                    : location.pathname === '/my-inquiries'
+                      ? 'My inquiries · ReFon'
+                      : location.pathname.startsWith('/seller/')
+                        ? 'Seller listing workspace · ReFon'
+                        : location.pathname === '/admin'
+                          ? 'Admin dashboard · ReFon'
+                          : location.pathname === '/forbidden'
+                            ? 'Access restricted · ReFon'
+                            : 'Page not found · ReFon'
     document.title = pageTitle
 
     const timer = window.setTimeout(() => {

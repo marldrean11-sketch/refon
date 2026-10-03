@@ -11,6 +11,7 @@ import { MarketplaceLayout } from './components/layout/MarketplaceLayout.jsx'
 import { LoadingScreen } from './components/ui/LoadingScreen.jsx'
 import { SellerListingsProvider } from './features/seller/SellerListingsProvider.jsx'
 import { SellerInquiriesProvider } from './features/inquiries/SellerInquiriesProvider.jsx'
+import { SavedListingsProvider } from './features/favorites/SavedListingsProvider.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
 
 const LoginPage = lazy(() =>
@@ -45,6 +46,16 @@ const SellerInquiriesPage = lazy(() =>
     default: module.SellerInquiriesPage,
   })),
 )
+const SavedListingsPage = lazy(() =>
+  import('./pages/SavedListingsPage.jsx').then((module) => ({
+    default: module.SavedListingsPage,
+  })),
+)
+const MyInquiriesPage = lazy(() =>
+  import('./pages/MyInquiriesPage.jsx').then((module) => ({
+    default: module.MyInquiriesPage,
+  })),
+)
 const AdminDashboardPage = lazy(() =>
   import('./pages/AdminDashboardPage.jsx').then((module) => ({
     default: module.AdminDashboardPage,
@@ -62,6 +73,8 @@ function App() {
     <BrowserRouter>
       <MotionConfig reducedMotion="user">
         <AuthProvider>
+        {/* Above both layouts so public listing cards and the headers share one poller. */}
+        <SavedListingsProvider>
         <RouteEffects />
         <a
           href="#main-content"
@@ -91,6 +104,11 @@ function App() {
                     <Route path="/admin" element={<AdminDashboardPage />} />
                   </Route>
 
+                  <Route element={<RequireRole allowedRoles={['BUYER', 'SELLER']} />}>
+                    <Route path={AUTH_ROUTES.saved} element={<SavedListingsPage />} />
+                    <Route path={AUTH_ROUTES.myInquiries} element={<MyInquiriesPage />} />
+                  </Route>
+
                   <Route element={<RequireRole allowedRoles={['SELLER']} />}>
                     <Route element={<SellerListingsProvider />}>
                       <Route path="/seller" element={<SellerDashboardPage />} />
@@ -115,6 +133,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+        </SavedListingsProvider>
         </AuthProvider>
       </MotionConfig>
     </BrowserRouter>

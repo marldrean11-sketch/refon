@@ -13,6 +13,8 @@ import adminRoutes from './routes/admin.routes.js'
 import uploadRoutes from './routes/upload.routes.js'
 import notificationRoutes from './routes/notification.routes.js'
 import inquiryRoutes from './routes/inquiry.routes.js'
+import favoriteRoutes from './routes/favorite.routes.js'
+import myInquiryRoutes from './routes/my-inquiry.routes.js'
 
 const app = express()
 
@@ -65,6 +67,8 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/uploads', uploadRoutes)
 app.use('/api/notifications', notificationRoutes)
 app.use('/api/inquiries', inquiryRoutes)
+app.use('/api/favorites', favoriteRoutes)
+app.use('/api/my-inquiries', myInquiryRoutes)
 app.use(notFoundHandler)
 app.use(errorHandler)
 

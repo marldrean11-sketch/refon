@@ -5,7 +5,7 @@ import { uploadsDirectory } from '../config/uploads.js'
 import { ApiError } from '../utils/api-error.js'
 import { presentListing } from '../utils/listing-presenter.js'
 
-const listingInclude = {
+export const listingInclude = {
   seller: {
     select: {
       id: true,

@@ -30,6 +30,7 @@ let inquiryBuyerId
 let testSellerId
 let rejectedBuyerId
 let rejectedSellerId
+let otherBuyerId
 
 function cookieFrom(response) {
   const cookie = response.headers.getSetCookie?.()[0]
@@ -303,6 +304,131 @@ try {
 
   const otherSeller = await login('circuit@refon.test', 'SellerTest123!')
 
+  // --- Buyer features: saved listings + buyer inquiry history ---
+  const otherBuyerEmail = `other-buyer-${testRun}@example.test`
+  const otherBuyerRegistration = await request('/api/auth/register', {
+    method: 'POST',
+    body: {
+      name: 'Other Buyer',
+      email: otherBuyerEmail,
+      password: 'BuyerTest123!',
+      role: 'BUYER',
+    },
+  })
+  assert.equal(otherBuyerRegistration.response.status, 201)
+  otherBuyerId = otherBuyerRegistration.payload.user.id
+  const otherBuyerCookie = cookieFrom(otherBuyerRegistration.response)
+
+  const otherBuyerInquiryResult = await request(
+    `/api/listings/${listingId}/inquiries`,
+    {
+      method: 'POST',
+      cookie: otherBuyerCookie,
+      body: {
+        buyerName: 'Other Buyer',
+        buyerContact: 'other-buyer@example.test',
+        message: 'Would you consider a lower offer for this handset?',
+      },
+    },
+  )
+  assert.equal(otherBuyerInquiryResult.response.status, 201)
+  const otherBuyerInquiryId = otherBuyerInquiryResult.payload.inquiry.id
+
+  const myInquiries = await request('/api/my-inquiries', {
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(myInquiries.response.status, 200)
+  const myInquiryIds = myInquiries.payload.inquiries.map((inquiry) => inquiry.id)
+  assert.ok(myInquiryIds.includes(inquiryId))
+  assert.equal(myInquiryIds.includes(otherBuyerInquiryId), false)
+  // The guest inquiry has no buyerId and must never leak into a buyer history.
+  assert.equal(
+    myInquiryIds.includes(anonymousInquiry.payload.inquiry.id),
+    false,
+  )
+  const myInquiry = myInquiries.payload.inquiries.find(
+    (inquiry) => inquiry.id === inquiryId,
+  )
+  assert.equal(myInquiry.listingId, listingId)
+  assert.equal(myInquiry.listing.id, listingId)
+  assert.equal(myInquiry.listing.status, 'APPROVED')
+  assert.equal(typeof myInquiry.listing.price, 'number')
+  assert.equal(typeof myInquiry.buyerContact, 'string')
+  // Seller contact details are never part of the buyer payload.
+  assert.equal(myInquiry.listing.contactInfo, undefined)
+
+  const otherBuyerInquiries = await request('/api/my-inquiries', {
+    cookie: otherBuyerCookie,
+  })
+  assert.equal(otherBuyerInquiries.response.status, 200)
+  const otherBuyerInquiryIds = otherBuyerInquiries.payload.inquiries.map(
+    (inquiry) => inquiry.id,
+  )
+  assert.ok(otherBuyerInquiryIds.includes(otherBuyerInquiryId))
+  assert.equal(otherBuyerInquiryIds.includes(inquiryId), false)
+
+  // Sellers keep read access to their own inquiry history, which starts empty.
+  const sellerMyInquiries = await request('/api/my-inquiries', {
+    cookie: otherSeller.cookie,
+  })
+  assert.equal(sellerMyInquiries.response.status, 200)
+  assert.deepEqual(sellerMyInquiries.payload.inquiries, [])
+
+  const anonymousMyInquiries = await request('/api/my-inquiries')
+  assert.equal(anonymousMyInquiries.response.status, 401)
+
+  const anonymousFavorites = await request('/api/favorites/mine')
+  assert.equal(anonymousFavorites.response.status, 401)
+
+  const anonymousSave = await request(`/api/favorites/${listingId}`, {
+    method: 'PUT',
+  })
+  assert.equal(anonymousSave.response.status, 401)
+
+  const sellerSave = await request(`/api/favorites/${listingId}`, {
+    method: 'PUT',
+    cookie: otherSeller.cookie,
+  })
+  assert.equal(sellerSave.response.status, 403)
+  assert.equal(sellerSave.payload.code, 'FORBIDDEN')
+
+  const saveFavorite = await request(`/api/favorites/${listingId}`, {
+    method: 'PUT',
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(saveFavorite.response.status, 200)
+  assert.equal(saveFavorite.payload.saved, true)
+
+  const savedTwice = await request(`/api/favorites/${listingId}`, {
+    method: 'PUT',
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(savedTwice.response.status, 200)
+  assert.equal(savedTwice.payload.saved, true)
+
+  const favoriteRows = await prisma.favorite.count({
+    where: { userId: inquiryBuyerId, listingId },
+  })
+  assert.equal(favoriteRows, 1)
+
+  const myFavorites = await request('/api/favorites/mine', {
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(myFavorites.response.status, 200)
+  assert.ok(myFavorites.payload.ids.includes(listingId))
+  const savedListing = myFavorites.payload.listings.find(
+    (listing) => listing.id === listingId,
+  )
+  assert.ok(savedListing)
+  assert.equal(savedListing.status, 'APPROVED')
+  assert.equal(typeof savedListing.savedAt, 'string')
+
+  const sellerFavorites = await request('/api/favorites/mine', {
+    cookie: otherSeller.cookie,
+  })
+  assert.equal(sellerFavorites.response.status, 200)
+  assert.equal(sellerFavorites.payload.ids.includes(listingId), false)
+
   // --- Seller inquiry inbox ---
   const inboxBeforeRead = await request('/api/inquiries/mine', {
     cookie: sellerSession.cookie,
@@ -492,6 +618,46 @@ try {
   assert.equal(soldDetail.payload.listing.id, listingId)
   assert.equal(soldDetail.payload.listing.status, 'SOLD')
 
+  // A saved listing stays in the buyer's list once it sells.
+  const favoritesAfterSold = await request('/api/favorites/mine', {
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(favoritesAfterSold.response.status, 200)
+  assert.ok(favoritesAfterSold.payload.ids.includes(listingId))
+  assert.equal(
+    favoritesAfterSold.payload.listings.find(
+      (listing) => listing.id === listingId,
+    ).status,
+    'SOLD',
+  )
+
+  const removeFavorite = await request(`/api/favorites/${listingId}`, {
+    method: 'DELETE',
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(removeFavorite.response.status, 204)
+
+  const removedTwice = await request(`/api/favorites/${listingId}`, {
+    method: 'DELETE',
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(removedTwice.response.status, 204)
+
+  const favoritesAfterRemove = await request('/api/favorites/mine', {
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(favoritesAfterRemove.payload.ids.includes(listingId), false)
+  assert.equal(
+    favoritesAfterRemove.payload.listings.some(
+      (listing) => listing.id === listingId,
+    ),
+    false,
+  )
+  assert.equal(
+    await prisma.favorite.count({ where: { userId: inquiryBuyerId, listingId } }),
+    0,
+  )
+
   const soldBrowse = await request(
     `/api/listings?search=${encodeURIComponent(`Galaxy E2E ${testRun}`)}`,
   )
@@ -527,7 +693,28 @@ try {
   })
   assert.equal(secondCreate.response.status, 201)
   const secondId = secondCreate.payload.listing.id
+  assert.equal(secondCreate.payload.listing.status, 'PENDING')
   createdListingIds.push(secondId)
+
+  // Listings still in moderation cannot be saved.
+  const savePendingFavorite = await request(`/api/favorites/${secondId}`, {
+    method: 'PUT',
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(savePendingFavorite.response.status, 404)
+  assert.equal(savePendingFavorite.payload.code, 'LISTING_NOT_FOUND')
+
+  const saveMissingFavorite = await request(
+    '/api/favorites/00000000-0000-0000-0000-000000000000',
+    { method: 'PUT', cookie: inquiryBuyerCookie },
+  )
+  assert.equal(saveMissingFavorite.response.status, 404)
+
+  const saveInvalidFavorite = await request('/api/favorites/not-a-uuid', {
+    method: 'PUT',
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(saveInvalidFavorite.response.status, 422)
 
   const rejectResult = await request(`/api/admin/listings/${secondId}/reject`, {
     method: 'PATCH',
@@ -774,6 +961,7 @@ try {
     inquiryBuyerId,
     testBuyerId,
     rejectedBuyerId,
+    otherBuyerId,
   ].filter(Boolean)
   if (buyerIdsToDelete.length > 0) {
     await prisma.user.deleteMany({ where: { id: { in: buyerIdsToDelete } } })

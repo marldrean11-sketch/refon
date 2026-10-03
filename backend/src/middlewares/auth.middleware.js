@@ -77,3 +77,5 @@ export function requireRole(...allowedRoles) {
 export const requireAdmin = requireRole('ADMIN')
 export const requireSeller = requireRole('SELLER')
 export const requireBuyer = requireRole('BUYER')
+// Saved listings and sent inquiries stay readable after a buyer becomes a seller.
+export const requireBuyerOrSeller = requireRole('BUYER', 'SELLER')

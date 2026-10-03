@@ -19,6 +19,7 @@ import { InquiryModal } from '../features/listings/InquiryModal.jsx'
 import { ListingCard } from '../features/listings/listing-card.jsx'
 import { ListingGallery } from '../features/listings/listing-gallery.jsx'
 import { useListing } from '../features/listings/useListing.js'
+import { FavoriteButton } from '../features/favorites/FavoriteButton.jsx'
 import { useApprovedListings } from '../features/listings/useApprovedListings.js'
 import {
   ListingDetailSkeleton,
@@ -196,12 +197,17 @@ export function ListingDetailPage() {
                 </div>
 
                 <div className="mt-7 border-y border-line py-6">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                    Asking price
-                  </p>
-                  <p className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">
-                    {currencyFormatter.format(listing.price)}
-                  </p>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                        Asking price
+                      </p>
+                      <p className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">
+                        {currencyFormatter.format(listing.price)}
+                      </p>
+                    </div>
+                    {!isSold && <FavoriteButton listing={listing} />}
+                  </div>
                   {isSold && (
                     <div
                       className="mt-4 flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900"

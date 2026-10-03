@@ -2,6 +2,7 @@ import { BadgeCheck, BatteryMedium, HardDrive, ImageIcon } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { isImageReference } from './image-reference.js'
+import { FavoriteButton } from '../favorites/FavoriteButton.jsx'
 import { standardTransition } from '../../lib/motion.js'
 
 const currencyFormatter = new Intl.NumberFormat('en-PH', {
@@ -156,7 +157,7 @@ export function PhoneArtwork({
   )
 }
 
-export function ListingCard({ listing, preview = false }) {
+export function ListingCard({ listing, preview = false, hideSaveButton = false }) {
   const reduceMotion = useReducedMotion()
   const batteryTone = getBatteryTone(listing.batteryPercent)
   const mainPhoto = listing.mainPhoto ?? listing.photos?.[0]
@@ -203,6 +204,12 @@ export function ListingCard({ listing, preview = false }) {
         <span className="absolute right-4 top-12 rounded-full bg-white/90 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
           {listing.condition}
         </span>
+        {/* Sits above the z-30 full-card link so it stays clickable. */}
+        {!preview && !hideSaveButton && (
+          <div className="absolute right-3 top-3">
+            <FavoriteButton listing={listing} />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-5">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  Heart,
   LogOut,
   Menu,
   MessagesSquare,
@@ -15,6 +16,7 @@ import { useAuth } from '../../features/auth/useAuth.js'
 import { AUTH_ROUTES } from '../../features/auth/auth.routes.js'
 import { NotificationBell } from '../../features/notifications/NotificationBell.jsx'
 import { useSellerInquiries } from '../../features/inquiries/useSellerInquiries.js'
+import { useSavedListings } from '../../features/favorites/useSavedListings.js'
 import { quickTransition } from '../../lib/motion.js'
 
 const linksByRole = {
@@ -41,15 +43,15 @@ const roleLabels = {
   BUYER: 'Buyer',
 }
 
-function UnreadBadge({ count }) {
-  if (count < 1) {
+function CountBadge({ count, srLabel }) {
+  if (!count) {
     return null
   }
 
   return (
     <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent-700 px-1.5 py-0.5 text-[10px] font-bold leading-4 text-white">
       {count > 99 ? '99+' : count}
-      <span className="sr-only"> unread inquiries</span>
+      <span className="sr-only"> {srLabel}</span>
     </span>
   )
 }
@@ -57,12 +59,15 @@ function UnreadBadge({ count }) {
 export function AppNavbar() {
   const { user, logout } = useAuth()
   const { unreadCount } = useSellerInquiries()
+  const { savedIds } = useSavedListings()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navigate = useNavigate()
   const reduceMotion = useReducedMotion()
   const roleLink = linksByRole[user.role] ?? linksByRole.BUYER
   const RoleIcon = roleLink.icon
   const isSeller = user.role === 'SELLER'
+  const isAdmin = user.role === 'ADMIN'
+  const savedCount = savedIds?.size ?? 0
   const initials = user.name
     .split(' ')
     .filter(Boolean)
@@ -109,7 +114,40 @@ export function AppNavbar() {
             >
               <MessagesSquare className="size-4" aria-hidden="true" />
               Inquiries
-              <UnreadBadge count={unreadCount} />
+              <CountBadge count={unreadCount} srLabel="unread inquiries" />
+            </NavLink>
+          )}
+
+          {!isAdmin && (
+            <NavLink
+              to={AUTH_ROUTES.saved}
+              className={({ isActive }) =>
+                `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition duration-200 ${
+                  isActive
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-muted hover:bg-primary-50/70 hover:text-primary-700'
+                }`
+              }
+            >
+              <Heart className="size-4" aria-hidden="true" />
+              Saved
+              <CountBadge count={savedCount} srLabel="saved listings" />
+            </NavLink>
+          )}
+
+          {!isAdmin && (
+            <NavLink
+              to={AUTH_ROUTES.myInquiries}
+              className={({ isActive }) =>
+                `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition duration-200 ${
+                  isActive
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-muted hover:bg-primary-50/70 hover:text-primary-700'
+                }`
+              }
+            >
+              <MessagesSquare className="size-4" aria-hidden="true" />
+              My Inquiries
             </NavLink>
           )}
 
@@ -193,7 +231,42 @@ export function AppNavbar() {
                 >
                   <MessagesSquare className="size-5" aria-hidden="true" />
                   Inquiries
-                  <UnreadBadge count={unreadCount} />
+                  <CountBadge count={unreadCount} srLabel="unread inquiries" />
+                </NavLink>
+              )}
+
+              {!isAdmin && (
+                <NavLink
+                  to={AUTH_ROUTES.saved}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isActive
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-muted hover:bg-canvas'
+                    }`
+                  }
+                >
+                  <Heart className="size-5" aria-hidden="true" />
+                  Saved
+                  <CountBadge count={savedCount} srLabel="saved listings" />
+                </NavLink>
+              )}
+
+              {!isAdmin && (
+                <NavLink
+                  to={AUTH_ROUTES.myInquiries}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isActive
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-muted hover:bg-canvas'
+                    }`
+                  }
+                >
+                  <MessagesSquare className="size-5" aria-hidden="true" />
+                  My Inquiries
                 </NavLink>
               )}
 

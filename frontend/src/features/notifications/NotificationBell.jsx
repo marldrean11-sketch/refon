@@ -87,9 +87,14 @@ function getNotificationTarget(notification) {
     return AUTH_ROUTES.sellerInquiries
   }
 
+  // A buyer's own sent inquiries open their history page.
+  if (notification.type === 'INQUIRY_SENT') {
+    return AUTH_ROUTES.myInquiries
+  }
+
   if (
     notification.relatedListingId &&
-    ['INQUIRY_SENT', 'LISTING_APPROVED'].includes(notification.type)
+    notification.type === 'LISTING_APPROVED'
   ) {
     return `/listings/${notification.relatedListingId}`
   }

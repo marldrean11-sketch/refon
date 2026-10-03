@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import {
+  Heart,
   Home,
   LogIn,
   LogOut,
   Menu,
+  MessagesSquare,
   Search,
   ShieldCheck,
   Store,
@@ -16,6 +18,7 @@ import { BrandMark } from '../ui/BrandMark.jsx'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { AUTH_ROUTES } from '../../features/auth/auth.routes.js'
 import { NotificationBell } from '../../features/notifications/NotificationBell.jsx'
+import { useSavedListings } from '../../features/favorites/useSavedListings.js'
 import { quickTransition } from '../../lib/motion.js'
 
 const marketplaceLinks = [
@@ -23,18 +26,39 @@ const marketplaceLinks = [
   { label: 'Browse Phones', to: AUTH_ROUTES.buyer, icon: Search },
 ]
 
+const buyerLinks = [
+  { label: 'Saved', to: AUTH_ROUTES.saved, icon: Heart, badge: 'saved' },
+  { label: 'My Inquiries', to: AUTH_ROUTES.myInquiries, icon: MessagesSquare },
+]
+
 const workspaceLinkByRole = {
   ADMIN: { label: 'Admin Dashboard', to: AUTH_ROUTES.admin, icon: ShieldCheck },
   SELLER: { label: 'Seller Dashboard', to: AUTH_ROUTES.seller, icon: Store },
 }
 
+function SavedCountBadge({ count }) {
+  if (!count) {
+    return null
+  }
+
+  return (
+    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent-700 px-1.5 py-0.5 text-[10px] font-bold leading-4 text-white">
+      {count > 99 ? '99+' : count}
+      <span className="sr-only"> saved listings</span>
+    </span>
+  )
+}
+
 export function MarketplaceHeader() {
   const { user, logout } = useAuth()
+  const { savedIds } = useSavedListings()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navigate = useNavigate()
   const reduceMotion = useReducedMotion()
   const workspaceLink = user ? workspaceLinkByRole[user.role] : null
   const WorkspaceIcon = workspaceLink?.icon
+  const showBuyerLinks = Boolean(user) && user.role !== 'ADMIN'
+  const savedCount = savedIds?.size ?? 0
   const initials = user?.name
     .split(' ')
     .filter(Boolean)
@@ -77,6 +101,25 @@ export function MarketplaceHeader() {
               {label}
             </NavLink>
           ))}
+
+          {showBuyerLinks &&
+            buyerLinks.map(({ label, to, icon: Icon, badge }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition duration-200 ${
+                    isActive
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-muted hover:bg-primary-50/70 hover:text-primary-700'
+                  }`
+                }
+              >
+                <Icon className="size-4" aria-hidden="true" />
+                {label}
+                {badge === 'saved' && <SavedCountBadge count={savedCount} />}
+              </NavLink>
+            ))}
 
           {workspaceLink && (
             <NavLink
@@ -190,6 +233,26 @@ export function MarketplaceHeader() {
                   {label}
                 </NavLink>
               ))}
+
+              {showBuyerLinks &&
+                buyerLinks.map(({ label, to, icon: Icon, badge }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={closeMenu}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                        isActive
+                          ? 'bg-primary-50 text-primary-700'
+                          : 'text-muted hover:bg-canvas'
+                      }`
+                    }
+                  >
+                    <Icon className="size-5" aria-hidden="true" />
+                    {label}
+                    {badge === 'saved' && <SavedCountBadge count={savedCount} />}
+                  </NavLink>
+                ))}
 
               {workspaceLink && (
                 <NavLink
