@@ -280,7 +280,7 @@ export async function getApprovedListings(filters = {}) {
 
 export async function getApprovedListing(id) {
   const listing = await prisma.listing.findFirst({
-    where: { id, status: 'APPROVED' },
+    where: { id, status: { in: ['APPROVED', 'SOLD'] } },
     include: listingInclude,
   })
 

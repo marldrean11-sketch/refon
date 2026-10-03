@@ -91,6 +91,23 @@ try {
   assert.equal(profileResult.response.status, 200)
   assert.equal(profileResult.payload.seller.verificationStatus, 'APPROVED')
 
+  const approvedReapply = await request('/api/sellers/apply', {
+    method: 'POST',
+    cookie: sellerSession.cookie,
+    body: {
+      businessName: 'Should Not Reset',
+      contactInfo: 'should-not-reset@example.test',
+    },
+  })
+  assert.equal(approvedReapply.response.status, 409)
+  assert.equal(approvedReapply.payload.code, 'SELLER_ALREADY_APPROVED')
+
+  const sellerStillApproved = await prisma.seller.findUniqueOrThrow({
+    where: { userId: sellerSession.user.id },
+  })
+  assert.equal(sellerStillApproved.verificationStatus, 'APPROVED')
+  assert.equal(sellerStillApproved.businessName, 'ReFon Select')
+
   const uploadResult = await uploadPhotos(sellerSession.cookie)
   assert.equal(uploadResult.response.status, 201, JSON.stringify(uploadResult.payload))
   assert.equal(uploadResult.payload.files.length, 2)
@@ -121,6 +138,44 @@ try {
   })
   assert.equal(noPhotoResult.response.status, 422)
   assert.equal(noPhotoResult.payload.code, 'VALIDATION_ERROR')
+
+  const externalPhotoResult = await request('/api/listings', {
+    method: 'POST',
+    cookie: sellerSession.cookie,
+    body: {
+      brand: 'Samsung',
+      model: `External Photo E2E ${testRun}`,
+      year: 2021,
+      price: 1000,
+      batteryPercent: 90,
+      storage: '128 GB',
+      condition: 'Good',
+      conditionNotes: 'This request should be rejected because the photo is hosted externally.',
+      photos: ['https://cdn.example.com/photo.png'],
+      mainPhoto: 'https://cdn.example.com/photo.png',
+    },
+  })
+  assert.equal(externalPhotoResult.response.status, 422)
+  assert.equal(externalPhotoResult.payload.code, 'VALIDATION_ERROR')
+  assert.match(externalPhotoResult.payload.errors.photos, /must be uploaded image URLs/i)
+
+  const traversalPhotoResult = await request('/api/listings', {
+    method: 'POST',
+    cookie: sellerSession.cookie,
+    body: {
+      brand: 'Samsung',
+      model: `Traversal Photo E2E ${testRun}`,
+      year: 2021,
+      price: 1000,
+      batteryPercent: 90,
+      storage: '128 GB',
+      condition: 'Good',
+      conditionNotes: 'This request should be rejected because the photo escapes the uploads folder.',
+      photos: ['/uploads/../../prisma/schema.prisma'],
+    },
+  })
+  assert.equal(traversalPhotoResult.response.status, 422)
+  assert.match(traversalPhotoResult.payload.errors.photos, /must be uploaded image URLs/i)
 
   const createResult = await request('/api/listings', {
     method: 'POST',
@@ -322,7 +377,26 @@ try {
   createdNotificationIds.push(soldNotification.id)
 
   const soldDetail = await request(`/api/listings/${listingId}`)
-  assert.equal(soldDetail.response.status, 404)
+  assert.equal(soldDetail.response.status, 200, JSON.stringify(soldDetail.payload))
+  assert.equal(soldDetail.payload.listing.id, listingId)
+  assert.equal(soldDetail.payload.listing.status, 'SOLD')
+
+  const soldBrowse = await request(
+    `/api/listings?search=${encodeURIComponent(`Galaxy E2E ${testRun}`)}`,
+  )
+  assert.equal(soldBrowse.response.status, 200)
+  assert.equal(soldBrowse.payload.listings.length, 0)
+
+  const soldInquiry = await request(`/api/listings/${listingId}/inquiries`, {
+    method: 'POST',
+    body: {
+      buyerName: 'Late Buyer',
+      buyerContact: 'late-buyer@example.test',
+      message: 'Is this phone still available after it was marked sold?',
+    },
+  })
+  assert.equal(soldInquiry.response.status, 404)
+  assert.equal(soldInquiry.payload.code, 'LISTING_NOT_FOUND')
 
   const secondCreate = await request('/api/listings', {
     method: 'POST',
@@ -468,6 +542,21 @@ try {
   assert.equal(sellerApproval.response.status, 200)
   assert.equal(sellerApproval.payload.seller.verificationStatus, 'APPROVED')
 
+  const approvedSellerNotifications = await request('/api/notifications/mine', {
+    cookie: refreshedBuyerCookie,
+  })
+  assert.equal(approvedSellerNotifications.response.status, 200)
+  const sellerApprovedNotification = approvedSellerNotifications.payload.notifications.find(
+    (notification) => notification.type === 'SELLER_APPROVED',
+  )
+  assert.ok(sellerApprovedNotification)
+  assert.equal(sellerApprovedNotification.relatedListingId, null)
+  assert.match(
+    sellerApprovedNotification.message,
+    /your seller application was approved\. you can now create listings\./i,
+  )
+  createdNotificationIds.push(sellerApprovedNotification.id)
+
   const rejectedBuyerEmail = `rejected-buyer-${testRun}@example.test`
   const rejectedBuyerRegistration = await request('/api/auth/register', {
     method: 'POST',
@@ -497,6 +586,21 @@ try {
   )
   assert.equal(sellerRejection.response.status, 200)
   assert.equal(sellerRejection.payload.seller.verificationStatus, 'REJECTED')
+
+  const rejectedSellerNotifications = await request('/api/notifications/mine', {
+    cookie: rejectedBuyerCookie,
+  })
+  assert.equal(rejectedSellerNotifications.response.status, 200)
+  const sellerRejectedNotification = rejectedSellerNotifications.payload.notifications.find(
+    (notification) => notification.type === 'SELLER_REJECTED',
+  )
+  assert.ok(sellerRejectedNotification)
+  assert.equal(sellerRejectedNotification.relatedListingId, null)
+  assert.match(
+    sellerRejectedNotification.message,
+    /your seller application was rejected\. contact the refon team if you have questions\./i,
+  )
+  createdNotificationIds.push(sellerRejectedNotification.id)
 
   const filteredListings = await request(
     '/api/listings?brand=Samsung&minYear=2020&maxYear=2024&minPrice=10000&maxPrice=20000',

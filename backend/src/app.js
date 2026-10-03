@@ -16,6 +16,13 @@ import notificationRoutes from './routes/notification.routes.js'
 const app = express()
 
 app.disable('x-powered-by')
+
+if (env.isProduction) {
+  // Behind a reverse proxy the client IP arrives via X-Forwarded-For, which the
+  // rate limiters need in order to key limits per address.
+  app.set('trust proxy', 1)
+}
+
 app.use(helmet())
 app.use(
   cors({

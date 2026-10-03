@@ -27,6 +27,16 @@ export async function applyAsSeller(userId, values) {
       where: { userId },
     })
 
+    if (existingSeller?.verificationStatus === 'APPROVED') {
+      throw new ApiError(
+        409,
+        'Your seller profile is already approved.',
+        'SELLER_ALREADY_APPROVED',
+      )
+    }
+
+    // PENDING keeps its status while contact details are refreshed; REJECTED sellers
+    // are allowed to re-apply and are reset back to PENDING.
     const seller = existingSeller
       ? await transaction.seller.update({
           where: { id: existingSeller.id },
@@ -84,21 +94,34 @@ export async function reviewSeller(sellerId, decision) {
     throw new ApiError(422, 'Seller decision must be APPROVED or REJECTED.')
   }
 
-  const existingSeller = await prisma.seller.findUnique({ where: { id: sellerId } })
+  return prisma.$transaction(async (transaction) => {
+    const existingSeller = await transaction.seller.findUnique({ where: { id: sellerId } })
 
-  if (!existingSeller) {
-    throw new ApiError(404, 'Seller profile not found.', 'SELLER_NOT_FOUND')
-  }
+    if (!existingSeller) {
+      throw new ApiError(404, 'Seller profile not found.', 'SELLER_NOT_FOUND')
+    }
 
-  if (existingSeller.verificationStatus !== 'PENDING') {
-    throw new ApiError(409, 'Only pending seller applications can be reviewed.')
-  }
+    if (existingSeller.verificationStatus !== 'PENDING') {
+      throw new ApiError(409, 'Only pending seller applications can be reviewed.')
+    }
 
-  const seller = await prisma.seller.update({
-    where: { id: sellerId },
-    data: { verificationStatus: decision },
-    include: { user: { select: { id: true, name: true, email: true } } },
+    const seller = await transaction.seller.update({
+      where: { id: sellerId },
+      data: { verificationStatus: decision },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    })
+
+    await transaction.notification.create({
+      data: {
+        userId: seller.userId,
+        type: decision === 'APPROVED' ? 'SELLER_APPROVED' : 'SELLER_REJECTED',
+        message:
+          decision === 'APPROVED'
+            ? 'Your seller application was approved. You can now create listings.'
+            : 'Your seller application was rejected. Contact the ReFon team if you have questions.',
+      },
+    })
+
+    return presentSeller(seller)
   })
-
-  return presentSeller(seller)
 }

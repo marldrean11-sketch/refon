@@ -15,6 +15,7 @@ import {
   optionalAuthenticate,
   requireSeller,
 } from '../middlewares/auth.middleware.js'
+import { inquiryLimiter } from '../middlewares/rate-limit.middleware.js'
 import {
   validateCreateListing,
   validateListingId,
@@ -47,6 +48,7 @@ router.patch(
 )
 router.post(
   '/:id/inquiries',
+  inquiryLimiter,
   optionalAuthenticate,
   validateListingId,
   validateInquiry,

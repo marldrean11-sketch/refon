@@ -11,7 +11,10 @@ const photoSchema = z
   .min(1, 'A listing photo URL is required.')
   .max(2048, 'Photo URLs must be 2048 characters or fewer.')
   .refine(
-    (value) => value.startsWith('/uploads/') || /^https?:\/\//i.test(value),
+    (value) =>
+      value.startsWith('/uploads/') &&
+      !value.includes('..') &&
+      !value.includes('\\'),
     'Photos must be uploaded image URLs.',
   )
 

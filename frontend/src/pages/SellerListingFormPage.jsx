@@ -24,6 +24,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ListingCard } from '../features/listings/listing-card.jsx'
 import { uploadPhotosRequest } from '../features/listings/listing-api.js'
 import { useSellerListings } from '../features/seller/useSellerListings.js'
+import { useSellerProfile } from '../features/seller/useSellerProfile.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 
 const brandOptions = ['Apple', 'Samsung', 'Xiaomi', 'OPPO']
@@ -31,6 +32,7 @@ const years = Array.from({ length: 10 }, (_, index) => 2015 + index)
 const storageOptions = ['32 GB', '64 GB', '128 GB', '256 GB', '512 GB']
 const conditionOptions = ['Good', 'Excellent', 'Like New']
 const MAX_PHOTOS = 6
+const MAX_COLOR_LENGTH = 80
 const MAX_PHOTO_SIZE = 8 * 1024 * 1024
 const ACCEPTED_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
@@ -83,6 +85,9 @@ function getInitialForm(listing) {
     batteryPercent: listing?.batteryPercent ?? 85,
     storage: listing?.storage ?? '128 GB',
     condition: listing?.condition ?? 'Good',
+    // The API substitutes "As pictured" when a listing has no color, so treat that
+    // placeholder as an empty field instead of showing it to the seller.
+    color: listing?.color && listing.color !== 'As pictured' ? listing.color : '',
     conditionNotes: listing?.conditionNotes ?? '',
   }
 }
@@ -112,6 +117,10 @@ function validateForm(form, photos) {
 
   if (form.conditionNotes.trim().length < 10) {
     errors.conditionNotes = 'Add at least 10 characters of cosmetic detail.'
+  }
+
+  if (form.color.trim().length > MAX_COLOR_LENGTH) {
+    errors.color = `Color must be ${MAX_COLOR_LENGTH} characters or fewer.`
   }
 
   if (photos.length < 1) {
@@ -211,6 +220,7 @@ export function SellerListingFormPage({ mode = 'create' }) {
 function SellerListingFormEditor({ mode, existingListing }) {
   const isEditing = mode === 'edit'
   const { createListing, updateListing } = useSellerListings()
+  const { seller } = useSellerProfile()
   const [form, setForm] = useState(() => getInitialForm(existingListing))
   const [photos, setPhotos] = useState(() => getInitialPhotos(existingListing))
   const [errors, setErrors] = useState({})
@@ -382,7 +392,7 @@ function SellerListingFormEditor({ mode, existingListing }) {
       price: Number(form.price),
       batteryPercent: Number(form.batteryPercent),
       conditionNotes: form.conditionNotes.trim(),
-      color: existingListing?.color ?? 'Natural finish',
+      color: form.color.trim(),
     }
 
     setIsSubmitting(true)
@@ -476,8 +486,8 @@ function SellerListingFormEditor({ mode, existingListing }) {
     storage: form.storage,
     condition: form.condition,
     conditionNotes: form.conditionNotes,
-    color: existingListing?.color ?? 'Natural finish',
-    sellerName: 'Circuit Foundry',
+    color: form.color.trim() || 'As pictured',
+    sellerName: seller?.businessName || 'Your shop',
     photos: photos.map((photo) => photo.url),
     mainPhoto: photos[0]?.url ?? null,
   }
@@ -642,6 +652,25 @@ function SellerListingFormEditor({ mode, existingListing }) {
                         <option key={condition} value={condition}>{condition}</option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="listing-color" className={labelClassName}>Color</label>
+                    <input
+                      id="listing-color"
+                      maxLength={MAX_COLOR_LENGTH}
+                      value={form.color}
+                      onChange={(event) => updateField('color', event.target.value)}
+                      placeholder="e.g. Awesome Blue"
+                      className={`${inputClassName} mt-2 ${errors.color ? 'border-danger focus:border-danger focus:ring-red-100' : ''}`}
+                      aria-invalid={Boolean(errors.color)}
+                      aria-describedby={errors.color ? 'listing-color-error' : undefined}
+                    />
+                    {errors.color ? (
+                      <p id="listing-color-error" role="alert" className="mt-2 text-xs font-medium text-danger">{errors.color}</p>
+                    ) : (
+                      <p className="mt-2 text-xs text-muted">Optional. Leave blank if the finish is not known.</p>
+                    )}
                   </div>
                 </div>
               </div>

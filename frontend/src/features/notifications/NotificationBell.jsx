@@ -43,6 +43,14 @@ const notificationPresentation = {
     icon: ShoppingBag,
     iconClass: 'bg-amber-50 text-amber-700',
   },
+  SELLER_APPROVED: {
+    icon: BadgeCheck,
+    iconClass: 'bg-accent-50 text-accent-700',
+  },
+  SELLER_REJECTED: {
+    icon: ShieldAlert,
+    iconClass: 'bg-red-50 text-danger',
+  },
 }
 
 function formatRelativeTimestamp(value) {
@@ -83,8 +91,12 @@ function getNotificationTarget(notification) {
     return `/listings/${notification.relatedListingId}`
   }
 
+  // Sold listings stay reachable from the notification so buyers can still see
+  // the confirmation banner instead of hitting a missing-listing page.
   if (notification.type === 'LISTING_SOLD') {
-    return AUTH_ROUTES.buyer
+    return notification.relatedListingId
+      ? `/listings/${notification.relatedListingId}`
+      : AUTH_ROUTES.buyer
   }
 
   return AUTH_ROUTES.seller

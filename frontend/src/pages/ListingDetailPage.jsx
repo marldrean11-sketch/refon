@@ -10,6 +10,7 @@ import {
   MessageCircle,
   SearchX,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
   Store,
 } from 'lucide-react'
@@ -131,6 +132,7 @@ export function ListingDetailPage() {
 
   const battery = getBatteryPresentation(listing.batteryPercent)
   const seller = listing.seller
+  const isSold = listing.status === 'SOLD'
   const otherListings = approvedListings.filter((item) => item.id !== listing.id)
   const relatedListings = [
     ...otherListings.filter((item) => item.brand === listing.brand),
@@ -200,16 +202,38 @@ export function ListingDetailPage() {
                   <p className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">
                     {currencyFormatter.format(listing.price)}
                   </p>
+                  {isSold && (
+                    <div
+                      className="mt-4 flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900"
+                      role="status"
+                    >
+                      <ShoppingBag className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden="true" />
+                      <div>
+                        <p className="text-sm font-bold">This phone has been sold</p>
+                        <p className="mt-1 text-xs leading-relaxed">
+                          This listing is no longer accepting inquiries. Browse the
+                          marketplace to find another verified phone.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsInquiryOpen(true)}
-                  className="mt-6 hidden h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-6 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 lg:inline-flex"
-                >
-                  <MessageCircle className="size-5" aria-hidden="true" />
-                  Inquire Now
-                </button>
+                {isSold ? (
+                  <div className="mt-6 hidden h-14 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-canvas px-6 text-sm font-bold text-muted lg:inline-flex">
+                    <ShoppingBag className="size-5" aria-hidden="true" />
+                    No longer accepting inquiries
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsInquiryOpen(true)}
+                    className="mt-6 hidden h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-6 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 lg:inline-flex"
+                  >
+                    <MessageCircle className="size-5" aria-hidden="true" />
+                    Inquire Now
+                  </button>
+                )}
                 <p className="mt-3 text-center text-xs leading-relaxed text-muted">
                   No account required · Your details go only to this seller
                 </p>
@@ -445,22 +469,31 @@ export function ListingDetailPage() {
               {currencyFormatter.format(listing.price)}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsInquiryOpen(true)}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98]"
-          >
-            <MessageCircle className="size-4" aria-hidden="true" />
-            Inquire Now
-          </button>
+          {isSold ? (
+            <div className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-canvas px-5 text-sm font-bold text-muted">
+              <ShoppingBag className="size-4" aria-hidden="true" />
+              Sold
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsInquiryOpen(true)}
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98]"
+            >
+              <MessageCircle className="size-4" aria-hidden="true" />
+              Inquire Now
+            </button>
+          )}
         </div>
       </div>
 
-      <InquiryModal
-        listing={listing}
-        open={isInquiryOpen}
-        onClose={() => setIsInquiryOpen(false)}
-      />
+      {!isSold && (
+        <InquiryModal
+          listing={listing}
+          open={isInquiryOpen}
+          onClose={() => setIsInquiryOpen(false)}
+        />
+      )}
     </>
   )
 }
