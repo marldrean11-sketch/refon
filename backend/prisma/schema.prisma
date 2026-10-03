@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  SELLER
+  BUYER
+}
+
+enum SellerVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SOLD
+}
+
+enum NotificationType {
+  NEW_INQUIRY
+  INQUIRY_SENT
+  LISTING_APPROVED
+  LISTING_REJECTED
+  LISTING_SOLD
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(120)
+  email        String   @unique @db.VarChar(320)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         UserRole @default(BUYER)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  seller         Seller?
+  notifications  Notification[]
+  buyerInquiries Inquiry[]      @relation("BuyerInquiries")
+
+  @@map("users")
+}
+
+model Seller {
+  id                 String                   @id @default(uuid()) @db.Uuid
+  userId             String                   @unique @map("user_id") @db.Uuid
+  businessName       String                   @map("business_name") @db.VarChar(160)
+  contactInfo        String                   @map("contact_info") @db.VarChar(320)
+  verificationStatus SellerVerificationStatus @default(PENDING) @map("verification_status")
+  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  listings Listing[]
+
+  @@index([verificationStatus])
+  @@map("sellers")
+}
+
+model Listing {
+  id                String        @id @default(uuid()) @db.Uuid
+  sellerId          String        @map("seller_id") @db.Uuid
+  brand             String        @db.VarChar(80)
+  model             String        @db.VarChar(120)
+  /// Must be between 2015 and 2024; enforced by a PostgreSQL check constraint.
+  year              Int
+  price             Decimal       @db.Decimal(12, 2)
+  /// Must be between 0 and 100; enforced by a PostgreSQL check constraint.
+  batteryPercent    Int           @map("battery_percent")
+  storage           String        @db.VarChar(64)
+  cosmeticCondition String        @default("Good") @map("cosmetic_condition") @db.VarChar(40)
+  color             String?       @map("color") @db.VarChar(80)
+  conditionNotes    String        @map("condition_notes") @db.Text
+  /// Ordered image URLs; the first URL is the listing Main Photo.
+  photos            String[]      @default([])
+  status            ListingStatus @default(PENDING)
+  moderatorFeedback String?       @map("moderator_feedback") @db.Text
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  seller        Seller         @relation(fields: [sellerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inquiries     Inquiry[]
+  notifications Notification[]
+
+  @@index([sellerId, status])
+  @@index([status, createdAt])
+  @@index([brand, model])
+  @@map("listings")
+}
+
+model Inquiry {
+  id           String   @id @default(uuid()) @db.Uuid
+  listingId    String   @map("listing_id") @db.Uuid
+  buyerName    String   @map("buyer_name") @db.VarChar(120)
+  buyerContact String   @map("buyer_contact") @db.VarChar(320)
+  message      String   @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  buyerId String? @map("buyer_id") @db.Uuid
+  buyer   User?   @relation("BuyerInquiries", fields: [buyerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([listingId, createdAt])
+  @@index([buyerId])
+  @@map("inquiries")
+}
+
+model Notification {
+  id               String           @id @default(uuid()) @db.Uuid
+  userId           String           @map("user_id") @db.Uuid
+  type             NotificationType
+  message          String           @db.Text
+  relatedListingId String?          @map("related_listing_id") @db.Uuid
+  isRead           Boolean          @default(false) @map("is_read")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  relatedListing Listing? @relation(fields: [relatedListingId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" role="img" aria-labelledby="title desc">
+  <title id="title">ReFon demo listing screen photo</title>
+  <desc id="desc">A phone screen displaying battery and condition information.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="80%">
+      <stop offset="0" stop-color="#1e293b"/>
+      <stop offset="1" stop-color="#020617"/>
+    </radialGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#164e63"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <circle cx="600" cy="390" r="290" fill="#14b8a6" opacity=".16" filter="url(#glow)"/>
+  <rect x="370" y="80" width="460" height="740" rx="70" fill="#020617" stroke="#334155" stroke-width="8"/>
+  <rect x="400" y="112" width="400" height="676" rx="48" fill="url(#screen)"/>
+  <rect x="530" y="132" width="140" height="22" rx="11" fill="#022c22"/>
+  <text x="600" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ccfbf1">BATTERY HEALTH</text>
+  <text x="600" y="410" text-anchor="middle" font-family="Arial, sans-serif" font-size="150" font-weight="700" fill="#ecfeff">92%</text>
+  <rect x="480" y="480" width="240" height="22" rx="11" fill="#99f6e4" opacity=".35"/>
+  <rect x="480" y="480" width="221" height="22" rx="11" fill="#5eead4"/>
+  <text x="600" y="620" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#f0fdfa">CONDITION · EXCELLENT</text>
+  <text x="600" y="842" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#99f6e4">REFON DEMO · SCREEN PHOTO</text>
+</svg>
