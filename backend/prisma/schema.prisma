@@ -105,6 +105,7 @@ model Inquiry {
   buyerName    String   @map("buyer_name") @db.VarChar(120)
   buyerContact String   @map("buyer_contact") @db.VarChar(320)
   message      String   @db.Text
+  isRead       Boolean  @default(false) @map("is_read")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -112,6 +113,7 @@ model Inquiry {
   buyer   User?   @relation("BuyerInquiries", fields: [buyerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([listingId, createdAt])
+  @@index([listingId, isRead])
   @@index([buyerId])
   @@map("inquiries")
 }

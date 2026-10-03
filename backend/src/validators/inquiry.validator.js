@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { validate } from './auth.validator.js'
+import { validate, validateParams, validateQuery } from './auth.validator.js'
 
 const inquirySchema = z
   .object({
@@ -22,3 +22,22 @@ const inquirySchema = z
   .strict()
 
 export const validateInquiry = validate(inquirySchema)
+
+const inquiryIdSchema = z.object({
+  id: z.string().uuid('Inquiry ID must be a valid UUID.'),
+})
+
+const inquiryQuerySchema = z
+  .object({
+    status: z.enum(['unread', 'all'], {
+      error: 'Status must be unread or all.',
+    }).default('all'),
+    listingId: z
+      .string()
+      .uuid('Listing ID must be a valid UUID.')
+      .optional(),
+  })
+  .strict()
+
+export const validateInquiryId = validateParams(inquiryIdSchema)
+export const validateInquiryQuery = validateQuery(inquiryQuerySchema)

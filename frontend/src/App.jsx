@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { MotionConfig } from 'framer-motion'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider.jsx'
+import { AUTH_ROUTES } from './features/auth/auth.routes.js'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute.jsx'
 import { RequireAuth } from './components/auth/RequireAuth.jsx'
 import { RequireRole } from './components/auth/RequireRole.jsx'
@@ -9,6 +10,7 @@ import { AuthenticatedLayout } from './components/layout/AuthenticatedLayout.jsx
 import { MarketplaceLayout } from './components/layout/MarketplaceLayout.jsx'
 import { LoadingScreen } from './components/ui/LoadingScreen.jsx'
 import { SellerListingsProvider } from './features/seller/SellerListingsProvider.jsx'
+import { SellerInquiriesProvider } from './features/inquiries/SellerInquiriesProvider.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
 
 const LoginPage = lazy(() =>
@@ -36,6 +38,11 @@ const SellerDashboardPage = lazy(() =>
 const SellerListingFormPage = lazy(() =>
   import('./pages/SellerListingFormPage.jsx').then((module) => ({
     default: module.SellerListingFormPage,
+  })),
+)
+const SellerInquiriesPage = lazy(() =>
+  import('./pages/SellerInquiriesPage.jsx').then((module) => ({
+    default: module.SellerInquiriesPage,
   })),
 )
 const AdminDashboardPage = lazy(() =>
@@ -76,24 +83,30 @@ function App() {
             </Route>
 
             <Route element={<RequireAuth />}>
-              <Route element={<AuthenticatedLayout />}>
-                <Route path="/forbidden" element={<ForbiddenPage />} />
+              <Route element={<SellerInquiriesProvider />}>
+                <Route element={<AuthenticatedLayout />}>
+                  <Route path="/forbidden" element={<ForbiddenPage />} />
 
-                <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
-                  <Route path="/admin" element={<AdminDashboardPage />} />
-                </Route>
+                  <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
+                    <Route path="/admin" element={<AdminDashboardPage />} />
+                  </Route>
 
-                <Route element={<RequireRole allowedRoles={['SELLER']} />}>
-                  <Route element={<SellerListingsProvider />}>
-                    <Route path="/seller" element={<SellerDashboardPage />} />
-                    <Route
-                      path="/seller/listings/new"
-                      element={<SellerListingFormPage mode="create" />}
-                    />
-                    <Route
-                      path="/seller/listings/:id/edit"
-                      element={<SellerListingFormPage mode="edit" />}
-                    />
+                  <Route element={<RequireRole allowedRoles={['SELLER']} />}>
+                    <Route element={<SellerListingsProvider />}>
+                      <Route path="/seller" element={<SellerDashboardPage />} />
+                      <Route
+                        path={AUTH_ROUTES.sellerInquiries}
+                        element={<SellerInquiriesPage />}
+                      />
+                      <Route
+                        path="/seller/listings/new"
+                        element={<SellerListingFormPage mode="create" />}
+                      />
+                      <Route
+                        path="/seller/listings/:id/edit"
+                        element={<SellerListingFormPage mode="edit" />}
+                      />
+                    </Route>
                   </Route>
                 </Route>
               </Route>

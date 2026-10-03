@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   LogOut,
   Menu,
+  MessagesSquare,
   Search,
   ShieldCheck,
   Store,
@@ -13,6 +14,7 @@ import { BrandMark } from '../ui/BrandMark.jsx'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { AUTH_ROUTES } from '../../features/auth/auth.routes.js'
 import { NotificationBell } from '../../features/notifications/NotificationBell.jsx'
+import { useSellerInquiries } from '../../features/inquiries/useSellerInquiries.js'
 import { quickTransition } from '../../lib/motion.js'
 
 const linksByRole = {
@@ -39,13 +41,28 @@ const roleLabels = {
   BUYER: 'Buyer',
 }
 
+function UnreadBadge({ count }) {
+  if (count < 1) {
+    return null
+  }
+
+  return (
+    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent-700 px-1.5 py-0.5 text-[10px] font-bold leading-4 text-white">
+      {count > 99 ? '99+' : count}
+      <span className="sr-only"> unread inquiries</span>
+    </span>
+  )
+}
+
 export function AppNavbar() {
   const { user, logout } = useAuth()
+  const { unreadCount } = useSellerInquiries()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navigate = useNavigate()
   const reduceMotion = useReducedMotion()
   const roleLink = linksByRole[user.role] ?? linksByRole.BUYER
   const RoleIcon = roleLink.icon
+  const isSeller = user.role === 'SELLER'
   const initials = user.name
     .split(' ')
     .filter(Boolean)
@@ -78,6 +95,23 @@ export function AppNavbar() {
             <RoleIcon className="size-4" aria-hidden="true" />
             {roleLink.label}
           </NavLink>
+
+          {isSeller && (
+            <NavLink
+              to={AUTH_ROUTES.sellerInquiries}
+              className={({ isActive }) =>
+                `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition duration-200 ${
+                  isActive
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-muted hover:bg-primary-50/70 hover:text-primary-700'
+                }`
+              }
+            >
+              <MessagesSquare className="size-4" aria-hidden="true" />
+              Inquiries
+              <UnreadBadge count={unreadCount} />
+            </NavLink>
+          )}
 
           <div className="h-6 w-px bg-line" aria-hidden="true" />
           <NotificationBell />
@@ -144,6 +178,24 @@ export function AppNavbar() {
                 <RoleIcon className="size-5" aria-hidden="true" />
                 {roleLink.label}
               </NavLink>
+
+              {isSeller && (
+                <NavLink
+                  to={AUTH_ROUTES.sellerInquiries}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isActive
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-muted hover:bg-canvas'
+                    }`
+                  }
+                >
+                  <MessagesSquare className="size-5" aria-hidden="true" />
+                  Inquiries
+                  <UnreadBadge count={unreadCount} />
+                </NavLink>
+              )}
 
               <div className="flex items-center justify-between rounded-2xl bg-canvas px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">

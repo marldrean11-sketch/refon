@@ -8,6 +8,7 @@ import {
   ListChecks,
   LockKeyhole,
   MessageCircleWarning,
+  MessagesSquare,
   Plus,
   ShieldCheck,
   ShoppingBag,
@@ -19,6 +20,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useSellerListings } from '../features/seller/useSellerListings.js'
 import { useSellerProfile } from '../features/seller/useSellerProfile.js'
+import { useSellerInquiries } from '../features/inquiries/useSellerInquiries.js'
 import { ConfirmDialog } from '../features/seller/components/ConfirmDialog.jsx'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
@@ -112,6 +114,7 @@ export function SellerDashboardPage() {
     error: profileError,
     refresh: refreshProfile,
   } = useSellerProfile()
+  const { unreadCount } = useSellerInquiries()
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [updatingListingId, setUpdatingListingId] = useState(null)
@@ -158,6 +161,17 @@ export function SellerDashboardPage() {
       value: stats.sold,
       icon: ShoppingBag,
       iconClass: 'bg-primary-50 text-primary-700',
+    },
+  ]
+
+  const statCardsWithInquiries = [
+    ...statCards,
+    {
+      label: 'Unread inquiries',
+      value: unreadCount,
+      icon: MessagesSquare,
+      iconClass: 'bg-accent-50 text-accent-700',
+      to: AUTH_ROUTES.sellerInquiries,
     },
   ]
 
@@ -260,6 +274,7 @@ export function SellerDashboardPage() {
                 and sale.
               </p>
             </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
             {canCreateListing ? (
               <Link
                 to="/seller/listings/new"
@@ -279,6 +294,19 @@ export function SellerDashboardPage() {
                 Loading seller profile…
               </span>
             )}
+            <Link
+              to={AUTH_ROUTES.sellerInquiries}
+              className="relative inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-white px-6 text-sm font-bold text-primary-700 shadow-sm transition duration-200 hover:border-primary-200 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:w-auto"
+            >
+              <MessagesSquare className="size-5" aria-hidden="true" />
+              Inquiries
+              {unreadCount > 0 && (
+                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-accent-700 px-2 py-0.5 text-xs font-bold text-white">
+                  {unreadCount}
+                </span>
+              )}
+            </Link>
+            </div>
           </div>
 
           <div
@@ -345,8 +373,8 @@ export function SellerDashboardPage() {
             aria-live="polite"
             aria-label="Loading seller inventory"
           >
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }, (_, index) => (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              {Array.from({ length: 5 }, (_, index) => (
                 <div key={index} className="rounded-card border border-line p-5">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="mt-3 h-10 w-16" />
@@ -387,14 +415,9 @@ export function SellerDashboardPage() {
           </div>
         ) : (
         <>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {statCards.map(({ label, value, icon: Icon, iconClass }) => (
-            <motion.div
-              key={label}
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-card border border-line bg-white p-5 shadow-card"
-            >
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {statCardsWithInquiries.map(({ label, value, icon: Icon, iconClass, to }) => {
+            const body = (
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-muted">{label}</p>
@@ -406,8 +429,33 @@ export function SellerDashboardPage() {
                   <Icon className="size-6" aria-hidden="true" />
                 </span>
               </div>
-            </motion.div>
-          ))}
+            )
+
+            return (
+              <motion.div
+                key={label}
+                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`rounded-card border border-line bg-white p-5 shadow-card ${
+                  to
+                    ? 'transition duration-200 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-card-hover'
+                    : ''
+                }`}
+              >
+                {to ? (
+                  <Link
+                    to={to}
+                    className="block rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                  >
+                    {body}
+                    <span className="sr-only">Open {label.toLowerCase()}</span>
+                  </Link>
+                ) : (
+                  body
+                )}
+              </motion.div>
+            )
+          })}
         </div>
 
         <div className="mt-10 overflow-hidden rounded-card-xl border border-line bg-white shadow-card">

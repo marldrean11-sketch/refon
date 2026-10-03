@@ -82,11 +82,14 @@ function formatRelativeTimestamp(value) {
 }
 
 function getNotificationTarget(notification) {
+  // Buyer questions belong in the seller's inbox rather than on the listing page.
+  if (notification.type === 'NEW_INQUIRY') {
+    return AUTH_ROUTES.sellerInquiries
+  }
+
   if (
     notification.relatedListingId &&
-    ['NEW_INQUIRY', 'INQUIRY_SENT', 'LISTING_APPROVED'].includes(
-      notification.type,
-    )
+    ['INQUIRY_SENT', 'LISTING_APPROVED'].includes(notification.type)
   ) {
     return `/listings/${notification.relatedListingId}`
   }

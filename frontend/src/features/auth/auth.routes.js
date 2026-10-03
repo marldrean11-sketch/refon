@@ -4,6 +4,7 @@ export const AUTH_ROUTES = Object.freeze({
   register: '/register',
   admin: '/admin',
   seller: '/seller',
+  sellerInquiries: '/seller/inquiries',
   buyer: '/browse',
   forbidden: '/forbidden',
 })

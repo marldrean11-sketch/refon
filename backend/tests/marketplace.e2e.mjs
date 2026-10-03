@@ -289,6 +289,7 @@ try {
   })
   assert.equal(sellerInquiries.response.status, 200)
   assert.equal(sellerInquiries.payload.inquiries.length, 1)
+  assert.equal(sellerInquiries.payload.inquiries[0].isRead, false)
 
   const anonymousInquiry = await request(`/api/listings/${listingId}/inquiries`, {
     method: 'POST',
@@ -299,6 +300,117 @@ try {
     },
   })
   assert.equal(anonymousInquiry.response.status, 201)
+
+  const otherSeller = await login('circuit@refon.test', 'SellerTest123!')
+
+  // --- Seller inquiry inbox ---
+  const inboxBeforeRead = await request('/api/inquiries/mine', {
+    cookie: sellerSession.cookie,
+  })
+  assert.equal(inboxBeforeRead.response.status, 200)
+  assert.ok(inboxBeforeRead.payload.unreadCount >= 1)
+
+  const inboxInquiry = inboxBeforeRead.payload.inquiries.find(
+    (inquiry) => inquiry.id === inquiryId,
+  )
+  assert.ok(inboxInquiry)
+  assert.equal(inboxInquiry.isRead, false)
+  assert.equal(inboxInquiry.listingId, listingId)
+  assert.equal(inboxInquiry.listing.id, listingId)
+  assert.equal(inboxInquiry.listing.status, 'APPROVED')
+  assert.equal(typeof inboxInquiry.listing.price, 'number')
+  assert.ok(inboxInquiry.listing.mainPhoto === null || typeof inboxInquiry.listing.mainPhoto === 'string')
+
+  const unreadOnly = await request('/api/inquiries/mine?status=unread', {
+    cookie: sellerSession.cookie,
+  })
+  assert.equal(unreadOnly.response.status, 200)
+  assert.ok(unreadOnly.payload.inquiries.every((inquiry) => inquiry.isRead === false))
+  // The badge count must ignore the filters, so it matches the unfiltered total.
+  assert.equal(unreadOnly.payload.unreadCount, inboxBeforeRead.payload.unreadCount)
+
+  const filteredByListing = await request(
+    `/api/inquiries/mine?listingId=${listingId}`,
+    { cookie: sellerSession.cookie },
+  )
+  assert.equal(filteredByListing.response.status, 200)
+  assert.ok(filteredByListing.payload.inquiries.every((inquiry) => inquiry.listingId === listingId))
+  assert.equal(filteredByListing.payload.unreadCount, inboxBeforeRead.payload.unreadCount)
+
+  const otherSellerInbox = await request('/api/inquiries/mine', {
+    cookie: otherSeller.cookie,
+  })
+  assert.equal(otherSellerInbox.response.status, 200)
+  assert.ok(
+    !otherSellerInbox.payload.inquiries.some((inquiry) => inquiry.id === inquiryId),
+  )
+  assert.equal(
+    otherSellerInbox.payload.inquiries.some((inquiry) => inquiry.listingId === listingId),
+    false,
+  )
+
+  const crossSellerRead = await request(`/api/inquiries/${inquiryId}/read`, {
+    method: 'PATCH',
+    cookie: otherSeller.cookie,
+  })
+  assert.equal(crossSellerRead.response.status, 404)
+  assert.equal(crossSellerRead.payload.code, 'INQUIRY_NOT_FOUND')
+
+  const buyerInbox = await request('/api/inquiries/mine', {
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(buyerInbox.response.status, 403)
+  assert.equal(buyerInbox.payload.code, 'FORBIDDEN')
+
+  const anonymousInbox = await request('/api/inquiries/mine')
+  assert.equal(anonymousInbox.response.status, 401)
+
+  const unreadBeforeMark = (
+    await request('/api/inquiries/mine', { cookie: sellerSession.cookie })
+  ).payload.unreadCount
+
+  const ownerReadResult = await request(`/api/inquiries/${inquiryId}/read`, {
+    method: 'PATCH',
+    cookie: sellerSession.cookie,
+  })
+  assert.equal(ownerReadResult.response.status, 200)
+  assert.equal(ownerReadResult.payload.inquiry.isRead, true)
+
+  const afterOwnerRead = await request('/api/inquiries/mine', {
+    cookie: sellerSession.cookie,
+  })
+  assert.equal(afterOwnerRead.payload.unreadCount, unreadBeforeMark - 1)
+  assert.equal(
+    afterOwnerRead.payload.inquiries.find((inquiry) => inquiry.id === inquiryId).isRead,
+    true,
+  )
+
+  const storedReadInquiry = await prisma.inquiry.findUniqueOrThrow({
+    where: { id: inquiryId },
+  })
+  assert.equal(storedReadInquiry.isRead, true)
+
+  const readAllResult = await request('/api/inquiries/read-all', {
+    method: 'PATCH',
+    cookie: sellerSession.cookie,
+  })
+  assert.equal(readAllResult.response.status, 200)
+  assert.ok(readAllResult.payload.updatedCount >= 1)
+
+  const afterReadAll = await request('/api/inquiries/mine', {
+    cookie: sellerSession.cookie,
+  })
+  assert.equal(afterReadAll.payload.unreadCount, 0)
+  assert.ok(afterReadAll.payload.inquiries.every((inquiry) => inquiry.isRead === true))
+
+  const crossSellerAfterReadAll = await request('/api/inquiries/mine', {
+    cookie: otherSeller.cookie,
+  })
+  assert.ok(
+    !crossSellerAfterReadAll.payload.inquiries.some(
+      (inquiry) => inquiry.id === inquiryId,
+    ),
+  )
 
   const inquiryNotifications = await request('/api/notifications/mine', {
     cookie: sellerSession.cookie,
@@ -335,7 +447,6 @@ try {
   assert.match(inquirySentNotification.message, /your inquiry about the samsung/i)
   createdNotificationIds.push(inquirySentNotification.id)
 
-  const otherSeller = await login('circuit@refon.test', 'SellerTest123!')
   const forbiddenEdit = await request(`/api/listings/${listingId}`, {
     method: 'PUT',
     cookie: otherSeller.cookie,

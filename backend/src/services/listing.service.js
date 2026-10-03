@@ -492,6 +492,7 @@ export async function getListingInquiries(listingId, userId) {
     buyerName: inquiry.buyerName,
     buyerContact: inquiry.buyerContact,
     message: inquiry.message,
+    isRead: inquiry.isRead,
     createdAt: inquiry.createdAt.toISOString(),
   }))
 }
