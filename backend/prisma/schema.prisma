@@ -34,6 +34,22 @@ enum NotificationType {
   LISTING_SOLD
   SELLER_APPROVED
   SELLER_REJECTED
+  LISTING_TAKEN_DOWN
+  REPORT_RESOLVED
+}
+
+enum ReportReason {
+  SCAM
+  MISLEADING
+  WRONG_INFO
+  PROHIBITED_ITEM
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
 }
 
 model User {
@@ -49,6 +65,8 @@ model User {
   notifications  Notification[]
   buyerInquiries Inquiry[]      @relation("BuyerInquiries")
   favorites      Favorite[]
+  reportsMade    Report[]        @relation("ReportReporter")
+  reportsHandled Report[]        @relation("ReportResolver")
 
   @@map("users")
 }
@@ -59,6 +77,7 @@ model Seller {
   businessName       String                   @map("business_name") @db.VarChar(160)
   contactInfo        String                   @map("contact_info") @db.VarChar(320)
   verificationStatus SellerVerificationStatus @default(PENDING) @map("verification_status")
+  moderatorFeedback  String?                  @map("moderator_feedback") @db.Text
   createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -94,6 +113,7 @@ model Listing {
   inquiries     Inquiry[]
   notifications Notification[]
   favorites     Favorite[]
+  reports       Report[]
 
   @@index([sellerId, status])
   @@index([status, createdAt])
@@ -132,6 +152,29 @@ model Favorite {
   @@unique([userId, listingId])
   @@index([userId, createdAt])
   @@map("favorites")
+}
+
+model Report {
+  id             String       @id @default(uuid()) @db.Uuid
+  listingId      String       @map("listing_id") @db.Uuid
+  reporterId     String       @map("reporter_id") @db.Uuid
+  reason         ReportReason
+  /// Optional for every reason except OTHER, which the API requires.
+  details        String?      @db.Text
+  status         ReportStatus @default(OPEN)
+  resolutionNote String?      @map("resolution_note") @db.Text
+  resolvedById   String?      @map("resolved_by_id") @db.Uuid
+  resolvedAt     DateTime?    @map("resolved_at") @db.Timestamptz(3)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  listing    Listing @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reporter   User    @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  resolvedBy User?   @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([listingId, reporterId])
+  @@index([status, createdAt])
+  @@index([listingId])
+  @@map("reports")
 }
 
 model Notification {

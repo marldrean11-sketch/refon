@@ -7,12 +7,14 @@ export async function getAdminStats() {
     totalListings,
     pendingListings,
     totalSold,
+    openReports,
   ] = await prisma.$transaction([
     prisma.seller.count(),
     prisma.seller.count({ where: { verificationStatus: 'PENDING' } }),
     prisma.listing.count(),
     prisma.listing.count({ where: { status: 'PENDING' } }),
     prisma.listing.count({ where: { status: 'SOLD' } }),
+    prisma.report.count({ where: { status: 'OPEN' } }),
   ])
 
   return {
@@ -21,5 +23,6 @@ export async function getAdminStats() {
     totalListings,
     pendingListings,
     totalSold,
+    openReports,
   }
 }

@@ -52,11 +52,11 @@ export function FavoriteButton({ listing, className = '' }) {
     <button
       type="button"
       onClick={handleClick}
-      disabled={isBusy}
+      aria-disabled={isBusy || undefined}
       aria-pressed={canSave ? saved : undefined}
       aria-label={saved ? `Remove ${label}` : label}
       title={saved ? 'Remove from saved listings' : 'Save this listing'}
-      className={`z-40 grid size-9 place-items-center rounded-xl bg-white/90 shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-60 ${
+      className={`relative grid size-9 place-items-center rounded-xl bg-white/90 shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 aria-disabled:opacity-60 ${
         saved ? 'text-danger' : 'text-muted hover:text-danger'
       } ${className}`}
     >

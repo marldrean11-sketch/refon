@@ -69,3 +69,10 @@ export function submitInquiryRequest(listingId, values) {
 export function getListingInquiriesRequest(listingId) {
   return apiRequest(`/listings/${listingId}/inquiries`)
 }
+
+export function reportListingRequest(listingId, body) {
+  return apiRequest(`/listings/${listingId}/reports`, {
+    method: 'POST',
+    body,
+  })
+}

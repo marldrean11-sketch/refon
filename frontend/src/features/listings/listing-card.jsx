@@ -204,9 +204,9 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
         <span className="absolute right-4 top-12 rounded-full bg-white/90 px-2.5 py-1.5 text-[11px] font-bold text-ink shadow-sm backdrop-blur">
           {listing.condition}
         </span>
-        {/* Sits above the z-30 full-card link so it stays clickable. */}
+        {/* Owns the stacking context so it paints above the z-30 full-card link. */}
         {!preview && !hideSaveButton && (
-          <div className="absolute right-3 top-3">
+          <div className="absolute right-3 top-3 z-40">
             <FavoriteButton listing={listing} />
           </div>
         )}

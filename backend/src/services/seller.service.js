@@ -8,6 +8,7 @@ function presentSeller(seller) {
     businessName: seller.businessName,
     contactInfo: seller.contactInfo,
     verificationStatus: seller.verificationStatus,
+    moderatorFeedback: seller.moderatorFeedback ?? null,
     createdAt: seller.createdAt.toISOString(),
     updatedAt: seller.updatedAt.toISOString(),
     appliedAt: seller.createdAt.toISOString(),
@@ -44,6 +45,8 @@ export async function applyAsSeller(userId, values) {
             businessName: values.businessName,
             contactInfo: values.contactInfo,
             verificationStatus: 'PENDING',
+            // A fresh application starts clean; stale feedback must not resurface.
+            moderatorFeedback: null,
           },
           include: { user: { select: { id: true, name: true, email: true } } },
         })
@@ -89,10 +92,12 @@ export async function getPendingSellers() {
   return sellers.map(presentSeller)
 }
 
-export async function reviewSeller(sellerId, decision) {
+export async function reviewSeller(sellerId, decision, feedback = '') {
   if (!['APPROVED', 'REJECTED'].includes(decision)) {
     throw new ApiError(422, 'Seller decision must be APPROVED or REJECTED.')
   }
+
+  const feedbackText = (feedback ?? '').trim()
 
   return prisma.$transaction(async (transaction) => {
     const existingSeller = await transaction.seller.findUnique({ where: { id: sellerId } })
@@ -107,18 +112,25 @@ export async function reviewSeller(sellerId, decision) {
 
     const seller = await transaction.seller.update({
       where: { id: sellerId },
-      data: { verificationStatus: decision },
+      data: {
+        verificationStatus: decision,
+        moderatorFeedback: decision === 'REJECTED' ? feedbackText || null : null,
+      },
       include: { user: { select: { id: true, name: true, email: true } } },
     })
+
+    const baseMessage =
+      decision === 'APPROVED'
+        ? 'Your seller application was approved. You can now create listings.'
+        : 'Your seller application was rejected. Contact the ReFon team if you have questions.'
 
     await transaction.notification.create({
       data: {
         userId: seller.userId,
         type: decision === 'APPROVED' ? 'SELLER_APPROVED' : 'SELLER_REJECTED',
-        message:
-          decision === 'APPROVED'
-            ? 'Your seller application was approved. You can now create listings.'
-            : 'Your seller application was rejected. Contact the ReFon team if you have questions.',
+        message: feedbackText
+          ? `${baseMessage} Reason: ${feedbackText}`
+          : baseMessage,
       },
     })
 

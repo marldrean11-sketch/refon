@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock3,
   FileWarning,
+  Flag,
   ListChecks,
   MessageSquareText,
   PackageCheck,
@@ -28,8 +29,10 @@ import {
   getAdminStatsRequest,
   getPendingListingsRequest,
   getPendingSellersRequest,
+  getReportsRequest,
   rejectListingRequest,
   rejectSellerRequest,
+  resolveReportRequest,
 } from '../features/admin/admin-api.js'
 import {
   notifyMarketplaceChange,
@@ -59,6 +62,25 @@ const queueTabs = [
     label: 'Pending Listings',
     icon: ListChecks,
   },
+  {
+    id: 'REPORTS',
+    label: 'Reports',
+    icon: ShieldAlert,
+  },
+]
+
+const reasonLabels = {
+  SCAM: 'Scam or fraud',
+  MISLEADING: 'Misleading listing',
+  WRONG_INFO: 'Wrong device information',
+  PROHIBITED_ITEM: 'Prohibited item',
+  OTHER: 'Something else',
+}
+
+const reportStatusFilters = [
+  { value: 'OPEN', label: 'Open' },
+  { value: 'RESOLVED', label: 'Resolved' },
+  { value: 'DISMISSED', label: 'Dismissed' },
 ]
 
 function ReviewActions({
@@ -111,47 +133,212 @@ function ReviewActions({
   )
 }
 
+function ReportCard({
+  report,
+  note,
+  onNoteChange,
+  onAction,
+  isProcessing,
+  isOpen,
+}) {
+  const { listing, reporter } = report
+  const reduceMotion = useReducedMotion()
+
+  return (
+    <motion.article
+      layout
+      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
+      className="overflow-hidden rounded-card border border-line bg-white shadow-card"
+    >
+      <div className="flex gap-4 p-5 sm:p-6">
+        <div className="size-16 shrink-0 overflow-hidden rounded-2xl border border-line">
+          {isImageReference(listing.mainPhoto) ? (
+            <img
+              src={listing.mainPhoto}
+              alt={`${listing.brand} ${listing.model}`}
+              loading="lazy"
+              decoding="async"
+              className="size-full object-cover"
+            />
+          ) : (
+            <PhoneArtwork
+              brand={listing.brand}
+              model={listing.model}
+              view="front"
+              className="size-full"
+            />
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-600">
+                {listing.brand}
+              </p>
+              <a
+                href={`/listings/${listing.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-0.5 block break-words font-display text-lg font-semibold text-ink transition hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+              >
+                {listing.model}
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+              <p className="mt-1 text-xs font-semibold text-muted">
+                {currencyFormatter.format(listing.price)} · {listing.sellerName}
+              </p>
+            </div>
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-700">
+              <Flag className="size-3.5" aria-hidden="true" />
+              {reasonLabels[report.reason] ?? report.reason}
+            </span>
+          </div>
+
+          {report.details && (
+            <p className="mt-3 whitespace-pre-line rounded-2xl bg-canvas p-3 text-sm leading-relaxed text-ink">
+              {report.details}
+            </p>
+          )}
+
+          <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+            <div>
+              <dt className="font-semibold text-muted">Reported by</dt>
+              <dd className="mt-0.5 break-words font-medium text-ink">
+                {reporter?.name} · {reporter?.email}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-muted">Reported</dt>
+              <dd className="mt-0.5 font-medium text-ink">
+                {dateFormatter.format(new Date(report.createdAt))}
+              </dd>
+            </div>
+          </dl>
+
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-canvas px-2.5 py-1 text-[11px] font-bold text-muted">
+            <ShieldAlert className="size-3.5" aria-hidden="true" />
+            {report.openReportsForListing} open on this listing
+          </p>
+        </div>
+      </div>
+
+      {isOpen ? (
+        <div className="border-t border-line px-5 py-5 sm:px-6">
+          <label
+            htmlFor={`report-note-${report.id}`}
+            className="text-xs font-bold uppercase tracking-[0.1em] text-muted"
+          >
+            Moderator note{' '}
+            <span className="font-medium normal-case tracking-normal">
+              (required to take down)
+            </span>
+          </label>
+          <textarea
+            id={`report-note-${report.id}`}
+            rows={3}
+            value={note}
+            onChange={(event) => onNoteChange(event.target.value)}
+            placeholder="Explain what the seller must fix, or why this listing stays up…"
+            className="mt-2 w-full resize-none rounded-2xl border border-line bg-white p-3.5 text-sm leading-relaxed text-ink shadow-sm transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+          />
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => onAction('TAKE_DOWN')}
+              disabled={isProcessing}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-danger px-4 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+            >
+              <ShieldAlert className="size-4" aria-hidden="true" />
+              Take down
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction('RESOLVE')}
+              disabled={isProcessing}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
+            >
+              <Check className="size-4" aria-hidden="true" />
+              Resolve
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction('DISMISS')}
+              disabled={isProcessing}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 text-sm font-bold text-muted transition hover:bg-canvas disabled:opacity-50"
+            >
+              <X className="size-4" aria-hidden="true" />
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="border-t border-line px-5 py-4 text-xs text-muted sm:px-6">
+          <p className="font-bold uppercase tracking-[0.1em]">
+            {report.status === 'RESOLVED' ? 'Resolved' : 'Dismissed'}
+          </p>
+          {report.resolutionNote && (
+            <p className="mt-1 leading-relaxed text-ink">{report.resolutionNote}</p>
+          )}
+        </div>
+      )}
+    </motion.article>
+  )
+}
+
 export function AdminDashboardPage() {
   const [activeQueue, setActiveQueue] = useState('SELLERS')
   const [feedback, setFeedback] = useState({})
   const [notice, setNotice] = useState('')
   const [pendingApplications, setPendingApplications] = useState([])
   const [pendingListings, setPendingListings] = useState([])
+  const [reports, setReports] = useState([])
+  const [reportStatus, setReportStatus] = useState('OPEN')
+  const [resolvingReportId, setResolvingReportId] = useState(null)
   const [overview, setOverview] = useState({
     totalSellers: 0,
     pendingSellers: 0,
     totalListings: 0,
     pendingListings: 0,
     totalSold: 0,
+    openReports: 0,
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reviewingId, setReviewingId] = useState(null)
   const reduceMotion = useReducedMotion()
 
-  const refresh = useCallback(async ({ silent = false } = {}) => {
-    if (!silent) {
-      setIsLoading(true)
-    }
-    setError(null)
-
-    try {
-      const [statsResponse, sellersResponse, listingsResponse] = await Promise.all([
-        getAdminStatsRequest(),
-        getPendingSellersRequest(),
-        getPendingListingsRequest(),
-      ])
-      setOverview(statsResponse.stats)
-      setPendingApplications(sellersResponse.sellers)
-      setPendingListings(listingsResponse.listings)
-    } catch (requestError) {
-      setError(requestError)
-    } finally {
+  const refresh = useCallback(
+    async ({ silent = false, status = reportStatus } = {}) => {
       if (!silent) {
-        setIsLoading(false)
+        setIsLoading(true)
       }
-    }
-  }, [])
+      setError(null)
+
+      try {
+        const [statsResponse, sellersResponse, listingsResponse, reportsResponse] =
+          await Promise.all([
+            getAdminStatsRequest(),
+            getPendingSellersRequest(),
+            getPendingListingsRequest(),
+            getReportsRequest(status),
+          ])
+        setOverview(statsResponse.stats)
+        setPendingApplications(sellersResponse.sellers)
+        setPendingListings(listingsResponse.listings)
+        setReports(reportsResponse.reports)
+      } catch (requestError) {
+        setError(requestError)
+      } finally {
+        if (!silent) {
+          setIsLoading(false)
+        }
+      }
+    },
+    [reportStatus],
+  )
 
   useEffect(() => {
     // eslint-disable-next-line react/set-state-in-effect
@@ -204,9 +391,21 @@ export function AdminDashboardPage() {
         icon: ShoppingBag,
         iconClass: 'bg-accent-50 text-accent-700',
       },
+      {
+        label: 'Open reports',
+        value: overview.openReports,
+        icon: ShieldAlert,
+        iconClass: 'bg-red-50 text-red-700',
+      },
     ],
     [overview],
   )
+
+  const queueCounts = {
+    SELLERS: pendingApplications.length,
+    LISTINGS: pendingListings.length,
+    REPORTS: overview.openReports,
+  }
 
   function handleQueueKeyDown(event, queueId) {
     if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) {
@@ -236,6 +435,7 @@ export function AdminDashboardPage() {
   }
 
   async function handleApplicationReview(application, decision) {
+    const key = `seller:${application.id}`
     setReviewingId(application.id)
     setError(null)
 
@@ -243,8 +443,9 @@ export function AdminDashboardPage() {
       if (decision === 'APPROVED') {
         await approveSellerRequest(application.id)
       } else {
-        await rejectSellerRequest(application.id)
+        await rejectSellerRequest(application.id, feedback[key] ?? '')
       }
+      setFeedback((current) => ({ ...current, [key]: '' }))
       setNotice(
         `${application.businessName} was ${decision === 'APPROVED' ? 'approved' : 'rejected'}.`,
       )
@@ -254,6 +455,44 @@ export function AdminDashboardPage() {
       setError(requestError)
     } finally {
       setReviewingId(null)
+    }
+  }
+
+  async function handleReportStatusChange(nextStatus) {
+    setReportStatus(nextStatus)
+  }
+
+  async function handleReportAction(report, action) {
+    const noteKey = `report:${report.id}`
+    // The note textarea writes into the same `feedback` map this reads from.
+    const note = feedback[noteKey]?.trim() ?? ''
+
+    // The API rejects a note-less take-down too; blocking here avoids a round trip.
+    if (action === 'TAKE_DOWN' && !note) {
+      setError({
+        message: 'Add a note explaining why this listing is being taken down.',
+      })
+      return
+    }
+
+    setResolvingReportId(report.id)
+    setError(null)
+
+    try {
+      await resolveReportRequest(report.id, { action, note })
+      setFeedback((current) => ({ ...current, [noteKey]: '' }))
+      const notices = {
+        TAKE_DOWN: `${report.listing.brand} ${report.listing.model} was taken down.`,
+        RESOLVE: 'Report marked as resolved.',
+        DISMISS: 'Report dismissed.',
+      }
+      setNotice(notices[action])
+      notifyMarketplaceChange()
+      await refresh()
+    } catch (requestError) {
+      setError(requestError)
+    } finally {
+      setResolvingReportId(null)
     }
   }
 
@@ -353,8 +592,8 @@ export function AdminDashboardPage() {
             aria-live="polite"
             aria-label="Loading moderation queues"
           >
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
-              {Array.from({ length: 5 }, (_, index) => (
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+              {Array.from({ length: 6 }, (_, index) => (
                 <div key={index} className="rounded-card border border-line p-5">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="mt-3 h-10 w-16" />
@@ -376,7 +615,7 @@ export function AdminDashboardPage() {
           </div>
         ) : (
         <>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
           {stats.map(({ label, value, icon: Icon, iconClass }) => (
             <motion.div
               key={label}
@@ -403,7 +642,7 @@ export function AdminDashboardPage() {
           <div className="border-b border-line px-4 pt-4 sm:px-6 sm:pt-5">
             <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Moderation queues">
               {queueTabs.map(({ id, label, icon: Icon }) => {
-                const count = id === 'SELLERS' ? pendingApplications.length : pendingListings.length
+                const count = queueCounts[id] ?? 0
                 const isActive = activeQueue === id
 
                 return (
@@ -451,7 +690,7 @@ export function AdminDashboardPage() {
             tabIndex={0}
             className="bg-canvas/50 p-5 sm:p-6 lg:p-8"
           >
-            {activeQueue === 'SELLERS' ? (
+            {activeQueue === 'SELLERS' && (
               <section aria-labelledby="pending-sellers-heading">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
@@ -523,7 +762,6 @@ export function AdminDashboardPage() {
                               feedbackId={feedbackKey}
                               feedback={feedback[feedbackKey] ?? ''}
                               onFeedbackChange={(value) => updateFeedback(feedbackKey, value)}
-                              showFeedback={false}
                                onReject={() => handleApplicationReview(application, 'REJECTED')}
                               onApprove={() => handleApplicationReview(application, 'APPROVED')}
                               isProcessing={reviewingId === application.id}
@@ -541,7 +779,9 @@ export function AdminDashboardPage() {
                   />
                 )}
               </section>
-            ) : (
+            )}
+
+            {activeQueue === 'LISTINGS' && (
               <section aria-labelledby="pending-listings-heading">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
@@ -558,8 +798,7 @@ export function AdminDashboardPage() {
                 </div>
 
                 {pendingListings.length > 0 ? (
-                  <div className="mt-6 grid gap-5 xl:grid-cols-2">
-                    <AnimatePresence mode="popLayout">
+                  <div className="mt-6 grid gap-5 xl:grid-cols-2">                    <AnimatePresence mode="popLayout">
                       {pendingListings.map((listing) => {
                         const feedbackKey = `listing:${listing.id}`
                         const reviewPhotos = listing.photos?.length
@@ -675,31 +914,70 @@ export function AdminDashboardPage() {
                 )}
               </section>
             )}
+
+            {activeQueue === 'REPORTS' && (
+              <section aria-labelledby="reports-heading">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">
+                      Safety queue
+                    </p>
+                    <h2 id="reports-heading" className="mt-2 text-2xl font-semibold text-ink">
+                      Buyer reports
+                    </h2>
+                  </div>
+                  <div
+                    className="inline-flex self-start rounded-2xl border border-line bg-white p-1 shadow-sm sm:self-auto"
+                    role="group"
+                    aria-label="Filter reports by status"
+                  >
+                    {reportStatusFilters.map((filter) => (
+                      <button
+                        key={filter.value}
+                        type="button"
+                        onClick={() => handleReportStatusChange(filter.value)}
+                        aria-pressed={reportStatus === filter.value}
+                        className={`rounded-xl px-4 py-2 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
+                          reportStatus === filter.value
+                            ? 'bg-primary-500 text-white shadow-sm'
+                            : 'text-muted hover:bg-primary-50 hover:text-primary-700'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {reports.length > 0 ? (
+                  <div className="mt-6 grid gap-5 xl:grid-cols-2">
+                    <AnimatePresence mode="popLayout">
+                      {reports.map((report) => (
+                        <ReportCard
+                          key={report.id}
+                          report={report}
+                          note={feedback[`report:${report.id}`] ?? ''}
+                          onNoteChange={(value) =>
+                            updateFeedback(`report:${report.id}`, value)
+                          }
+                          onAction={(action) => handleReportAction(report, action)}
+                          isProcessing={resolvingReportId === report.id}
+                          isOpen={report.status === 'OPEN'}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <AdminEmptyState
+                    icon={ShieldCheck}
+                    title={`No ${reportStatus.toLowerCase()} reports`}
+                    description="Buyer reports on live listings will appear here for review."
+                  />
+                )}
+              </section>
+            )}
           </div>
         </div>
-
-        <section className="mt-8 rounded-card-xl border border-line bg-white p-5 shadow-card sm:p-6">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-violet-50 text-violet-700">
-                <ShieldAlert className="size-6" aria-hidden="true" />
-              </span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-violet-700">
-                  Reports & safety
-                </p>
-                <h2 className="mt-1 break-words font-display text-xl font-semibold text-ink">Reported listings and users</h2>
-                <p className="mt-1 text-sm leading-relaxed text-muted">
-                  The report-management queue is reserved for a later moderation stage.
-                </p>
-              </div>
-            </div>
-            <span className="inline-flex self-start items-center gap-2 rounded-full border border-line bg-canvas px-3 py-2 text-xs font-bold text-muted sm:self-auto">
-              <AlertCircle className="size-4" aria-hidden="true" />
-              0 open reports
-            </span>
-          </div>
-        </section>
         </>
         )}
       </section>

@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Flag,
   HardDrive,
   MessageCircle,
   SearchX,
@@ -14,8 +15,10 @@ import {
   Sparkles,
   Store,
 } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { InquiryModal } from '../features/listings/InquiryModal.jsx'
+import { ReportListingModal } from '../features/listings/ReportListingModal.jsx'
+import { useAuth } from '../features/auth/useAuth.js'
 import { ListingCard } from '../features/listings/listing-card.jsx'
 import { ListingGallery } from '../features/listings/listing-gallery.jsx'
 import { useListing } from '../features/listings/useListing.js'
@@ -116,6 +119,10 @@ function ListingUnavailableState({ error, onRetry }) {
 export function ListingDetailPage() {
   const { id } = useParams()
   const [isInquiryOpen, setIsInquiryOpen] = useState(false)
+  const [isReportOpen, setIsReportOpen] = useState(false)
+  const { user } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
   const { listing, isLoading, error, retry } = useListing(id)
   const {
     listings: approvedListings,
@@ -134,6 +141,20 @@ export function ListingDetailPage() {
   const battery = getBatteryPresentation(listing.batteryPercent)
   const seller = listing.seller
   const isSold = listing.status === 'SOLD'
+  // Ownership is not exposed on the public listing payload, so the server rejects
+  // a seller's own report with CANNOT_REPORT_OWN_LISTING.
+  const canReport = Boolean(user) && user.role !== 'ADMIN'
+
+  function handleReportClick() {
+    if (!user) {
+      navigate(AUTH_ROUTES.login, {
+        state: { from: `${location.pathname}${location.search}` },
+      })
+      return
+    }
+
+    setIsReportOpen(true)
+  }
   const otherListings = approvedListings.filter((item) => item.id !== listing.id)
   const relatedListings = [
     ...otherListings.filter((item) => item.brand === listing.brand),
@@ -420,6 +441,16 @@ export function ListingDetailPage() {
                 <Clock3 className="mt-0.5 size-4 shrink-0 text-primary-600" aria-hidden="true" />
                 {seller.responseTime}
               </p>
+              {canReport && (
+                <button
+                  type="button"
+                  onClick={handleReportClick}
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                >
+                  <Flag className="size-3.5" aria-hidden="true" />
+                  Report this listing
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -498,6 +529,14 @@ export function ListingDetailPage() {
           listing={listing}
           open={isInquiryOpen}
           onClose={() => setIsInquiryOpen(false)}
+        />
+      )}
+
+      {canReport && (
+        <ReportListingModal
+          listing={listing}
+          open={isReportOpen}
+          onClose={() => setIsReportOpen(false)}
         />
       )}
     </>

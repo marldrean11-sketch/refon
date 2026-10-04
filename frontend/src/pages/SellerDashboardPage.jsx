@@ -348,6 +348,13 @@ export function SellerDashboardPage() {
                 <>
                   <span className="font-bold">Verification rejected.</span>{' '}
                   Contact an administrator before creating listings.
+                  {seller.moderatorFeedback && (
+                    <>
+                      {' '}
+                      <span className="font-bold">Reason:</span>{' '}
+                      {seller.moderatorFeedback}
+                    </>
+                  )}
                 </>
               )}
             </p>

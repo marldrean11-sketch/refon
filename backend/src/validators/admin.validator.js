@@ -14,4 +14,18 @@ const rejectListingSchema = z.preprocess(
     .strict(),
 )
 
+const rejectSellerSchema = z.preprocess(
+  (value) => value ?? {},
+  z
+    .object({
+      feedback: z
+        .string()
+        .trim()
+        .max(1000, 'Feedback must be 1000 characters or fewer.')
+        .default(''),
+    })
+    .strict(),
+)
+
 export const validateRejectListing = validate(rejectListingSchema)
+export const validateRejectSeller = validate(rejectSellerSchema)

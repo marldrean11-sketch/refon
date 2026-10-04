@@ -51,6 +51,14 @@ const notificationPresentation = {
     icon: ShieldAlert,
     iconClass: 'bg-red-50 text-danger',
   },
+  LISTING_TAKEN_DOWN: {
+    icon: ShieldAlert,
+    iconClass: 'bg-red-50 text-danger',
+  },
+  REPORT_RESOLVED: {
+    icon: BadgeCheck,
+    iconClass: 'bg-primary-50 text-primary-700',
+  },
 }
 
 function formatRelativeTimestamp(value) {
@@ -105,6 +113,16 @@ function getNotificationTarget(notification) {
     return notification.relatedListingId
       ? `/listings/${notification.relatedListingId}`
       : AUTH_ROUTES.buyer
+  }
+
+  // A taken-down listing is the seller's problem to fix.
+  if (notification.type === 'LISTING_TAKEN_DOWN') {
+    return AUTH_ROUTES.seller
+  }
+
+  // Report outcomes land back in the marketplace, not the seller workspace.
+  if (notification.type === 'REPORT_RESOLVED') {
+    return AUTH_ROUTES.buyer
   }
 
   return AUTH_ROUTES.seller

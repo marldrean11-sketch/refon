@@ -4,6 +4,7 @@ import { ApiError } from '../utils/api-error.js'
 
 const fifteenMinutes = 15 * 60 * 1000
 const tenMinutes = 10 * 60 * 1000
+const thirtyMinutes = 30 * 60 * 1000
 
 function rateLimitHandler(_req, _res, next) {
   next(
@@ -32,3 +33,5 @@ export const authLimiter = createLimiter({ windowMs: fifteenMinutes, limit: 10 }
 export const inquiryLimiter = createLimiter({ windowMs: tenMinutes, limit: 5 })
 
 export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 })
+
+export const reportLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })

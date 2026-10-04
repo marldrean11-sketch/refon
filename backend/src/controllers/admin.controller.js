@@ -25,7 +25,11 @@ export const approveSeller = asyncHandler(async (req, res) => {
 })
 
 export const rejectSeller = asyncHandler(async (req, res) => {
-  const seller = await reviewSeller(req.validatedParams.id, 'REJECTED')
+  const seller = await reviewSeller(
+    req.validatedParams.id,
+    'REJECTED',
+    req.validatedBody.feedback,
+  )
   return res.status(200).json({ seller })
 })
 

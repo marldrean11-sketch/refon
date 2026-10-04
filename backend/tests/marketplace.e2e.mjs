@@ -591,6 +591,156 @@ try {
   })
   assert.equal(forbiddenEdit.response.status, 404)
 
+  // --- Listing reports ---
+  const anonymousReport = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    body: { reason: 'SCAM' },
+  })
+  assert.equal(anonymousReport.response.status, 401)
+
+  const adminReport = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    cookie: adminSession.cookie,
+    body: { reason: 'SCAM' },
+  })
+  assert.equal(adminReport.response.status, 403)
+
+  const ownListingReport = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    cookie: sellerSession.cookie,
+    body: { reason: 'SCAM' },
+  })
+  assert.equal(ownListingReport.response.status, 403)
+  assert.equal(ownListingReport.payload.code, 'CANNOT_REPORT_OWN_LISTING')
+
+  const otherRequiresDetails = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    cookie: otherBuyerCookie,
+    body: { reason: 'OTHER' },
+  })
+  assert.equal(otherRequiresDetails.response.status, 422)
+  assert.match(otherRequiresDetails.payload.errors.details, /add details/i)
+
+  const firstReport = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    cookie: inquiryBuyerCookie,
+    body: { reason: 'MISLEADING', details: 'The photos show a different handset.' },
+  })
+  assert.equal(firstReport.response.status, 201, JSON.stringify(firstReport.payload))
+  assert.equal(firstReport.payload.report.status, 'OPEN')
+  assert.equal(typeof firstReport.payload.report.createdAt, 'string')
+  // The reporter's identity is never echoed back.
+  assert.equal(firstReport.payload.report.reporterId, undefined)
+  assert.equal(firstReport.payload.report.reporter, undefined)
+  const firstReportId = firstReport.payload.report.id
+
+  const duplicateReport = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    cookie: inquiryBuyerCookie,
+    body: { reason: 'SCAM' },
+  })
+  assert.equal(duplicateReport.response.status, 409)
+  assert.equal(duplicateReport.payload.code, 'ALREADY_REPORTED')
+
+  const secondReport = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    cookie: otherBuyerCookie,
+    body: { reason: 'OTHER', details: 'Seller refuses to meet locally.' },
+  })
+  assert.equal(secondReport.response.status, 201)
+  const secondReportId = secondReport.payload.report.id
+
+  const unknownListingReport = await request(
+    '/api/listings/00000000-0000-0000-0000-000000000000/reports',
+    { method: 'POST', cookie: inquiryBuyerCookie, body: { reason: 'SCAM' } },
+  )
+  assert.equal(unknownListingReport.response.status, 404)
+
+  const invalidReasonReport = await request(`/api/listings/${listingId}/reports`, {
+    method: 'POST',
+    cookie: inquiryBuyerCookie,
+    body: { reason: 'NONSENSE' },
+  })
+  assert.equal(invalidReasonReport.response.status, 422)
+
+  const buyerReportsList = await request('/api/admin/reports', {
+    cookie: inquiryBuyerCookie,
+  })
+  assert.equal(buyerReportsList.response.status, 403)
+
+  const sellerReportsList = await request('/api/admin/reports', {
+    cookie: otherSeller.cookie,
+  })
+  assert.equal(sellerReportsList.response.status, 403)
+
+  const adminReports = await request('/api/admin/reports?status=OPEN', {
+    cookie: adminSession.cookie,
+  })
+  assert.equal(adminReports.response.status, 200)
+  const listedReport = adminReports.payload.reports.find(
+    (report) => report.id === firstReportId,
+  )
+  assert.ok(listedReport)
+  assert.equal(listedReport.reason, 'MISLEADING')
+  assert.equal(listedReport.reporter.id, inquiryBuyerId)
+  assert.equal(typeof listedReport.reporter.email, 'string')
+  assert.equal(listedReport.listing.id, listingId)
+  assert.equal(listedReport.listing.status, 'APPROVED')
+  assert.equal(typeof listedReport.listing.price, 'number')
+  assert.equal(typeof listedReport.listing.sellerName, 'string')
+  // Both reports on this listing are still open.
+  assert.equal(listedReport.openReportsForListing, 2)
+
+  const statsWithReports = await request('/api/admin/stats', {
+    cookie: adminSession.cookie,
+  })
+  assert.equal(statsWithReports.response.status, 200)
+  assert.ok(statsWithReports.payload.stats.openReports >= 2)
+
+  const takeDownWithoutNote = await request(
+    `/api/admin/reports/${firstReportId}/resolve`,
+    { method: 'PATCH', cookie: adminSession.cookie, body: { action: 'TAKE_DOWN' } },
+  )
+  assert.equal(takeDownWithoutNote.response.status, 422)
+  assert.match(takeDownWithoutNote.payload.errors.note, /why this listing/i)
+
+  const invalidAction = await request(
+    `/api/admin/reports/${firstReportId}/resolve`,
+    { method: 'PATCH', cookie: adminSession.cookie, body: { action: 'DELETE_EVERYWHERE' } },
+  )
+  assert.equal(invalidAction.response.status, 422)
+
+  // DISMISS leaves the live listing untouched and still tells the reporter.
+  const dismissResult = await request(
+    `/api/admin/reports/${secondReportId}/resolve`,
+    {
+      method: 'PATCH',
+      cookie: adminSession.cookie,
+      body: { action: 'DISMISS', note: 'Photos matched the description.' },
+    },
+  )
+  assert.equal(dismissResult.response.status, 200)
+
+  const dismissedListing = await request(`/api/listings/${listingId}`)
+  assert.equal(dismissedListing.payload.listing.status, 'APPROVED')
+
+  const reporterAfterDismiss = await request('/api/notifications/mine', {
+    cookie: otherBuyerCookie,
+  })
+  const dismissNotification = reporterAfterDismiss.payload.notifications.find(
+    (notification) => notification.type === 'REPORT_RESOLVED',
+  )
+  assert.ok(dismissNotification)
+  assert.match(dismissNotification.message, /found no violation/i)
+  createdNotificationIds.push(dismissNotification.id)
+
+  const resolveDismissed = await request(
+    `/api/admin/reports/${secondReportId}/resolve`,
+    { method: 'PATCH', cookie: adminSession.cookie, body: { action: 'RESOLVE' } },
+  )
+  assert.equal(resolveDismissed.response.status, 409)
+  assert.equal(resolveDismissed.payload.code, 'REPORT_ALREADY_RESOLVED')
+
   const soldResult = await request(`/api/listings/${listingId}/mark-sold`, {
     method: 'PATCH',
     cookie: sellerSession.cookie,
@@ -675,6 +825,21 @@ try {
   assert.equal(soldInquiry.response.status, 404)
   assert.equal(soldInquiry.payload.code, 'LISTING_NOT_FOUND')
 
+  // A sold listing is off the market, so it can no longer be taken down.
+  const takeDownSold = await request(
+    `/api/admin/reports/${firstReportId}/resolve`,
+    {
+      method: 'PATCH',
+      cookie: adminSession.cookie,
+      body: { action: 'TAKE_DOWN', note: 'Reported as a scam listing.' },
+    },
+  )
+  assert.equal(takeDownSold.response.status, 409)
+  assert.equal(takeDownSold.payload.code, 'LISTING_NOT_TAKEDOWN_ELIGIBLE')
+
+  const stillSold = await request(`/api/listings/${listingId}`)
+  assert.equal(stillSold.payload.listing.status, 'SOLD')
+
   const secondCreate = await request('/api/listings', {
     method: 'POST',
     cookie: sellerSession.cookie,
@@ -695,6 +860,112 @@ try {
   const secondId = secondCreate.payload.listing.id
   assert.equal(secondCreate.payload.listing.status, 'PENDING')
   createdListingIds.push(secondId)
+
+  // Listings still in moderation cannot be reported.
+  const reportPending = await request(`/api/listings/${secondId}/reports`, {
+    method: 'POST',
+    cookie: inquiryBuyerCookie,
+    body: { reason: 'SCAM' },
+  })
+  assert.equal(reportPending.response.status, 404)
+  assert.equal(reportPending.payload.code, 'LISTING_NOT_FOUND')
+
+  // --- Successful take-down on a dedicated listing ---
+  const reportedCreate = await request('/api/listings', {
+    method: 'POST',
+    cookie: sellerSession.cookie,
+    body: {
+      brand: 'Xiaomi',
+      model: `Reported E2E ${testRun}`,
+      year: 2020,
+      price: 7500,
+      batteryPercent: 70,
+      storage: '64 GB',
+      condition: 'Good',
+      color: 'Red',
+      conditionNotes: 'Condition notes long enough for validation to pass.',
+      photos: uploadResult.payload.urls,
+    },
+  })
+  assert.equal(reportedCreate.response.status, 201, JSON.stringify(reportedCreate.payload))
+  const reportedListingId = reportedCreate.payload.listing.id
+  createdListingIds.push(reportedListingId)
+
+  const approveReported = await request(
+    `/api/admin/listings/${reportedListingId}/approve`,
+    { method: 'PATCH', cookie: adminSession.cookie },
+  )
+  assert.equal(approveReported.response.status, 200)
+
+  const reportedResult = await request(`/api/listings/${reportedListingId}/reports`, {
+    method: 'POST',
+    cookie: inquiryBuyerCookie,
+    body: { reason: 'PROHIBITED_ITEM', details: 'Stolen device.' },
+  })
+  assert.equal(reportedResult.response.status, 201)
+  const reportedId = reportedResult.payload.report.id
+
+  const takeDownResult = await request(`/api/admin/reports/${reportedId}/resolve`, {
+    method: 'PATCH',
+    cookie: adminSession.cookie,
+    body: {
+      action: 'TAKE_DOWN',
+      note: 'Device reported stolen; listing removed pending police report.',
+    },
+  })
+  assert.equal(takeDownResult.response.status, 200)
+
+  // A REJECTED listing is no longer publicly readable, so verify through Prisma.
+  const takenDownDetail = await request(`/api/listings/${reportedListingId}`)
+  assert.equal(takenDownDetail.response.status, 404)
+
+  const takenDownRow = await prisma.listing.findUniqueOrThrow({
+    where: { id: reportedListingId },
+  })
+  assert.equal(takenDownRow.status, 'REJECTED')
+  assert.equal(
+    takenDownRow.moderatorFeedback,
+    'Device reported stolen; listing removed pending police report.',
+  )
+
+  const sellerTakeDownNotifications = await request('/api/notifications/mine', {
+    cookie: sellerSession.cookie,
+  })
+  const takeDownNotification = sellerTakeDownNotifications.payload.notifications.find(
+    (notification) =>
+      notification.type === 'LISTING_TAKEN_DOWN' &&
+      notification.relatedListingId === reportedListingId,
+  )
+  assert.ok(takeDownNotification)
+  assert.match(takeDownNotification.message, /taken down after a buyer report/i)
+  assert.match(takeDownNotification.message, /reported stolen/i)
+  createdNotificationIds.push(takeDownNotification.id)
+
+  const reporterTakeDownNotifications = await request('/api/notifications/mine', {
+    cookie: inquiryBuyerCookie,
+  })
+  const reporterTakeDownNotification =
+    reporterTakeDownNotifications.payload.notifications.find(
+      (notification) =>
+        notification.type === 'REPORT_RESOLVED' &&
+        notification.message.includes('removed the listing'),
+    )
+  assert.ok(reporterTakeDownNotification)
+  createdNotificationIds.push(reporterTakeDownNotification.id)
+
+  const reResolveTakenDown = await request(
+    `/api/admin/reports/${reportedId}/resolve`,
+    { method: 'PATCH', cookie: adminSession.cookie, body: { action: 'RESOLVE' } },
+  )
+  assert.equal(reResolveTakenDown.response.status, 409)
+
+  const resolvedQueue = await request('/api/admin/reports?status=RESOLVED', {
+    cookie: adminSession.cookie,
+  })
+  assert.equal(resolvedQueue.response.status, 200)
+  assert.ok(
+    resolvedQueue.payload.reports.some((report) => report.id === reportedId),
+  )
 
   // Listings still in moderation cannot be saved.
   const savePendingFavorite = await request(`/api/favorites/${secondId}`, {
@@ -880,10 +1151,18 @@ try {
   rejectedSellerId = rejectedApplication.payload.seller.id
   const sellerRejection = await request(
     `/api/admin/sellers/${rejectedSellerId}/reject`,
-    { method: 'PATCH', cookie: adminSession.cookie },
+    {
+      method: 'PATCH',
+      cookie: adminSession.cookie,
+      body: { feedback: 'Business registration could not be verified.' },
+    },
   )
   assert.equal(sellerRejection.response.status, 200)
   assert.equal(sellerRejection.payload.seller.verificationStatus, 'REJECTED')
+  assert.equal(
+    sellerRejection.payload.seller.moderatorFeedback,
+    'Business registration could not be verified.',
+  )
 
   const rejectedSellerNotifications = await request('/api/notifications/mine', {
     cookie: rejectedBuyerCookie,
@@ -898,7 +1177,35 @@ try {
     sellerRejectedNotification.message,
     /your seller application was rejected\. contact the refon team if you have questions\./i,
   )
+  assert.match(
+    sellerRejectedNotification.message,
+    /reason: business registration could not be verified\./i,
+  )
   createdNotificationIds.push(sellerRejectedNotification.id)
+
+  const rejectedProfile = await request('/api/sellers/me', {
+    cookie: rejectedBuyerCookie,
+  })
+  assert.equal(rejectedProfile.payload.seller.moderatorFeedback,
+    'Business registration could not be verified.')
+
+  // Re-applying clears the stale rejection reason.
+  const rejectedReapply = await request('/api/sellers/apply', {
+    method: 'POST',
+    cookie: rejectedBuyerCookie,
+    body: {
+      businessName: 'E2E Rejected Shop',
+      contactInfo: 'rejected-shop@example.test',
+    },
+  })
+  assert.equal(rejectedReapply.response.status, 200)
+  assert.equal(rejectedReapply.payload.seller.verificationStatus, 'PENDING')
+  assert.equal(rejectedReapply.payload.seller.moderatorFeedback, null)
+
+  const clearedFeedbackSeller = await prisma.seller.findUniqueOrThrow({
+    where: { id: rejectedSellerId },
+  })
+  assert.equal(clearedFeedbackSeller.moderatorFeedback, null)
 
   const filteredListings = await request(
     '/api/listings?brand=Samsung&minYear=2020&maxYear=2024&minPrice=10000&maxPrice=20000',

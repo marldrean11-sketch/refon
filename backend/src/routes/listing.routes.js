@@ -15,7 +15,12 @@ import {
   optionalAuthenticate,
   requireSeller,
 } from '../middlewares/auth.middleware.js'
-import { inquiryLimiter } from '../middlewares/rate-limit.middleware.js'
+import {
+  inquiryLimiter,
+  reportLimiter,
+} from '../middlewares/rate-limit.middleware.js'
+import { submitReport } from '../controllers/report.controller.js'
+import { validateReportBody } from '../validators/report.validator.js'
 import {
   validateCreateListing,
   validateListingId,
@@ -60,6 +65,14 @@ router.get(
   requireSeller,
   validateListingId,
   getInquiries,
+)
+router.post(
+  '/:id/reports',
+  reportLimiter,
+  authenticate,
+  validateListingId,
+  validateReportBody,
+  submitReport,
 )
 
 export default router
