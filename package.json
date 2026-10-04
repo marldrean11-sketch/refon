@@ -13,6 +13,7 @@
     "prisma:seed": "npm run prisma:seed --workspace @refon/backend",
     "test:auth": "npm run test:auth --workspace @refon/backend",
     "test:marketplace": "npm run test:marketplace --workspace @refon/backend",
+    "test:ui": "npm --prefix e2e-ui test",
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {

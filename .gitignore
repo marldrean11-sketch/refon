@@ -16,3 +16,11 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 !backend/uploads/seed/
 !backend/uploads/seed/**
+
+# Playwright UI verification artefacts
+e2e-ui/node_modules/
+e2e-ui/test-results/
+e2e-ui/playwright-report/
+e2e-ui/screenshots/
+e2e-ui/state/
+*.log
