@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
-import { watchErrors, expectNoFatalErrors } from './support.js'
+import { watchErrors, expectNoFatalErrors, showListing } from './support.js'
+import { LISTINGS } from './constants.js'
 
 const state = JSON.parse(fs.readFileSync('state/buyer.json', 'utf8'))
 const BUYER_COOKIE = state.cookies.map((c) => `${c.name}=${c.value}`).join('; ')
@@ -29,7 +30,7 @@ async function openReports(page) {
  * reportLimiter allows 5 report POSTs per 30 minutes per IP, so the whole run
  * budgets exactly five: D11 + D12 (duplicate) + D14 (own listing) happen in
  * admin-1-report-modal.spec.js, and this file seeds two more via the API
- * (Galaxy S8 for the take-down, Galaxy A54 for the dismiss). D15 and the D17
+ * (iPhone 12 for the take-down, Galaxy A54 for the dismiss). D15 and the D17
  * resolve path reuse the report that D11 already created on Galaxy S21.
  */
 test.describe('D15 reports queue', () => {
@@ -101,7 +102,7 @@ test.describe('D15 reports queue', () => {
     const all = watchErrors(page)
     // Must be owned by seller@refon.test (ReFon Select) so the seller-side
     // assertions in the next test observe the take-down.
-    const seeded = await apiReport(request, '40000000-0000-4000-8000-000000000003', 'SCAM', 'Seller asked for an off-platform deposit.')
+    const seeded = await apiReport(request, LISTINGS.iphone12, 'SCAM', 'Seller asked for an off-platform deposit.')
     console.log('D16_SEEDED_REPORT', seeded.status)
 
     await openReports(page)
@@ -136,9 +137,9 @@ test.describe('D15 reports queue', () => {
     const cardGone = (await page.locator('article').filter({ hasText: /Apple\s*iPhone\s*12/i }).count()) === 0
     console.log('D16_NOTICE', notice > 0, 'CARD_LEFT_OPEN_TAB', cardGone)
 
-    await page.goto('/browse')
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(1200)
+    // Searched rather than browsed: the catalog paginates, so a listing being
+    // absent from page one is not evidence that it left the catalog.
+    await showListing(page, 'iPhone 12')
     const stillListed = await page.getByRole('button', { name: /Save Apple iPhone 12/i }).count()
     await page.screenshot({ path: 'screenshots/D16-06-browse-after-takedown.png' })
     console.log('D16_LISTING_STILL_ON_BROWSE', stillListed > 0)
@@ -160,7 +161,7 @@ test.describe('D15 reports queue', () => {
   test('D17 resolve and dismiss both notify the reporter; dismissed listing stays APPROVED', async ({ page, request }) => {
     const all = watchErrors(page)
     // Galaxy A54 gets a fresh report for the DISMISS path.
-    const a54 = await apiReport(request, '40000000-0000-4000-8000-000000000007', 'MISLEADING', 'Gallery photos are stock images.')
+    const a54 = await apiReport(request, LISTINGS.galaxyA54, 'MISLEADING', 'Gallery photos are stock images.')
     console.log('D17_SEEDED_A54', a54.status)
 
     await openReports(page)
@@ -188,11 +189,13 @@ test.describe('D15 reports queue', () => {
       await page.screenshot({ path: 'screenshots/D17-02-dismissed.png' })
     }
 
-    await page.goto('/browse')
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(1200)
-    // The admin context renders no hearts, so assert on the listing cards instead.
+    // Each listing is searched for rather than expected on page one: the catalog
+    // paginates to twelve results, so absence from the first page proves nothing
+    // about whether a listing is still approved.
+    await showListing(page, 'Galaxy A54')
     const a54Live = await page.locator('article').filter({ hasText: /Samsung\s*Galaxy\s*A54/i }).count()
+
+    await showListing(page, 'Galaxy S21')
     const s21Live = await page.locator('article').filter({ hasText: /Samsung\s*Galaxy\s*S21/i }).count()
     await page.screenshot({ path: 'screenshots/D17-03-a54-still-listed.png' })
     console.log('D17_A54_STILL_APPROVED', a54Live > 0, 'S21_STILL_APPROVED', s21Live > 0)

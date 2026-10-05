@@ -1,11 +1,8 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
 import { prisma } from '../src/config/prisma.js'
-import { uploadsDirectory } from '../src/config/uploads.js'
+import { storage } from '../src/services/storage.service.js'
 
 const MAX_AGE_MS = 24 * 60 * 60 * 1000
 const isDryRun = process.argv.includes('--dry-run')
-const PROTECTED_ENTRIES = new Set(['.gitkeep', 'seed'])
 
 async function collectReferencedUrls() {
   const listings = await prisma.listing.findMany({ select: { photos: true } })
@@ -21,32 +18,31 @@ async function collectReferencedUrls() {
 }
 
 async function cleanupUploads() {
-  const entries = await fs.readdir(uploadsDirectory, { withFileTypes: true })
+  // storage.list() only ever reports managed listing uploads, so the seed/ SVGs and the
+  // .gitkeep placeholder can never be considered for deletion on either driver.
+  const entries = await storage.list()
   const referencedUrls = await collectReferencedUrls()
   const cutoff = Date.now() - MAX_AGE_MS
   const removable = []
 
   for (const entry of entries) {
-    // Directories (including seed/) and the .gitkeep placeholder are skipped.
-    if (!entry.isFile() || PROTECTED_ENTRIES.has(entry.name)) {
+    if (referencedUrls.has(`/uploads/${entry.filename}`)) {
       continue
     }
 
-    const url = `/uploads/${entry.name}`
-    if (referencedUrls.has(url)) {
+    const lastModifiedMs = new Date(entry.lastModified).getTime()
+    if (lastModifiedMs > cutoff) {
       continue
     }
 
-    const stats = await fs.stat(path.join(uploadsDirectory, entry.name))
-    if (stats.mtimeMs > cutoff) {
-      continue
-    }
-
-    removable.push({ filename: entry.name, mtime: stats.mtime })
+    removable.push({
+      filename: entry.filename,
+      mtime: new Date(entry.lastModified),
+    })
   }
 
   console.log(
-    `Scanned ${entries.length} entries in ${uploadsDirectory} (${isDryRun ? 'dry run' : 'live'}).`,
+    `Scanned ${entries.length} object(s) via the ${storage.name} storage driver (${isDryRun ? 'dry run' : 'live'}).`,
   )
   console.log(`Found ${removable.length} orphaned upload(s) older than 24 hours.`)
 
@@ -58,7 +54,7 @@ async function cleanupUploads() {
   }
 
   for (const file of removable) {
-    await fs.unlink(path.join(uploadsDirectory, file.filename))
+    await storage.remove(file.filename)
     console.log(`Deleted ${file.filename} (${file.mtime.toISOString()})`)
   }
 }

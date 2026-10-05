@@ -57,7 +57,8 @@ test.describe('buyer C7', () => {
     await page.getByText(/has been sold/i).first().click()
     await page.waitForTimeout(1500)
     const soldUrl = page.url()
-    console.log('C7_SOLD_NOTIF_URL', soldUrl)
+    const soldHeading = await page.locator('h1').innerText()
+    console.log('C7_SOLD_NOTIF_URL', soldUrl, 'heading', soldHeading)
 
     await page.getByRole('button', { name: /Notifications/i }).click()
     await page.getByRole('dialog').waitFor()
@@ -71,7 +72,19 @@ test.describe('buyer C7', () => {
     expect(saveResult.clicked, `heart clickable (error: ${saveResult.clickError})`).toBe(true)
     expect(savedHasSold, '/saved shows a Sold badge').toBe(true)
     expect(inqHasSold, '/my-inquiries shows a Sold chip').toBe(true)
-    expect(soldUrl, 'LISTING_SOLD -> /listings/:id').toContain(`/listings/${LISTINGS.iphone6s}`)
+    // The notification still deep-links by id, and the app replaces the address
+    // with the canonical slug once the listing resolves. Both forms work; the
+    // shopper lands on the product page either way.
+    expect(
+      soldUrl,
+      'LISTING_SOLD resolves to the sold iPhone 6s product page',
+    ).toMatch(/\/phones\/apple-iphone-6s|\/listings\/40000000-0000-4000-8000-000000000001/)
+
+    const soldHeadingAfter = await page.locator('h1').innerText()
+    expect(soldHeading, 'the sold listing is shown').toContain('iPhone 6s')
+    expect(soldHeadingAfter, 'the inquiry notification still reaches /my-inquiries').toBe(
+      'My Inquiries',
+    )
     expect(inqUrl, 'INQUIRY_SENT -> /my-inquiries').toContain('/my-inquiries')
     expectNoFatalErrors(all, 'C7')
   })

@@ -1,6 +1,4 @@
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
-import path from 'node:path'
 
 process.env.NODE_ENV = 'test'
 
@@ -11,11 +9,19 @@ const { default: app } = await import(
 const { prisma } = await import(
   new URL(`../src/config/prisma.js?marketplace-e2e=${testRun}`, import.meta.url)
 )
-const { uploadsDirectory } = await import('../src/config/uploads.js')
+const { storage } = await import(
+  new URL(`../src/services/storage.service.js?marketplace-e2e=${testRun}`, import.meta.url)
+)
 
 const testPng = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
   'base64',
+)
+
+// Not an image at all, but declared as one: the magic-byte check must catch this.
+const disguisedText = Buffer.from(
+  '<?php echo "this is not a png"; ?> and some more text to pad the buffer out.',
+  'utf8',
 )
 
 const server = app.listen(0, '127.0.0.1')
@@ -120,7 +126,54 @@ try {
     const staticResponse = await fetch(`${baseUrl}${url}`)
     assert.equal(staticResponse.status, 200)
     assert.match(staticResponse.headers.get('content-type') ?? '', /^image\/png/)
+    // Seed illustrations are served from local disk on every driver.
+    assert.equal(staticResponse.headers.get('x-content-type-options'), 'nosniff')
   }
+
+  const seedAssetResponse = await fetch(`${baseUrl}/uploads/seed/phone-front.svg`)
+  assert.equal(seedAssetResponse.status, 200)
+  assert.match(seedAssetResponse.headers.get('content-type') ?? '', /image\/svg\+xml/)
+
+  // The filename guard must reject anything that is not a managed listing upload.
+  for (const rejectedPath of [
+    '/uploads/seed/../.env',
+    '/uploads/not-a-managed-name.png',
+    '/uploads/1-2.png',
+  ]) {
+    const rejected = await fetch(`${baseUrl}${rejectedPath}`)
+    assert.ok(
+      rejected.status === 404 || rejected.status === 400,
+      `${rejectedPath} must not be served (got ${rejected.status})`,
+    )
+  }
+
+  // A file that lies about being a PNG is rejected on its bytes, not its header.
+  const disguisedForm = new FormData()
+  disguisedForm.append(
+    'photos',
+    new Blob([disguisedText], { type: 'image/png' }),
+    'not-really.png',
+  )
+  const disguisedResult = await fetch(`${baseUrl}/api/uploads`, {
+    method: 'POST',
+    headers: { Cookie: sellerSession.cookie },
+    body: disguisedForm,
+  })
+  assert.equal(disguisedResult.status, 422)
+  assert.equal((await disguisedResult.json()).code, 'INVALID_PHOTO_UPLOAD')
+
+  const storageFilesAfterReject = await storage.list()
+  assert.equal(
+    storageFilesAfterReject.some((file) => file.filename === 'not-really.png'),
+    false,
+    'a rejected upload must not leave a stored object behind',
+  )
+
+  const healthResponse = await request('/api/health')
+  assert.equal(healthResponse.response.status, 200)
+  assert.equal(healthResponse.payload.status, 'ok')
+  assert.equal(typeof healthResponse.payload.uptime, 'number')
+  assert.ok(healthResponse.payload.uptime >= 0)
 
   const noPhotoResult = await request('/api/listings', {
     method: 'POST',
@@ -1274,9 +1327,7 @@ try {
     await prisma.user.deleteMany({ where: { id: { in: buyerIdsToDelete } } })
   }
   await Promise.all(
-    createdUploadFiles.map((filename) =>
-      fs.promises.unlink(path.join(uploadsDirectory, filename)).catch(() => {}),
-    ),
+    createdUploadFiles.map((filename) => storage.remove(filename).catch(() => {})),
   )
   await new Promise((resolve) => server.close(resolve))
   await prisma.$disconnect()

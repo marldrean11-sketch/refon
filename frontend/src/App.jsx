@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { MotionConfig } from 'framer-motion'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider.jsx'
-import { AUTH_ROUTES } from './features/auth/auth.routes.js'
+import { AUTH_ROUTES, MARKETPLACE_ROUTES } from './features/auth/auth.routes.js'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute.jsx'
 import { RequireAuth } from './components/auth/RequireAuth.jsx'
 import { RequireRole } from './components/auth/RequireRole.jsx'
@@ -12,6 +12,7 @@ import { LoadingScreen } from './components/ui/LoadingScreen.jsx'
 import { SellerListingsProvider } from './features/seller/SellerListingsProvider.jsx'
 import { SellerInquiriesProvider } from './features/inquiries/SellerInquiriesProvider.jsx'
 import { SavedListingsProvider } from './features/favorites/SavedListingsProvider.jsx'
+import { ToastProvider } from './components/ui/Toast.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
 
 const LoginPage = lazy(() =>
@@ -32,9 +33,7 @@ const ListingDetailPage = lazy(() =>
   })),
 )
 const SellerDashboardPage = lazy(() =>
-  import('./pages/SellerDashboardPage.jsx').then((module) => ({
-    default: module.SellerDashboardPage,
-  })),
+  import('./pages/SellerDashboardPage.jsx').then((module) => ({ default: module.SellerDashboardPage })),
 )
 const SellerListingFormPage = lazy(() =>
   import('./pages/SellerListingFormPage.jsx').then((module) => ({
@@ -42,24 +41,16 @@ const SellerListingFormPage = lazy(() =>
   })),
 )
 const SellerInquiriesPage = lazy(() =>
-  import('./pages/SellerInquiriesPage.jsx').then((module) => ({
-    default: module.SellerInquiriesPage,
-  })),
+  import('./pages/SellerInquiriesPage.jsx').then((module) => ({ default: module.SellerInquiriesPage })),
 )
 const SavedListingsPage = lazy(() =>
-  import('./pages/SavedListingsPage.jsx').then((module) => ({
-    default: module.SavedListingsPage,
-  })),
+  import('./pages/SavedListingsPage.jsx').then((module) => ({ default: module.SavedListingsPage })),
 )
 const MyInquiriesPage = lazy(() =>
-  import('./pages/MyInquiriesPage.jsx').then((module) => ({
-    default: module.MyInquiriesPage,
-  })),
+  import('./pages/MyInquiriesPage.jsx').then((module) => ({ default: module.MyInquiriesPage })),
 )
 const AdminDashboardPage = lazy(() =>
-  import('./pages/AdminDashboardPage.jsx').then((module) => ({
-    default: module.AdminDashboardPage,
-  })),
+  import('./pages/AdminDashboardPage.jsx').then((module) => ({ default: module.AdminDashboardPage })),
 )
 const ForbiddenPage = lazy(() =>
   import('./pages/ForbiddenPage.jsx').then((module) => ({ default: module.ForbiddenPage })),
@@ -68,22 +59,66 @@ const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage.jsx').then((module) => ({ default: module.NotFoundPage })),
 )
 const ForgotPasswordPage = lazy(() =>
-  import('./pages/ForgotPasswordPage.jsx').then((module) => ({
-    default: module.ForgotPasswordPage,
-  })),
+  import('./pages/ForgotPasswordPage.jsx').then((module) => ({ default: module.ForgotPasswordPage })),
 )
 const ResetPasswordPage = lazy(() =>
-  import('./pages/ResetPasswordPage.jsx').then((module) => ({
-    default: module.ResetPasswordPage,
-  })),
+  import('./pages/ResetPasswordPage.jsx').then((module) => ({ default: module.ResetPasswordPage })),
 )
 const VerifyEmailPage = lazy(() =>
-  import('./pages/VerifyEmailPage.jsx').then((module) => ({
-    default: module.VerifyEmailPage,
-  })),
+  import('./pages/VerifyEmailPage.jsx').then((module) => ({ default: module.VerifyEmailPage })),
 )
 const AccountPage = lazy(() =>
   import('./pages/AccountPage.jsx').then((module) => ({ default: module.AccountPage })),
+)
+const CategoriesPage = lazy(() =>
+  import('./pages/CategoriesPage.jsx').then((module) => ({ default: module.CategoriesPage })),
+)
+const HowItWorksPage = lazy(() =>
+  import('./pages/HowItWorksPage.jsx').then((module) => ({ default: module.HowItWorksPage })),
+)
+const QualityCheckPage = lazy(() =>
+  import('./pages/QualityCheckPage.jsx').then((module) => ({ default: module.QualityCheckPage })),
+)
+const AboutPage = lazy(() =>
+  import('./pages/AboutPage.jsx').then((module) => ({ default: module.AboutPage })),
+)
+const SustainabilityPage = lazy(() =>
+  import('./pages/AboutPage.jsx').then((module) => ({ default: module.SustainabilityPage })),
+)
+const FaqPage = lazy(() =>
+  import('./pages/FaqPage.jsx').then((module) => ({ default: module.FaqPage })),
+)
+const WarrantyPage = lazy(() =>
+  import('./pages/PolicyPages.jsx').then((module) => ({ default: module.WarrantyPage })),
+)
+const ReturnsPage = lazy(() =>
+  import('./pages/PolicyPages.jsx').then((module) => ({ default: module.ReturnsPage })),
+)
+const ShippingPage = lazy(() =>
+  import('./pages/PolicyPages.jsx').then((module) => ({ default: module.ShippingPage })),
+)
+const PrivacyPage = lazy(() =>
+  import('./pages/PolicyPages.jsx').then((module) => ({ default: module.PrivacyPage })),
+)
+const TermsPage = lazy(() =>
+  import('./pages/PolicyPages.jsx').then((module) => ({ default: module.TermsPage })),
+)
+const ContactPage = lazy(() =>
+  import('./pages/PolicyPages.jsx').then((module) => ({ default: module.ContactPage })),
+)
+const CartPage = lazy(() =>
+  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.CartPage })),
+)
+const ComparePage = lazy(() =>
+  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.ComparePage })),
+)
+const SellerApplyPage = lazy(() =>
+  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.SellerApplyPage })),
+)
+const SellerStorefrontPage = lazy(() =>
+  import('./pages/NotFoundRoutePages.jsx').then((module) => ({
+    default: module.SellerStorefrontPage,
+  })),
 )
 
 function App() {
@@ -93,6 +128,7 @@ function App() {
         <AuthProvider>
         {/* Above both layouts so public listing cards and the headers share one poller. */}
         <SavedListingsProvider>
+        <ToastProvider>
         <RouteEffects />
         <a
           href="#main-content"
@@ -104,8 +140,28 @@ function App() {
           <Routes>
             <Route element={<MarketplaceLayout />}>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/browse" element={<BrowsePage />} />
+              <Route path={MARKETPLACE_ROUTES.shop} element={<BrowsePage />} />
+              {/* Legacy alias so existing bookmarks and tests keep resolving. */}
+              <Route path={MARKETPLACE_ROUTES.browse} element={<BrowsePage />} />
+              <Route path="/phones/:slug" element={<ListingDetailPage />} />
               <Route path="/listings/:id" element={<ListingDetailPage />} />
+
+              <Route path={MARKETPLACE_ROUTES.categories} element={<CategoriesPage />} />
+              <Route path={MARKETPLACE_ROUTES.compare} element={<ComparePage />} />
+              <Route path={MARKETPLACE_ROUTES.howItWorks} element={<HowItWorksPage />} />
+              <Route path={MARKETPLACE_ROUTES.qualityCheck} element={<QualityCheckPage />} />
+              <Route path={MARKETPLACE_ROUTES.about} element={<AboutPage />} />
+              <Route path={MARKETPLACE_ROUTES.faq} element={<FaqPage />} />
+              <Route path={MARKETPLACE_ROUTES.warranty} element={<WarrantyPage />} />
+              <Route path={MARKETPLACE_ROUTES.returns} element={<ReturnsPage />} />
+              <Route path={MARKETPLACE_ROUTES.shipping} element={<ShippingPage />} />
+              <Route path={MARKETPLACE_ROUTES.sustainability} element={<SustainabilityPage />} />
+              <Route path={MARKETPLACE_ROUTES.privacy} element={<PrivacyPage />} />
+              <Route path={MARKETPLACE_ROUTES.terms} element={<TermsPage />} />
+              <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
+              <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
+              <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
+              <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
             </Route>
 
             <Route element={<PublicOnlyRoute />}>
@@ -125,7 +181,7 @@ function App() {
                   <Route path={AUTH_ROUTES.account} element={<AccountPage />} />
 
                   <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
-                    <Route path="/admin" element={<AdminDashboardPage />} />
+                    <Route path={AUTH_ROUTES.admin} element={<AdminDashboardPage />} />
                   </Route>
 
                   <Route element={<RequireRole allowedRoles={['BUYER', 'SELLER']} />}>
@@ -154,9 +210,12 @@ function App() {
               </Route>
             </Route>
 
+            {/* /cart lives in the marketplace shell; the trailing route below is a
+                safety net for a stale client-side path. */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+        </ToastProvider>
         </SavedListingsProvider>
         </AuthProvider>
       </MotionConfig>

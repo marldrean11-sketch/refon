@@ -1,18 +1,35 @@
 import { chromium } from '@playwright/test'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { PrismaClient } from '@prisma/client'
+import { resetTestData, summarize } from './support-db.js'
 
 const BASE = 'http://localhost:5173'
 const stateDir = path.resolve('state')
 
 /**
- * Signs in / registers each account exactly once per run and saves the cookie
- * jars to disk. Tests then reuse those jars, which keeps the whole suite inside
- * the backend authLimiter budget (10 login+register requests per 15 min per IP)
- * and makes the suite repeatable.
+ * Prepares a clean run, then signs in / registers each account exactly once and
+ * saves the cookie jars to disk.
+ *
+ * The reset runs first because the suite writes to a real database. Without it,
+ * state from a previous run leaks forward: a seeded listing left as SOLD stops
+ * accepting inquiries, and a stale seller application sorts ahead of the current
+ * one in the admin moderation queue. Both produce failures that look like app
+ * regressions but are test pollution.
+ *
+ * `resetTestData` refuses to run against production or a non-local database.
  */
 export default async function globalSetup() {
   await fs.mkdir(stateDir, { recursive: true })
+
+  const prisma = new PrismaClient()
+  try {
+    const result = await resetTestData(prisma)
+    console.log(`[global-setup] reset test data: ${summarize(result)}`)
+  } finally {
+    await prisma.$disconnect()
+  }
+
   const stamp = Date.now()
 
   const emails = {

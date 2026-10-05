@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Signed-in areas have no public value and should not consume crawl budget.
+Disallow: /account
+Disallow: /admin
+Disallow: /seller
+Disallow: /saved
+Disallow: /my-inquiries
+Disallow: /cart
+Disallow: /orders
+
+Sitemap: https://refon.ph/sitemap.xml

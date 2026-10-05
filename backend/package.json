@@ -9,14 +9,18 @@
     "lint": "oxlint src tests prisma scripts",
     "test:auth": "node tests/auth.e2e.mjs",
     "test:marketplace": "node tests/marketplace.e2e.mjs",
+    "test:catalog": "node tests/catalog.e2e.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
+    "test:storage": "node tests/storage.test.mjs",
+    "admin:create": "node scripts/create-admin.js",
     "uploads:cleanup": "node scripts/cleanup-uploads.js",
     "uploads:cleanup:dry": "node scripts/cleanup-uploads.js --dry-run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
     "@prisma/client": "6.12.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",

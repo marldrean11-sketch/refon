@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { isImageReference } from '../features/listings/image-reference.js'
+import { productPath } from '../lib/routes.js'
 import { getMySentInquiriesRequest } from '../features/inquiries/my-inquiries-api.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { Skeleton } from '../components/ui/Skeleton.jsx'
@@ -190,7 +191,7 @@ export function MyInquiriesPage() {
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                           <Link
-                            to={`/listings/${inquiry.listing.id}`}
+                            to={productPath(inquiry.listing)}
                             className="font-display text-lg font-semibold text-ink transition hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                           >
                             {inquiry.listing.brand} {inquiry.listing.model}

@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Superseded runs on the same ref are cancelled, but never a run on main itself.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DATABASE_URL: postgresql://refon:refon@localhost:5432/refon?schema=public
+  JWT_SECRET: ci-only-test-secret-value-at-least-32-characters-long
+  NODE_ENV: test
+
+jobs:
+  checks:
+    name: Lint, build and API tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: refon
+          POSTGRES_PASSWORD: refon
+          POSTGRES_DB: refon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U refon -d refon"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema backend/prisma/schema.prisma
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
+
+      - name: Seed the database
+        run: npm run prisma:seed
+
+      - name: Lint both workspaces
+        run: npm run lint
+
+      - name: Build the frontend
+        run: npm run build
+
+      - name: Auth tests
+        run: npm run test:auth
+
+      - name: Marketplace tests
+        run: npm run test:marketplace
+
+      - name: Storage tests
+        run: npm run test:storage
+
+  ui-tests:
+    name: Playwright UI suite
+    needs: checks
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: refon
+          POSTGRES_PASSWORD: refon
+          POSTGRES_DB: refon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U refon -d refon"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Install the UI suite dependencies
+        # e2e-ui is intentionally outside the npm workspaces.
+        run: npm ci --prefix e2e-ui
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e-ui/package-lock.json') }}
+
+      - name: Install Chromium and its system dependencies
+        run: npx --prefix e2e-ui playwright install --with-deps chromium
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
+
+      - name: Seed the database
+        run: npm run prisma:seed
+
+      # authLimiter allows 10 register/login requests per 15 minutes per IP and the
+      # suite spends all of them, so any leftover server on :4000 makes it fail. Ports
+      # 4000 and 5173 must therefore be empty before the run starts.
+      - name: Confirm ports 4000 and 5173 are free
+        run: |
+          for port in 4000 5173; do
+            if ss -ltn "sport = :$port" | grep -q LISTEN; then
+              echo "Port $port is already in use; the UI suite needs a fresh backend."
+              exit 1
+            fi
+          done
+
+      - name: Run the UI suite
+        run: npm run test:ui
+
+      - name: Remove UI test data
+        if: always()
+        run: node e2e-ui/cleanup-ui-test-data.mjs
+        working-directory: backend
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e-ui/playwright-report
+          retention-days: 7
+
+      - name: Upload screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-screenshots
+          path: e2e-ui/screenshots
+          retention-days: 7
+
+  docker-build:
+    name: Docker images build
+    needs: checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          load: true
+          tags: refon-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build the frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: false
+          load: true
+          tags: refon-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

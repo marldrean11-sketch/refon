@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ArrowLeft,
   BadgeCheck,
@@ -8,7 +8,9 @@ import {
   Clock3,
   Flag,
   HardDrive,
+  MemoryStick,
   MessageCircle,
+  ScanLine,
   SearchX,
   ShieldCheck,
   ShoppingBag,
@@ -28,13 +30,18 @@ import {
   ListingDetailSkeleton,
   RelatedListingsSkeleton,
 } from '../features/listings/listing-skeletons.jsx'
+import { ConditionBadge } from '../components/ui/ConditionBadge.jsx'
+import { PriceDisplay } from '../components/ui/PriceDisplay.jsx'
+import { RatingStars } from '../components/ui/RatingStars.jsx'
+import { BatteryHealth } from '../components/ui/BatteryHealth.jsx'
+import {
+  ReturnPolicyBadge,
+  WarrantyBadge,
+} from '../components/ui/WarrantyBadge.jsx'
+import { InspectionPanel } from '../features/listings/InspectionPanel.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
-
-const currencyFormatter = new Intl.NumberFormat('en-PH', {
-  style: 'currency',
-  currency: 'PHP',
-  maximumFractionDigits: 0,
-})
+import { productPath } from '../lib/routes.js'
+import { formatPeso } from '../lib/format.js'
 
 function getBatteryPresentation(percentage) {
   if (percentage >= 90) {
@@ -117,18 +124,28 @@ function ListingUnavailableState({ error, onRetry }) {
 }
 
 export function ListingDetailPage() {
-  const { id } = useParams()
+  // The same component serves the canonical slug route and the legacy id route.
+  const { slug, id } = useParams()
+  const identifier = slug ?? id
   const [isInquiryOpen, setIsInquiryOpen] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { listing, isLoading, error, retry } = useListing(id)
+  const { listing, isLoading, error, retry } = useListing(identifier)
   const {
     listings: approvedListings,
     isLoading: relatedLoading,
     error: relatedError,
-  } = useApprovedListings()
+  } = useApprovedListings({ sort: 'recommended', pageSize: 6 })
+
+  // Arriving via the legacy /listings/:id URL replaces the address with the
+  // canonical slug so the shareable form becomes the one in the address bar.
+  useEffect(() => {
+    if (listing?.slug && !slug && location.pathname.startsWith('/listings/')) {
+      navigate(productPath(listing), { replace: true })
+    }
+  }, [listing, slug, location.pathname, navigate])
 
   if (isLoading) {
     return <ListingDetailSkeleton />
@@ -141,6 +158,17 @@ export function ListingDetailPage() {
   const battery = getBatteryPresentation(listing.batteryPercent)
   const seller = listing.seller
   const isSold = listing.status === 'SOLD'
+
+  const specificationRows = [
+    { label: 'Processor', value: listing.processor },
+    { label: 'Operating system', value: listing.operatingSystem },
+    { label: 'Display', value: listing.displaySpec },
+    { label: 'Camera', value: listing.cameraSpec },
+    { label: 'Network', value: listing.networkType },
+    { label: 'Warranty', value: listing.warrantyLabel },
+  ].filter((row) => Boolean(row.value))
+
+  const hasSpecifications = specificationRows.length > 0
   // Ownership is not exposed on the public listing payload, so the server rejects
   // a seller's own report with CANNOT_REPORT_OWN_LISTING.
   const canReport = Boolean(user) && user.role !== 'ADMIN'
@@ -187,9 +215,14 @@ export function ListingDetailPage() {
                     <BadgeCheck className="size-4" aria-hidden="true" />
                     Verified Seller
                   </span>
-                  <span className="rounded-full border border-line bg-canvas px-3 py-1.5 text-xs font-bold text-ink">
-                    {listing.condition}
-                  </span>
+                  <ConditionBadge grade={listing.grade} size="lg" />
+                  {listing.ratingAverage ? (
+                    <RatingStars
+                      value={listing.ratingAverage}
+                      count={listing.ratingCount}
+                      size="sm"
+                    />
+                  ) : null}
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-200 bg-accent-50 px-3 py-1.5 text-xs font-bold text-accent-800">
                     <ShieldCheck className="size-3.5" aria-hidden="true" />
                     Moderated
@@ -211,24 +244,60 @@ export function ListingDetailPage() {
                     <HardDrive className="size-4" aria-hidden="true" />
                     {listing.storage}
                   </span>
+                  {listing.ram && (
+                    <span className="inline-flex items-center gap-2">
+                      <MemoryStick className="size-4" aria-hidden="true" />
+                      {listing.ram} RAM
+                    </span>
+                  )}
                   <span className="inline-flex items-center gap-2">
                     <BatteryCharging className="size-4" aria-hidden="true" />
                     {listing.batteryPercent}% battery
                   </span>
+                  {listing.imeiVerified && (
+                    <span className="inline-flex items-center gap-2">
+                      <ScanLine className="size-4" aria-hidden="true" />
+                      IMEI verified
+                      {listing.imeiLast4 ? (
+                        <span className="font-mono text-xs">···{listing.imeiLast4}</span>
+                      ) : null}
+                    </span>
+                  )}
                 </div>
 
                 <div className="mt-7 border-y border-line py-6">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                        Asking price
-                      </p>
-                      <p className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">
-                        {currencyFormatter.format(listing.price)}
-                      </p>
-                    </div>
+                    <PriceDisplay
+                      price={listing.price}
+                      originalPrice={listing.originalPrice}
+                      size="lg"
+                      showSavings={false}
+                      className="flex-1"
+                    />
                     {!isSold && <FavoriteButton listing={listing} />}
                   </div>
+
+                  {listing.savings ? (
+                    <p className="mt-3 text-sm font-semibold text-accent-700">
+                      You save {formatPeso(listing.savings)} versus the original{' '}
+                      {formatPeso(listing.originalPrice)} price.
+                    </p>
+                  ) : (
+                    <p className="mt-3 text-xs text-muted">
+                      No original price recorded for this device, so no saving is claimed.
+                    </p>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <WarrantyBadge months={listing.warrantyMonths} size="lg" linkToPolicy />
+                    {listing.warrantyMonths === 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-pill bg-canvas px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-line">
+                        Sold as-is · no warranty
+                      </span>
+                    )}
+                    {!isSold && <ReturnPolicyBadge size="lg" />}
+                  </div>
+
                   {isSold && (
                     <div
                       className="mt-4 flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900"
@@ -366,32 +435,85 @@ export function ListingDetailPage() {
           </div>
 
           <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-            <div className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7">
-              <h3 className="font-display text-xl font-semibold text-ink">Listing overview</h3>
-              <dl className="mt-5 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl bg-canvas p-4">
-                  <dt className="text-xs font-semibold text-muted">Brand</dt>
-                  <dd className="mt-1 font-semibold text-ink">{listing.brand}</dd>
+            <div className="space-y-5">
+              <div className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7">
+                <h3 className="font-display text-xl font-semibold text-ink">
+                  Listing overview
+                </h3>
+                <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-canvas p-4">
+                    <dt className="text-xs font-semibold text-muted">Brand</dt>
+                    <dd className="mt-1 font-semibold text-ink">{listing.brand}</dd>
+                  </div>
+                  <div className="rounded-2xl bg-canvas p-4">
+                    <dt className="text-xs font-semibold text-muted">Model year</dt>
+                    <dd className="mt-1 font-semibold text-ink">{listing.year}</dd>
+                  </div>
+                  <div className="rounded-2xl bg-canvas p-4">
+                    <dt className="text-xs font-semibold text-muted">Color</dt>
+                    <dd className="mt-1 font-semibold text-ink">{listing.color}</dd>
+                  </div>
+                  <div className="rounded-2xl bg-canvas p-4">
+                    <dt className="text-xs font-semibold text-muted">Storage</dt>
+                    <dd className="mt-1 font-semibold text-ink">{listing.storage}</dd>
+                  </div>
+                  <div className="rounded-2xl bg-canvas p-4">
+                    <dt className="text-xs font-semibold text-muted">RAM</dt>
+                    <dd className="mt-1 font-semibold text-ink">{listing.ram ?? '—'}</dd>
+                  </div>
+                  <div className="rounded-2xl bg-canvas p-4">
+                    <dt className="text-xs font-semibold text-muted">Condition grade</dt>
+                    <dd className="mt-1 font-semibold text-ink">
+                      Grade {listing.grade} · {listing.gradeLabel}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              {/* Specifications are only rendered when the seller supplied them.
+                  An empty specification table would imply the phone has no
+                  processor or camera, which is not the same as "not recorded". */}
+              {hasSpecifications && (
+                <div className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7">
+                  <h3 className="font-display text-xl font-semibold text-ink">
+                    Full specifications
+                  </h3>
+                  <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+                    {specificationRows.map(({ label, value }) => (
+                      <div key={label} className="rounded-2xl bg-canvas p-4">
+                        <dt className="text-xs font-semibold text-muted">{label}</dt>
+                        <dd className="mt-1 font-semibold text-ink">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 </div>
-                <div className="rounded-2xl bg-canvas p-4">
-                  <dt className="text-xs font-semibold text-muted">Model year</dt>
-                  <dd className="mt-1 font-semibold text-ink">{listing.year}</dd>
-                </div>
-                <div className="rounded-2xl bg-canvas p-4">
-                  <dt className="text-xs font-semibold text-muted">Color</dt>
-                  <dd className="mt-1 font-semibold text-ink">{listing.color}</dd>
-                </div>
-              </dl>
+              )}
+
+              <InspectionPanel listing={listing} />
             </div>
 
-            <div className="rounded-card border border-accent-200 bg-accent-50 p-6">
-              <BadgeCheck className="size-7 text-accent-700" aria-hidden="true" />
-              <h3 className="mt-4 font-display text-lg font-semibold text-accent-950">
-                Moderation checked
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-accent-900/75">
-                Core condition fields are complete and the listing follows ReFon marketplace standards.
-              </p>
+            <div className="space-y-5">
+              <div className="rounded-card border border-accent-200 bg-accent-50 p-6">
+                <BadgeCheck className="size-7 text-accent-700" aria-hidden="true" />
+                <h3 className="mt-4 font-display text-lg font-semibold text-accent-950">
+                  Moderation checked
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-accent-900/75">
+                  Core condition fields are complete and the listing follows ReFon
+                  marketplace standards.
+                </p>
+              </div>
+
+              <div className="rounded-card border border-line bg-white p-6 shadow-card">
+                <h3 className="font-display text-lg font-semibold text-ink">
+                  Battery health
+                </h3>
+                <BatteryHealth percent={listing.batteryPercent} size="lg" className="mt-4" />
+                <p className="mt-3 text-xs leading-relaxed text-muted">
+                  {battery.note} This figure was measured during inspection and is
+                  published before purchase.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -503,7 +625,7 @@ export function ListingDetailPage() {
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">Asking price</p>
             <p className="truncate font-display text-xl font-bold text-ink">
-              {currencyFormatter.format(listing.price)}
+              {formatPeso(listing.price)}
             </p>
           </div>
           {isSold ? (

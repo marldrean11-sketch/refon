@@ -1,10 +1,16 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
 import { prisma } from '../config/prisma.js'
-import { uploadsDirectory } from '../config/uploads.js'
+import { storage } from './storage.service.js'
 import { ApiError } from '../utils/api-error.js'
-import { presentListing } from '../utils/listing-presenter.js'
+import { presentListing, presentPagination } from '../utils/listing-presenter.js'
+import { RAM_GB, STORAGE_GB, categoryWhere } from '../utils/catalog-taxonomy.js'
 
+/**
+ * Shape fetched for a presented listing.
+ *
+ * Kept narrow on purpose: the public catalog must not carry seller contact
+ * details, moderation notes beyond the listing's own feedback, or review bodies.
+ * Only the review rating and count are needed for the aggregate.
+ */
 export const listingInclude = {
   seller: {
     select: {
@@ -12,12 +18,22 @@ export const listingInclude = {
       businessName: true,
       verificationStatus: true,
       createdAt: true,
+      city: true,
+      region: true,
+      tagline: true,
+      ratingAverage: true,
+      ratingCount: true,
+      completedSales: true,
       _count: {
         select: {
           listings: { where: { status: 'SOLD' } },
         },
       },
     },
+  },
+  reviews: {
+    where: { status: 'PUBLISHED' },
+    select: { rating: true },
   },
 }
 
@@ -63,13 +79,79 @@ async function removeUnreferencedPhotos(urls) {
     }
 
     try {
-      await fs.unlink(path.join(uploadsDirectory, filename))
+      await storage.remove(filename)
     } catch (error) {
-      if (error?.code !== 'ENOENT') {
-        console.warn(`Could not remove orphaned upload ${filename}:`, error.message)
-      }
+      console.warn(`Could not remove orphaned upload ${filename}:`, error.message)
     }
   }
+}
+
+/** Normalises an optional free-text field to `null` when blank. */
+function optionalText(value) {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : null
+}
+
+/**
+ * Builds the canonical URL slug.
+ *
+ * Format is `<brand>-<model>-<storage>[-<colour>]`. The colour segment keeps two
+ * listings of the same phone distinguishable once several sellers list it, which
+ * is the normal case on a marketplace.
+ */
+export function buildListingSlug({ brand, model, storage, color }) {
+  const segment = (value) =>
+    String(value ?? '')
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
+  const parts = [segment(brand), segment(model), segment(storage), segment(color)]
+    .filter(Boolean)
+    .filter((part, index, all) => index === 0 || part !== all[index - 1])
+
+  return parts.slice(0, 4).join('-').slice(0, 180)
+}
+
+/**
+ * Returns a slug not already taken. Appends a short numeric suffix on collision
+ * rather than failing the create, because a seller re-listing the same phone in
+ * the same colour is legitimate.
+ */
+async function uniqueSlug(baseSlug, excludeId = null) {
+  let candidate = baseSlug
+
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const existing = await prisma.listing.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    })
+
+    if (!existing || existing.id === excludeId) {
+      return candidate
+    }
+
+    candidate = `${baseSlug.slice(0, 170)}-${attempt + 2}`
+  }
+
+  return `${baseSlug.slice(0, 160)}-${Date.now().toString(36)}`
+}
+
+async function resolveSlug(values, excludeId = null) {
+  if (values.slug) {
+    return values.slug
+  }
+
+  return uniqueSlug(
+    buildListingSlug({
+      brand: values.brand,
+      model: values.model,
+      storage: values.storage,
+      color: values.color,
+    }),
+    excludeId,
+  )
 }
 
 function listingData(values) {
@@ -88,16 +170,50 @@ function listingData(values) {
     ? [mainPhoto, ...photos.filter((photo) => photo !== mainPhoto)]
     : photos
 
+  // A reference price at or below the selling price would render a fake
+  // discount, so it is dropped rather than stored.
+  const originalPrice =
+    values.originalPrice != null && values.originalPrice > values.price
+      ? values.originalPrice
+      : null
+
+  // Denormalised so the catalog can sort by saving percentage in the database.
+  const discountPercent =
+    originalPrice && originalPrice > 0
+      ? Math.min(
+          100,
+          Math.max(0, Math.round(((originalPrice - values.price) / originalPrice) * 100)),
+        )
+      : 0
+
   return {
     brand: values.brand.trim(),
     model: values.model.trim(),
     year: values.year,
     price: values.price,
+    originalPrice,
+    discountPercent,
     batteryPercent: values.batteryPercent,
     storage: values.storage.trim(),
     cosmeticCondition: values.condition,
-    color: values.color?.trim() || null,
+    // Absent grade stays null and is resolved from the legacy label on read,
+    // rather than being guessed at write time.
+    conditionGrade: values.conditionGrade ?? null,
+    warrantyMonths: values.warrantyMonths ?? 0,
+    color: optionalText(values.color),
     conditionNotes: values.conditionNotes.trim(),
+    ram: optionalText(values.ram),
+    operatingSystem: optionalText(values.operatingSystem),
+    networkType: optionalText(values.networkType),
+    processor: optionalText(values.processor),
+    displaySpec: optionalText(values.displaySpec),
+    cameraSpec: optionalText(values.cameraSpec),
+    categoryTags: values.categoryTags ?? [],
+    inspectionChecks: values.inspectionChecks ?? [],
+    imeiVerified: values.imeiVerified ?? false,
+    imeiLast4: values.imeiLast4 ? values.imeiLast4 : null,
+    quantity: values.quantity ?? 1,
+    isFeatured: values.isFeatured ?? false,
     photos: orderedPhotos,
   }
 }
@@ -122,9 +238,13 @@ async function getApprovedSeller(userId) {
 
 export async function createListing(userId, values) {
   const seller = await getApprovedSeller(userId)
+  const data = listingData(values)
+  const slug = await resolveSlug({ ...values, color: data.color })
+
   const listing = await prisma.listing.create({
     data: {
-      ...listingData(values),
+      ...data,
+      slug,
       sellerId: seller.id,
       status: 'PENDING',
     },
@@ -174,10 +294,14 @@ export async function updateListing(id, userId, values) {
     )
   }
 
+  const data = listingData(values)
+  const slug = await resolveSlug({ ...values, color: data.color }, listing.id)
+
   const updatedListing = await prisma.listing.update({
     where: { id: listing.id },
     data: {
-      ...listingData(values),
+      ...data,
+      slug,
       status: 'PENDING',
       moderatorFeedback: null,
     },
@@ -207,9 +331,16 @@ export async function deleteListing(id, userId) {
   await removeUnreferencedPhotos(photos)
 }
 
-export async function getApprovedListings(filters = {}) {
-  const where = { status: 'APPROVED' }
+/**
+ * Builds the Prisma `where` clause for a catalog query.
+ *
+ * Every supported filter contributes an explicit predicate. Anything not
+ * supported is rejected by the validator rather than dropped here, so a shopper
+ * never receives unfiltered results while believing a filter was applied.
+ */
+function catalogWhere(filters) {
   const and = []
+  const where = { status: 'APPROVED' }
 
   if (filters.brand) {
     where.brand = { equals: filters.brand, mode: 'insensitive' }
@@ -237,45 +368,325 @@ export async function getApprovedListings(filters = {}) {
     })
   }
 
-  const search = filters.search ?? filters.q
+  if (filters.conditionGrade) {
+    and.push({ conditionGrade: filters.conditionGrade })
+  }
 
-  if (search) {
+  if (Number.isInteger(filters.minBattery) || Number.isInteger(filters.maxBattery)) {
     and.push({
-      OR: [
-        { brand: { contains: search, mode: 'insensitive' } },
-        { model: { contains: search, mode: 'insensitive' } },
-      ],
+      batteryPercent: {
+        ...(Number.isInteger(filters.minBattery) ? { gte: filters.minBattery } : {}),
+        ...(Number.isInteger(filters.maxBattery) ? { lte: filters.maxBattery } : {}),
+      },
     })
+  }
+
+  // Storage and RAM are free text in the database ("128 GB", "8 GB"), so a
+  // range is built from the numeric gigabyte bounds of the selected values.
+  const storageGb = (filters.storage ?? [])
+    .map((entry) => STORAGE_GB[entry])
+    .filter((value) => Number.isFinite(value))
+
+  if (storageGb.length > 0) {
+    and.push({
+      storage: { in: [...new Set(storageGb.map((gb) => `${gb} GB`))] },
+    })
+  }
+
+  const ramGb = (filters.ram ?? [])
+    .map((entry) => RAM_GB[entry])
+    .filter((value) => Number.isFinite(value))
+
+  if (ramGb.length > 0) {
+    and.push({ ram: { in: [...new Set(filters.ram)] } })
+  }
+
+  if (Number.isInteger(filters.minWarrantyMonths)) {
+    and.push({ warrantyMonths: { gte: filters.minWarrantyMonths } })
+  }
+
+  if (Array.isArray(filters.warrantyMonths) && filters.warrantyMonths.length > 0) {
+    and.push({
+      warrantyMonths: {
+        in: filters.warrantyMonths.map((value) => Number(value)).filter(Number.isFinite),
+      },
+    })
+  }
+
+  if (Array.isArray(filters.category) && filters.category.length > 0) {
+    const categoryFilter = categoryWhere(filters.category)
+    if (categoryFilter) {
+      and.push(categoryFilter)
+    }
+  }
+
+  if (Number.isFinite(filters.minSellerRating)) {
+    and.push({
+      seller: {
+        ratingCount: { gt: 0 },
+        ratingAverage: { gte: filters.minSellerRating },
+      },
+    })
+  }
+
+  if (filters.featured === true) {
+    and.push({ isFeatured: true })
+  }
+
+  if (filters.search ?? filters.q) {
+    and.push(searchWhere(filters.search ?? filters.q))
   }
 
   if (and.length > 0) {
     where.AND = and
   }
 
-  const orderBy = {
-    'price-asc': { price: 'asc' },
-    'price-desc': { price: 'desc' },
-    newest: { createdAt: 'desc' },
-  }[filters.sort] ?? { createdAt: 'desc' }
+  return where
+}
 
-  const [listings, brandRows] = await Promise.all([
+/**
+ * Full-text predicate for a free-text catalog search.
+ *
+ * The query is split on whitespace and every token must match at least one
+ * searchable field. Matching each field independently against the whole string
+ * looks equivalent but is not: "Samsung Galaxy S8" contains neither "Samsung"
+ * nor "Galaxy S8" within a single column, because the brand and the model live
+ * in separate columns. That made the search suggest "Samsung Galaxy S8" and
+ * then return nothing for it — a dead end the shopper could not diagnose.
+ *
+ * Tokenising also makes partial queries behave the way people expect:
+ * "samsung s8" and "Samsung Galaxy S8" both find the phone.
+ */
+function searchWhere(term) {
+  const tokens = String(term)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 8)
+
+  if (tokens.length === 0) {
+    return { id: '__no_match__' }
+  }
+
+  const searchable = (value) => ({ contains: value, mode: 'insensitive' })
+
+  return {
+    AND: tokens.map((token) => ({
+      OR: [
+        { brand: searchable(token) },
+        { model: searchable(token) },
+        { slug: searchable(token) },
+        { processor: searchable(token) },
+        { storage: searchable(token) },
+        { ram: searchable(token) },
+        { operatingSystem: searchable(token) },
+      ],
+    })),
+  }
+}
+
+/**
+ * Order-by for each sort option.
+ *
+ * `recommended` leads with curated listings, then best-rated, then newest, and
+ * always ends with `id` so ordering is total. Without a final tiebreaker, rows
+ * with equal keys can move between pages and a shopper paging through results
+ * would see one listing twice and another not at all.
+ */
+function catalogOrderBy(sort) {
+  switch (sort) {
+    case 'newest':
+      return [{ createdAt: 'desc' }, { id: 'asc' }]
+    case 'price-asc':
+      return [{ price: 'asc' }, { id: 'asc' }]
+    case 'price-desc':
+      return [{ price: 'desc' }, { id: 'asc' }]
+    case 'best-rated':
+      return [
+        { reviews: { _count: 'desc' } },
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+        { id: 'asc' },
+      ]
+    case 'best-selling':
+      return [
+        { seller: { completedSales: 'desc' } },
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+        { id: 'asc' },
+      ]
+    case 'biggest-discount':
+      // `discount_percent` is the saving as a proportion of the reference price.
+      // Listings with no genuine reference price hold 0 and sort last, rather than
+      // being treated as a 100% discount.
+      return [{ discountPercent: 'desc' }, { price: 'asc' }, { id: 'asc' }]
+    case 'recommended':
+    default:
+      return [{ isFeatured: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }]
+  }
+}
+
+/** Distinct brand facet for the filter sidebar. */
+async function getBrandFacet() {
+  const rows = await prisma.listing.findMany({
+    where: { status: 'APPROVED' },
+    distinct: ['brand'],
+    select: { brand: true },
+    orderBy: { brand: 'asc' },
+  })
+
+  return rows.map((row) => row.brand)
+}
+
+export async function getApprovedListings(filters = {}) {
+  const where = catalogWhere(filters)
+  const page = Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1
+  const pageSize =
+    Number.isInteger(filters.pageSize) && filters.pageSize > 0 ? filters.pageSize : 12
+
+  const [listings, total, brands] = await Promise.all([
     prisma.listing.findMany({
       where,
-      orderBy,
+      orderBy: catalogOrderBy(filters.sort),
+      take: pageSize,
+      skip: (page - 1) * pageSize,
       include: listingInclude,
     }),
-    prisma.listing.findMany({
-      where: { status: 'APPROVED' },
-      distinct: ['brand'],
-      select: { brand: true },
-      orderBy: { brand: 'asc' },
-    }),
+    prisma.listing.count({ where }),
+    getBrandFacet(),
   ])
 
   return {
     listings: listings.map(presentListing),
-    brands: brandRows.map((row) => row.brand),
+    brands,
+    pagination: presentPagination({ page, pageSize, total }),
   }
+}
+
+/**
+ * Facets for the filter sidebar: brands plus the storage, RAM, and warranty
+ * values actually present in the catalog, so the sidebar never offers a filter
+ * that returns nothing.
+ */
+export async function getCatalogFacets() {
+  const rows = await prisma.listing.findMany({
+    where: { status: 'APPROVED' },
+    select: {
+      brand: true,
+      storage: true,
+      ram: true,
+      conditionGrade: true,
+      warrantyMonths: true,
+    },
+  })
+
+  const tally = (key) => {
+    const counts = new Map()
+    for (const row of rows) {
+      const value = row[key]
+      if (value == null || value === '') continue
+      counts.set(value, (counts.get(value) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .sort((left, right) => {
+        const leftNumber = Number.parseFloat(left[0])
+        const rightNumber = Number.parseFloat(right[0])
+        if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
+          return leftNumber - rightNumber
+        }
+        return String(left[0]).localeCompare(String(right[0]))
+      })
+      .map(([value, count]) => ({ value, count }))
+  }
+
+  return {
+    brands: tally('brand'),
+    storages: tally('storage'),
+    rams: tally('ram'),
+    grades: tally('conditionGrade'),
+    warranties: tally('warrantyMonths'),
+  }
+}
+
+/**
+ * Typeahead suggestions.
+ *
+ * Reads real catalog data only — distinct models and brands that exist and are
+ * approved — so a suggestion never leads to an empty result page.
+ */
+export async function getCatalogSuggestions(search) {
+  const term = String(search ?? '').trim()
+
+  if (term.length < 1) {
+    return { suggestions: [], popular: await getPopularSearches() }
+  }
+
+  // The same tokenised predicate the results endpoint uses, so a suggestion can
+  // never be offered for a query that would come back empty.
+  const rows = await prisma.listing.findMany({
+    where: { status: 'APPROVED', ...searchWhere(term) },
+    select: {
+      brand: true,
+      model: true,
+      storage: true,
+      color: true,
+      slug: true,
+      conditionGrade: true,
+    },
+    take: 200,
+    orderBy: { createdAt: 'desc' },
+  })
+
+  // Grouped by model so "iphone 13" offers iPhone 13 variants rather than the
+  // same model repeated for every storage and colour.
+  const byModel = new Map()
+
+  for (const row of rows) {
+    const key = `${row.brand} ${row.model}`.toLowerCase()
+
+    if (byModel.has(key)) {
+      byModel.get(key).variants += 1
+      continue
+    }
+
+    byModel.set(key, {
+      type: 'model',
+      label: `${row.brand} ${row.model}`,
+      // The query is the brand and model together, which is exactly what the
+      // results endpoint tokenises back into brand + model.
+      query: `${row.brand} ${row.model}`,
+      grade: row.conditionGrade ?? null,
+      variants: 1,
+    })
+  }
+
+  const suggestions = [...byModel.values()].slice(0, 6)
+
+  return { suggestions, popular: await getPopularSearches() }
+}
+
+/** Models with the most approved inventory, used as "popular searches". */
+export async function getPopularSearches(limit = 6) {
+  const rows = await prisma.listing.findMany({
+    where: { status: 'APPROVED' },
+    select: { brand: true, model: true },
+    take: 500,
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const counts = new Map()
+
+  for (const row of rows) {
+    const key = `${row.brand} ${row.model}`.toLowerCase()
+    const existing = counts.get(key)
+    if (existing) {
+      existing.count += 1
+    } else {
+      counts.set(key, { label: `${row.brand} ${row.model}`, query: key, count: 1 })
+    }
+  }
+
+  return [...counts.values()].sort((left, right) => right.count - left.count).slice(0, limit)
 }
 
 export async function getApprovedListing(id) {
@@ -289,6 +700,60 @@ export async function getApprovedListing(id) {
   }
 
   return presentListing(listing)
+}
+
+/**
+ * Canonical product lookup by slug.
+ *
+ * SOLD listings remain resolvable so a shared product URL keeps working after
+ * the phone sells, matching the id-based behaviour.
+ */
+export async function getApprovedListingBySlug(slug) {
+  const listing = await prisma.listing.findFirst({
+    where: { slug, status: { in: ['APPROVED', 'SOLD'] } },
+    include: listingInclude,
+  })
+
+  if (!listing) {
+    throw new ApiError(404, 'Approved listing not found.', 'LISTING_NOT_FOUND')
+  }
+
+  return presentListing(listing)
+}
+
+/**
+ * Listings related to the given one: same brand first, then the same price band
+ * across other brands, so the rail suggests either an alternative of the same
+ * model or a comparable phone.
+ */
+export async function getRelatedListings(id, limit = 6) {
+  const listing = await prisma.listing.findFirst({
+    where: { id, status: 'APPROVED' },
+    select: { id: true, brand: true, price: true },
+  })
+
+  if (!listing) {
+    return []
+  }
+
+  const price = Number(listing.price)
+  const priceBand = Math.max(1500, Math.round(price * 0.15))
+
+  const rows = await prisma.listing.findMany({
+    where: {
+      status: 'APPROVED',
+      id: { not: listing.id },
+      OR: [
+        { brand: { equals: listing.brand, mode: 'insensitive' } },
+        { price: { gte: price - priceBand, lte: price + priceBand } },
+      ],
+    },
+    orderBy: [{ isFeatured: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }],
+    take: limit,
+    include: listingInclude,
+  })
+
+  return rows.map(presentListing)
 }
 
 export async function markListingSold(id, userId) {

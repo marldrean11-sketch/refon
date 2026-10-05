@@ -1,0 +1,36 @@
+# Dependencies are reinstalled inside the images from the lockfile.
+node_modules/
+**/node_modules/
+
+# Never bake secrets into an image.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Host uploads are runtime data; only the seed assets are needed in the image.
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/seed/
+!backend/uploads/seed/**
+
+# Local development mail outbox and logs.
+backend/tmp/
+*.log
+
+# The UI suite is not part of either image.
+e2e-ui/
+
+# VCS and editor metadata.
+.git/
+.gitignore
+.vscode/
+.idea/
+.github/
+.claude/
+
+# Docs and compose files are not needed to build the images.
+README.md
+docker-compose.yml

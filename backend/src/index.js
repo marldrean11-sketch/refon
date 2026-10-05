@@ -1,6 +1,9 @@
 import app from './app.js'
 import { env } from './config/env.js'
 import { prisma } from './config/prisma.js'
+import { storage } from './services/storage.service.js'
+
+console.log(`ReFon photo storage driver: ${storage.name}`)
 
 const server = app.listen(env.port, () => {
   console.log(`ReFon API listening on http://localhost:${env.port}`)

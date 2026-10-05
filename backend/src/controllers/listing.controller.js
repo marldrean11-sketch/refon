@@ -3,13 +3,24 @@ import {
   createListing,
   deleteListing,
   getApprovedListing,
+  getApprovedListingBySlug,
   getApprovedListings,
+  getCatalogFacets,
+  getCatalogSuggestions,
   getListingInquiries,
+  getRelatedListings,
   getSellerListings,
   markListingSold,
   updateListing,
 } from '../services/listing.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
+import {
+  CATEGORY_SLUGS,
+  LISTING_SORTS,
+  RAM_OPTIONS,
+  STORAGE_OPTIONS,
+  WARRANTY_OPTIONS,
+} from '../utils/catalog-taxonomy.js'
 
 export const create = asyncHandler(async (req, res) => {
   const listing = await createListing(req.user.id, req.validatedBody)
@@ -43,6 +54,46 @@ export const getAll = asyncHandler(async (req, res) => {
 export const getOne = asyncHandler(async (req, res) => {
   const listing = await getApprovedListing(req.validatedParams.id)
   return res.status(200).json({ listing })
+})
+
+export const getOneBySlug = asyncHandler(async (req, res) => {
+  const listing = await getApprovedListingBySlug(req.validatedParams.slug)
+  return res.status(200).json({ listing })
+})
+
+export const getRelated = asyncHandler(async (req, res) => {
+  const listings = await getRelatedListings(req.validatedParams.id)
+  return res.status(200).json({ listings })
+})
+
+/**
+ * Filter options for the shop sidebar.
+ *
+ * Returns the configured option lists alongside live facet counts, so the UI
+ * renders one control set that is guaranteed to match what the API accepts.
+ */
+export const getFacets = asyncHandler(async (req, res) => {
+  const facets = await getCatalogFacets()
+  return res.status(200).json({
+    facets,
+    options: {
+      sorts: LISTING_SORTS,
+      storages: STORAGE_OPTIONS,
+      rams: RAM_OPTIONS,
+      warranties: WARRANTY_OPTIONS,
+      categories: CATEGORY_SLUGS,
+    },
+  })
+})
+
+/**
+ * Typeahead suggestions, built only from approved catalog rows so a suggestion
+ * can never lead to an empty results page.
+ */
+export const getSuggestions = asyncHandler(async (req, res) => {
+  const term = req.validatedQuery.q ?? ''
+  const data = await getCatalogSuggestions(term)
+  return res.status(200).json(data)
 })
 
 export const markSold = asyncHandler(async (req, res) => {

@@ -23,6 +23,15 @@ export function getListingRequest(id, signal) {
   return apiRequest(`/listings/${id}`, { signal })
 }
 
+/** Canonical product lookup by slug. Resolves to a SOLD listing too. */
+export function getListingBySlugRequest(slug, signal) {
+  return apiRequest(`/listings/slug/${encodeURIComponent(slug)}`, { signal })
+}
+
+export function getRelatedListingsRequest(id, signal) {
+  return apiRequest(`/listings/${id}/related`, { signal })
+}
+
 export function getMyListingsRequest() {
   return apiRequest('/listings/mine')
 }

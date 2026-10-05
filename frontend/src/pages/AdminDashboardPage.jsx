@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
-import { PhoneArtwork } from '../features/listings/listing-card.jsx'
+import { PhoneArtwork } from '../features/listings/PhoneArtwork.jsx'
 import { isImageReference } from '../features/listings/image-reference.js'
 import { Skeleton } from '../components/ui/Skeleton.jsx'
 import {

@@ -11,7 +11,12 @@ export function MarketplaceLayout() {
     <div className="min-h-screen bg-canvas">
       <MarketplaceHeader />
       <EmailVerificationBanner />
-      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+      {/* Bottom padding clears the fixed mobile tab bar. */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="pb-20 focus:outline-none md:pb-0"
+      >
         <Suspense fallback={<LoadingScreen label="Loading this ReFon experience…" />}>
           <PageTransition>
             <Outlet />

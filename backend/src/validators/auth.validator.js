@@ -41,7 +41,12 @@ const loginSchema = z
 
 function formatIssues(issues) {
   return Object.fromEntries(
-    issues.map((issue) => [issue.path[0], issue.message]),
+    issues.map((issue) => [
+      // Unrecognised keys from `.strict()` carry an empty path, which would
+      // otherwise surface to the client as a field literally named "undefined".
+      issue.path[0] ?? '_query',
+      issue.message,
+    ]),
   )
 }
 

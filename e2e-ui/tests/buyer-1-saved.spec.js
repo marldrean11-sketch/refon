@@ -3,6 +3,7 @@ import {
   tryClickHeart,
   heartIsTopmost,
   savedBadge,
+  showListing,
   watchErrors,
   expectNoFatalErrors,
 } from './support.js'
@@ -15,6 +16,7 @@ test('C1 anonymous browse shows cards+hearts, heart click goes to /login and ret
   const all = watchErrors(page)
   await page.goto('/browse')
   await page.locator('article').first().waitFor()
+  await page.waitForTimeout(700)
   await page.screenshot({ path: 'screenshots/C1-01-anon-browse.png' })
 
   const cards = await page.locator('article').count()
@@ -23,7 +25,8 @@ test('C1 anonymous browse shows cards+hearts, heart click goes to /login and ret
   expect(cards, 'cards render').toBeGreaterThan(0)
   expect(hearts, 'hearts visible when anonymous').toBeGreaterThan(0)
 
-  const result = await tryClickHeart(page, 'Xiaomi XiaomiTest')
+  await showListing(page, 'Redmi Note 12')
+  const result = await tryClickHeart(page, 'Xiaomi Redmi Note 12')
   await page.screenshot({ path: 'screenshots/C1-02-after-heart-click.png' })
   console.log('C1_CLICK', JSON.stringify(result))
 
@@ -47,11 +50,9 @@ test.describe('signed-in buyer', () => {
 
   test('C2 buyer heart: aria-pressed, no navigation, badge increments, heart topmost', async ({ page }) => {
     const all = watchErrors(page)
-    await page.goto('/browse')
-    await page.locator('article').first().waitFor()
-    await page.waitForTimeout(900)
+    await showListing(page, 'Redmi Note 12')
 
-    const name = 'Xiaomi XiaomiTest'
+    const name = 'Xiaomi Redmi Note 12'
     const before = await savedBadge(page)
     const topmost = await heartIsTopmost(page, name)
     await page.screenshot({ path: 'screenshots/C2-01-browse-before-click.png' })
@@ -75,18 +76,26 @@ test.describe('signed-in buyer', () => {
 
   test('C3 save 3, unsave 1, state and badge persist across reload', async ({ page }) => {
     const all = watchErrors(page)
-    await page.goto('/browse')
-    await page.locator('article').first().waitFor()
-    await page.waitForTimeout(900)
-
-    // Listings untouched by the other tests in this file (C2 saves Xiaomi
-    // XiaomiTest, C4 Galaxy S21, C5 iPhone 13, C9 iPhone 8, C10 Redmi Note 9).
+    // The catalog paginates to twelve results, so a seeded listing is not always
+    // on page one. Each card below is reached through a filtered search rather
+    // than by assuming it appears in the first page.
+    //
+    // These three are untouched by the other tests in this file: C2 saves Xiaomi
+    // Redmi Note 12, C4 Galaxy S21, C5 iPhone 13, C9 iPhone 8, C10 Redmi Note 9.
     const names = ['OPPO Reno 8', 'Samsung Galaxy S8', 'Samsung Galaxy A54']
+
+    // Land on a real page before reading the badge, which reads the header.
+    await page.goto('/phones')
+    await page.locator('article').first().waitFor()
+    await page.waitForTimeout(700)
+
     // The badge is cumulative for this user across the whole file, so measure
     // relative to the starting value rather than an absolute number.
     const badgeStart = await savedBadge(page)
     const attempts = []
+
     for (const name of names) {
+      await showListing(page, name)
       attempts.push({ name, ...(await tryClickHeart(page, name)) })
     }
     await page.screenshot({ path: 'screenshots/C3-01-three-saved.png' })
@@ -94,8 +103,14 @@ test.describe('signed-in buyer', () => {
     console.log('C3_ATTEMPTS', JSON.stringify(attempts))
     console.log('C3_BADGE', badgeStart, '->', badgeAfter3)
 
+    // Unsave the last one that was saved. Which listing that is depends on the
+    // order the loop above visited them, so the label is read rather than
+    // assumed. The label reads "Remove Save <brand> <model>" once pressed, so
+    // both prefixes are stripped to recover the "brand model" name.
     const removeBtn = page.locator('button[aria-pressed="true"]').first()
     const removeLabel = await removeBtn.getAttribute('aria-label')
+    const removedName =
+      removeLabel?.replace(/^Remove\s+/, '').replace(/^Save\s+/, '') ?? ''
     let unsaveError = null
     try {
       await removeBtn.click({ timeout: 4000 })
@@ -107,20 +122,44 @@ test.describe('signed-in buyer', () => {
     const badgeAfter2 = await savedBadge(page)
     console.log('C3_UNSAVED', removeLabel, 'error', unsaveError, 'badge', badgeAfter2)
 
-    await page.reload()
+    // Persistence is checked against /saved rather than the current results
+    // page: the catalog paginates, so the current page may hold only the one
+    // card that was just unsaved.
+    await page.goto('/saved')
     await page.locator('article').first().waitFor()
     await page.waitForTimeout(1100)
     await page.screenshot({ path: 'screenshots/C3-03-after-reload.png' })
     const badgeAfterReload = await savedBadge(page)
-    const pressedAfterReload = await page.locator('button[aria-pressed="true"]').count()
-    console.log('C3_BADGE_AFTER_RELOAD', badgeAfterReload, 'PRESSED', pressedAfterReload)
+    const savedNames = (await page.locator('article h3').allInnerTexts()).join(' | ')
+    console.log('C3_BADGE_AFTER_RELOAD', badgeAfterReload, 'SAVED', savedNames)
 
     expect(attempts.every((a) => a.clicked), `all three hearts clickable (${JSON.stringify(attempts.map((a) => a.clickError))})`).toBe(true)
     expect(badgeAfter3, 'badge gains 3').toBe(badgeStart + 3)
     expect(unsaveError, `unsave clickable (error: ${unsaveError})`).toBeNull()
     expect(badgeAfter2, 'badge loses 1 after unsave').toBe(badgeStart + 2)
     expect(badgeAfterReload, 'badge persists after reload').toBe(badgeStart + 2)
-    expect(pressedAfterReload, 'pressed hearts persist after reload').toBeGreaterThanOrEqual(3)
+
+    // Card headings hold the model only, so compare against the model half of each
+    // "brand model" name.
+    const stillSaved = names
+      .filter((name) => name !== removedName)
+      .map((name) => name.replace(/^\S+\s+/, ''))
+
+    for (const model of stillSaved) {
+      expect(savedNames, `${model} stays saved`).toContain(model)
+    }
+
+    // Reload confirms the cards were read from the server, not left in memory.
+    await page.reload()
+    await page.locator('article').first().waitFor()
+    await page.waitForTimeout(1100)
+    const afterReload = (await page.locator('article h3').allInnerTexts()).join(' | ')
+    for (const model of stillSaved) {
+      expect(afterReload, `${model} survives a reload`).toContain(model)
+    }
+
+    const removedModel = removedName.replace(/^\S+\s+/, '')
+    expect(afterReload, 'the unsaved listing is gone').not.toContain(removedModel)
     expectNoFatalErrors(all, 'C3')
   })
 
@@ -162,9 +201,9 @@ test.describe('signed-in buyer', () => {
     const pressedOnDetail = await page.locator('button[aria-pressed="true"]').count()
     console.log('C5_DETAIL_CLICK', JSON.stringify(result), 'PRESSED', pressedOnDetail)
 
-    await page.goto('/browse')
-    await page.locator('article').first().waitFor()
-    await page.waitForTimeout(1100)
+    // Searched rather than browsed: the catalog paginates, so the iPhone 13 card
+    // is not guaranteed to be in the first page of results.
+    await showListing(page, 'iPhone 13')
     const cardState = await page.evaluate(() =>
       [...document.querySelectorAll('article button[aria-pressed]')].map((b) => ({
         label: b.getAttribute('aria-label'),
@@ -260,9 +299,10 @@ test.describe('signed-in buyer', () => {
 
   test('C10 keyboard: focus ring visible, Enter/Space toggle', async ({ page }) => {
     const all = watchErrors(page)
-    await page.goto('/browse')
-    await page.locator('article').first().waitFor()
-    await page.waitForTimeout(900)
+    // Redmi Note 9 is not touched by any other test in this file, so it is still
+    // unsaved when the keyboard test reaches it. Found by search because the
+    // catalog paginates.
+    await showListing(page, 'Redmi Note 9')
 
     const heart = page.locator('button[aria-label="Save Xiaomi Redmi Note 9"]')
     await heart.focus()

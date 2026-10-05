@@ -135,3 +135,16 @@ export async function savedBadge(page) {
 export function expectVisibleCount(locator, count, message) {
   expect(locator, message).toHaveCount(count)
 }
+
+/**
+ * Opens the shop page filtered to one listing.
+ *
+ * The catalog paginates, so a seeded listing is not necessarily on page one.
+ * Specs that interact with a specific phone's card search for it rather than
+ * assuming it happens to be in the first twelve results.
+ */
+export async function showListing(page, brandModel) {
+  await page.goto(`/phones?search=${encodeURIComponent(brandModel)}`)
+  await page.locator('article').first().waitFor()
+  await page.waitForTimeout(700)
+}

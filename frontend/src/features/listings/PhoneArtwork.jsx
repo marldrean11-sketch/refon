@@ -1,0 +1,361 @@
+import { ImageIcon } from 'lucide-react'
+
+/**
+ * Device artwork used when a listing has no real photograph yet.
+ *
+ * Every ReFon phone needs to look distinct on a results page even before the
+ * seller has uploaded photos, so this renders a device silhouette tinted by the
+ * actual listing colour. When real photos arrive, the card renders an `<img>`
+ * instead and this is never used.
+ */
+
+const BRAND_SURFACES = {
+  Apple: { from: '#f1f5f9', via: '#e2e8f0', to: '#cbd5e1', glow: 'rgba(100,116,139,0.28)' },
+  Samsung: { from: '#eff6ff', via: '#dbeafe', to: '#bfdbfe', glow: 'rgba(37,99,235,0.24)' },
+  Google: { from: '#f8fafc', via: '#eef2ff', to: '#e0e7ff', glow: 'rgba(79,70,229,0.22)' },
+  Xiaomi: { from: '#fff7ed', via: '#ffedd5', to: '#fed7aa', glow: 'rgba(234,88,12,0.22)' },
+  Oppo: { from: '#ecfdf5', via: '#d1fae5', to: '#a7f3d0', glow: 'rgba(5,150,105,0.22)' },
+  Vivo: { from: '#eff6ff', via: '#dbeafe', to: '#bfdbfe', glow: 'rgba(14,165,233,0.22)' },
+  OnePlus: { from: '#fef2f2', via: '#fee2e2', to: '#fecaca', glow: 'rgba(220,38,38,0.2)' },
+  Realme: { from: '#fffbeb', via: '#fef3c7', to: '#fde68a', glow: 'rgba(217,119,6,0.2)' },
+  Nokia: { from: '#f8fafc', via: '#f1f5f9', to: '#e2e8f0', glow: 'rgba(71,85,105,0.2)' },
+  Huawei: { from: '#fff7ed', via: '#ffedd5', to: '#fdba74', glow: 'rgba(234,88,12,0.2)' },
+}
+
+const DEFAULT_SURFACE = {
+  from: '#f1f5f9',
+  via: '#e2e8f0',
+  to: '#cbd5e1',
+  glow: 'rgba(15,23,42,0.18)',
+}
+
+/** Maps the free-text colour on a listing to a real device body colour. */
+const COLOR_BODIES = {
+  midnight: { body: ['#2f3640', '#111827'], trim: '#1f2937' },
+  black: { body: ['#3f3f46', '#18181b'], trim: '#27272a' },
+  space: { body: ['#4b5563', '#1f2937'], trim: '#374151' },
+  graphite: { body: ['#52525b', '#27272a'], trim: '#3f3f46' },
+  gray: { body: ['#9ca3af', '#4b5563'], trim: '#6b7280' },
+  grey: { body: ['#9ca3af', '#4b5563'], trim: '#6b7280' },
+  silver: { body: ['#e5e7eb', '#9ca3af'], trim: '#d1d5db' },
+  white: { body: ['#f8fafc', '#e2e8f0'], trim: '#f1f5f9' },
+  starlight: { body: ['#f5f3ef', '#dcd6cd'], trim: '#e7e2da' },
+  rose: { body: ['#f9c8d4', '#e8859c'], trim: '#f3aebd' },
+  gold: { body: ['#f5dfa8', '#c9a34e'], trim: '#e0c377' },
+  blue: { body: ['#7dd3fc', '#2563eb'], trim: '#60a5fa' },
+  iceblue: { body: ['#c7e2f7', '#7fb2d8'], trim: '#a5cfe9' },
+  onyx: { body: ['#3b3b41', '#131316'], trim: '#26262b' },
+  phantom: { body: ['#3f3f46', '#111113'], trim: '#27272a' },
+  awesome: { body: ['#dbeafe', '#93c5fd'], trim: '#bfdbfe' },
+  celestial: { body: ['#4c1d95', '#1e1b4b'], trim: '#5b21b6' },
+  awesomepearl: { body: ['#fdf4ff', '#f5d0fe'], trim: '#fae8ff' },
+  green: { body: ['#a7f3d0', '#059669'], trim: '#34d399' },
+  violet: { body: ['#ddd6fe', '#7c3aed'], trim: '#a78bfa' },
+  purple: { body: ['#ddd6fe', '#6d28d9'], trim: '#a78bfa' },
+  red: { body: ['#fecaca', '#b91c1c'], trim: '#f87171' },
+  yellow: { body: ['#fef08a', '#ca8a04'], trim: '#fde047' },
+  orange: { body: ['#fed7aa', '#ea580c'], trim: '#fb923c' },
+  coral: { body: ['#fed7aa', '#f97316'], trim: '#fdba74' },
+  teal: { body: ['#99f6e4', '#0f766e'], trim: '#5eead4' },
+  midnightblue: { body: ['#1e3a8a', '#0c1a3a'], trim: '#1d4ed8' },
+  titan: { body: ['#8f9aa8', '#3c4653'], trim: '#6b7684' },
+}
+
+const DEFAULT_BODY = { body: ['#94a3b8', '#334155'], trim: '#64748b' }
+
+/**
+ * Camera layout families. Roughly how many lenses the model has and how they
+ * are arranged, which is what makes two phones look different at card size.
+ */
+const CAMERA_LAYOUTS = {
+  square: { lenses: 2, columns: 2, label: 'square' },
+  vertical: { lenses: 2, columns: 1, label: 'vertical' },
+  triple: { lenses: 3, columns: 3, label: 'triple' },
+  'triple-vertical': { lenses: 3, columns: 3, label: 'triple vertical' },
+  quad: { lenses: 4, columns: 2, label: 'quad' },
+}
+
+function cameraLayoutFor(model) {
+  const text = String(model ?? '').toLowerCase()
+
+  if (/pro max|ultra|note 12 ultra/.test(text)) {
+    return CAMERA_LAYOUTS.quad
+  }
+
+  if (/pro/.test(text)) {
+    return CAMERA_LAYOUTS.triple
+  }
+
+  if (/\b(13|14|15|16|17)\b/.test(text) || /galaxy s2[2-4]/.test(text)) {
+    return CAMERA_LAYOUTS['triple-vertical']
+  }
+
+  if (/pixel/.test(text)) {
+    return CAMERA_LAYOUTS.vertical
+  }
+
+  if (/galaxy s2[1-9]/.test(text)) {
+    return CAMERA_LAYOUTS.triple
+  }
+
+  return CAMERA_LAYOUTS.square
+}
+
+/** Notch family, so a 2015 iPhone and a 2021 iPhone are visibly different. */
+function frameFamilyFor(model, brand) {
+  const text = String(model ?? '').toLowerCase()
+  const yearHint = text.match(/(?:iphone\s*)?(\d{2})/)
+
+  if (brand === 'Apple') {
+    const number = Number(text.match(/iphone\s*(\d{1,2})/)?.[1])
+
+    if (Number.isFinite(number)) {
+      if (number >= 14) return { notch: 'island', corners: 'rounded-xl', rails: 'flat' }
+      if (number >= 11) return { notch: 'notch', corners: 'rounded-lg', rails: 'flat' }
+      if (number >= 7) return { notch: 'circle', corners: 'rounded-md', rails: 'round' }
+      return { notch: 'bar', corners: 'rounded-sm', rails: 'round' }
+    }
+  }
+
+  if (/pixel|pixel/.test(text)) {
+    return { notch: 'punch', corners: 'rounded-2xl', rails: 'flat' }
+  }
+
+  if (yearHint) {
+    return { notch: 'punch', corners: 'rounded-2xl', rails: 'flat' }
+  }
+
+  return { notch: 'punch', corners: 'rounded-xl', rails: 'flat' }
+}
+
+function resolveBody(color) {
+  const text = String(color ?? '').toLowerCase()
+
+  for (const [key, value] of Object.entries(COLOR_BODIES)) {
+    if (text.includes(key)) {
+      return value
+    }
+  }
+
+  return DEFAULT_BODY
+}
+
+function Notch({ kind }) {
+  if (kind === 'island') {
+    return (
+      <div className="absolute left-1/2 top-2 h-4 w-14 -translate-x-1/2 rounded-pill bg-black/80" aria-hidden="true" />
+    )
+  }
+
+  if (kind === 'notch') {
+    return (
+      <div className="absolute left-1/2 top-1.5 h-4 w-12 -translate-x-1/2 rounded-b-xl bg-black/80" aria-hidden="true" />
+    )
+  }
+
+  if (kind === 'circle') {
+    return <div className="absolute left-1/2 top-2 size-2.5 -translate-x-1/2 rounded-full bg-black/70" aria-hidden="true" />
+  }
+
+  if (kind === 'punch') {
+    return <div className="absolute left-1/2 top-2 size-2 -translate-x-1/2 rounded-full bg-black/75" aria-hidden="true" />
+  }
+
+  return <div className="absolute left-1/2 top-1.5 h-1.5 w-10 -translate-x-1/2 rounded-pill bg-black/40" aria-hidden="true" />
+}
+
+function CameraCluster({ layout, trim }) {
+  const columns = layout.columns
+  const rows = Math.ceil(layout.lenses / columns)
+
+  return (
+    <div
+      className="absolute right-2.5 top-2.5 rounded-xl p-1.5 shadow-sm"
+      style={{
+        background: `linear-gradient(150deg, ${trim}, rgba(0,0,0,0.55))`,
+        display: 'grid',
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        gap: 4,
+      }}
+      aria-hidden="true"
+    >
+      {Array.from({ length: layout.lenses }, (_, index) => (
+        <span
+          key={index}
+          className="size-3 rounded-full ring-1 ring-white/25"
+          style={{
+            background: `radial-gradient(circle at 32% 30%, ${trim}, #05070a 68%)`,
+            gridRow: Math.floor(index / columns) + 1,
+            gridColumn: (index % columns) + 1,
+            aspectRatio: '1 / 1',
+            height: rows > 1 ? undefined : 12,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Renders a model-specific device illustration.
+ *
+ * `view` changes the pose and the on-screen content so a gallery can show
+ * front, back, screen, and detail angles without four external images.
+ */
+export function PhoneArtwork({
+  brand,
+  model,
+  color,
+  view = 'default',
+  className = 'aspect-[4/3]',
+  showLabel = true,
+}) {
+  const surface = BRAND_SURFACES[brand] ?? DEFAULT_SURFACE
+  const body = resolveBody(color)
+  const layout = cameraLayoutFor(model)
+  const frame = frameFamilyFor(model, brand)
+
+  const isBack = view === 'detail' || view === 'angle'
+  const isScreen = view === 'screen'
+  const isAngle = view === 'angle'
+
+  const rotation = isAngle ? 'rotate-[-8deg]' : view === 'front' ? 'rotate-[-2deg]' : ''
+  const tilt = view === 'detail' ? 'rotate-[6deg]' : ''
+
+  const deviceShell = [
+    'relative h-[74%] w-[38%] min-w-26 max-w-40 rounded-[1.6rem] p-[3px] shadow-2xl transition-transform duration-300 motion-reduce:transform-none',
+    frame.corners,
+    rotation,
+    tilt,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const screenClasses = [
+    'relative h-full w-full overflow-hidden bg-gradient-to-b',
+    frame.corners,
+  ].join(' ')
+
+  return (
+    <div
+      className={`relative overflow-hidden ${className}`}
+      style={{
+        background: `linear-gradient(140deg, ${surface.from} 0%, ${surface.via} 52%, ${surface.to} 100%)`,
+      }}
+      role="img"
+      aria-label={`${brand} ${model} in ${color ?? 'as pictured'}, ${view} illustration`}
+    >
+      <div
+        className="absolute -right-12 -top-14 size-48 rounded-full blur-3xl"
+        style={{ background: surface.glow }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 opacity-35"
+        style={{
+          backgroundImage:
+            'radial-gradient(rgba(100,116,139,0.6) 0.6px, transparent 0.6px)',
+          backgroundSize: '13px 13px',
+        }}
+        aria-hidden="true"
+      />
+
+      {showLabel && (
+        <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1.5 rounded-pill bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted backdrop-blur">
+          <ImageIcon className="size-3" aria-hidden="true" />
+          Illustration
+        </span>
+      )}
+
+      <div className="absolute inset-0 grid place-items-center">
+        <div
+          className={deviceShell}
+          style={{
+            background: `linear-gradient(160deg, ${body.trim}, rgba(255,255,255,0.28), ${body.trim})`,
+          }}
+          aria-hidden="true"
+        >
+          <div
+            className={`h-full w-full border-[3px] border-black/85 ${
+              isBack ? 'opacity-100' : 'opacity-95'
+            }`}
+            style={{
+              borderRadius: 'inherit',
+              background: isBack
+                ? `linear-gradient(155deg, ${body.body[0]}, ${body.body[1]})`
+                : `linear-gradient(180deg, ${body.body[1]}, #05070a)`,
+            }}
+          >
+            {isBack ? (
+              <>
+                <CameraCluster layout={layout} trim={body.trim} />
+                <div className="absolute bottom-3 left-1/2 h-[38%] w-[22%] -translate-x-1/2 rounded-[45%] border border-white/10" />
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase tracking-[0.2em] text-white/45">
+                  {brand}
+                </span>
+              </>
+            ) : (
+              <>
+                <Notch kind={frame.notch} />
+                {isScreen ? (
+                  <ScreenContent />
+                ) : (
+                  <div
+                    className="grid h-full place-items-center"
+                    style={{
+                      background:
+                        'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.22), transparent 62%)',
+                    }}
+                  >
+                    <span
+                      className="font-display text-3xl font-bold tracking-tight"
+                      style={{ color: 'rgba(255,255,255,0.5)' }}
+                    >
+                      {brandLabelInitials(brand)}
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {color && (
+        <span className="absolute bottom-3.5 right-3.5 rounded-pill bg-white/85 px-2.5 py-1 text-[10px] font-semibold text-muted backdrop-blur">
+          {color}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function ScreenContent() {
+  return (
+    <div className="flex h-full flex-col justify-between p-2.5" aria-hidden="true">
+      <div>
+        <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-white/55">
+          Battery health
+        </p>
+        <p className="font-display text-xl font-bold leading-none text-white">92%</p>
+        <div className="mt-1.5 h-1 overflow-hidden rounded-pill bg-white/20">
+          <div className="h-full w-[92%] rounded-pill bg-accent-400" />
+        </div>
+      </div>
+      <div className="flex items-end gap-1">
+        {[38, 62, 88, 100].map((height) => (
+          <span
+            key={height}
+            className="flex-1 rounded-t-sm bg-white/35"
+            style={{ height: `${height * 0.24}px` }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function brandLabelInitials(brand) {
+  const text = String(brand ?? '')
+  return text === 'Samsung' ? 'S' : text.charAt(0) || 'R'
+}

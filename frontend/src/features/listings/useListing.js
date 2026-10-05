@@ -1,8 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getListingRequest } from './listing-api.js'
+import {
+  getListingBySlugRequest,
+  getListingRequest,
+} from './listing-api.js'
 import { subscribeToMarketplaceChanges } from '../../lib/marketplace-sync.js'
 
-export function useListing(id) {
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Loads a listing from either a canonical slug (`/phones/:slug`) or a legacy id
+ * (`/listings/:id`).
+ *
+ * The route decides which: a UUID is an id, anything else is a slug. Both shapes
+ * resolve to the same listing, so old bookmarks and existing links keep working
+ * while the canonical URL is the slug.
+ */
+export function useListing(identifier) {
   const [listing, setListing] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -17,7 +31,18 @@ export function useListing(id) {
     setError(null)
     setListing(null)
 
-    getListingRequest(id, controller.signal)
+    if (!identifier) {
+      setIsLoading(false)
+      return () => {
+        isActive = false
+      }
+    }
+
+    const request = UUID_PATTERN.test(identifier)
+      ? getListingRequest(identifier, controller.signal)
+      : getListingBySlugRequest(identifier, controller.signal)
+
+    request
       .then((response) => {
         if (isActive) {
           setListing(response.listing)
@@ -38,7 +63,7 @@ export function useListing(id) {
       isActive = false
       controller.abort()
     }
-  }, [id, retryToken])
+  }, [identifier, retryToken])
 
   useEffect(() => {
     const revalidate = () => {

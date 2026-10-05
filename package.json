@@ -7,16 +7,24 @@
     "backend"
   ],
   "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev --workspace @refon/frontend",
     "dev:backend": "npm run dev --workspace @refon/backend",
+    "build": "npm run build --workspace @refon/frontend",
     "build:frontend": "npm run build --workspace @refon/frontend",
     "prisma:seed": "npm run prisma:seed --workspace @refon/backend",
     "test:auth": "npm run test:auth --workspace @refon/backend",
     "test:marketplace": "npm run test:marketplace --workspace @refon/backend",
+    "test:catalog": "npm run test:catalog --workspace @refon/backend",
+    "test:storage": "npm run test:storage --workspace @refon/backend",
+    "test:api": "npm run test:auth && npm run test:marketplace && npm run test:catalog",
     "test:ui": "npm --prefix e2e-ui test",
+    "admin:create": "npm run admin:create --workspace @refon/backend",
+    "uploads:cleanup": "npm run uploads:cleanup --workspace @refon/backend",
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prisma": "6.12.0"
   },
   "allowScripts": {

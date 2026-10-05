@@ -1,16 +1,34 @@
 import { useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Images } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { PhoneArtwork } from './listing-card.jsx'
+import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { isImageReference } from './image-reference.js'
 import { standardTransition } from '../../lib/motion.js'
+
+/**
+ * Gallery angles used when a listing has no uploaded photos.
+ * Covers the front, the back, the screen, and a close-up so the detail page
+ * still shows four distinct views instead of one repeated image.
+ */
+const ILLUSTRATION_VIEWS = ['front', 'detail', 'screen', 'angle']
+
+const VIEW_LABELS = {
+  front: 'Front view',
+  detail: 'Back and camera detail',
+  screen: 'Screen on, showing battery health',
+  angle: 'Angled side view',
+}
 
 export function ListingGallery({ listing }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const pointerStartX = useRef(null)
   const reduceMotion = useReducedMotion()
-  const photos = listing.photos.length > 0 ? listing.photos : ['front']
+  const hasPhotos = listing.photos.length > 0
+  const photos = hasPhotos ? listing.photos : ILLUSTRATION_VIEWS
   const activeView = photos[activeIndex] ?? photos[0]
+  const activeLabel = hasPhotos
+    ? `photo ${activeIndex + 1} of ${photos.length}`
+    : (VIEW_LABELS[activeView] ?? 'view')
 
   function showPrevious() {
     setActiveIndex((current) =>
@@ -51,7 +69,7 @@ export function ListingGallery({ listing }) {
       <div
         className="group relative aspect-[4/3] overflow-hidden rounded-card-xl border border-line bg-white shadow-card sm:aspect-[16/10]"
         role="region"
-        aria-label={`${listing.brand} ${listing.model} photo gallery`}
+        aria-label={`${listing.brand} ${listing.model} gallery, showing ${activeLabel}`}
         aria-roledescription="carousel"
         tabIndex={0}
         onKeyDown={(event) => {
@@ -84,7 +102,7 @@ export function ListingGallery({ listing }) {
             {isImageReference(activeView) ? (
               <img
                 src={activeView}
-                alt={`${listing.brand} ${listing.model}, photo ${activeIndex + 1} of ${photos.length}`}
+                alt={`${listing.brand} ${listing.model}, ${activeLabel}`}
                 loading="eager"
                 decoding="async"
                 className="h-full w-full object-cover"
@@ -134,38 +152,44 @@ export function ListingGallery({ listing }) {
 
       {photos.length > 1 && (
         <div className="mt-4 grid grid-cols-4 gap-3" role="group" aria-label="Choose a gallery photo">
-        {photos.map((view, index) => (
-          <button
-            key={`${view}-${index}`}
-            type="button"
-            onClick={() => setActiveIndex(index)}
-            className={`group/thumbnail relative aspect-[4/3] overflow-hidden rounded-2xl border-2 bg-white transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
-              index === activeIndex
-                ? 'border-primary-500 shadow-card'
-                : 'border-transparent opacity-70 hover:border-primary-200 hover:opacity-100'
-            }`}
-            aria-label={`Show photo ${index + 1} of ${photos.length}`}
-            aria-current={index === activeIndex ? 'true' : undefined}
-          >
-            {isImageReference(view) ? (
-              <img
-                src={view}
-                alt={`${listing.brand} ${listing.model}, thumbnail ${index + 1}`}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <PhoneArtwork
-                brand={listing.brand}
-                model={listing.model}
-                color={listing.color}
-                view={view}
-                className="h-full w-full"
-              />
-            )}
-          </button>
-        ))}
+        {photos.map((view, index) => {
+          const label = hasPhotos
+            ? `Show photo ${index + 1} of ${photos.length}`
+            : `Show ${VIEW_LABELS[view] ?? 'view'}`
+
+          return (
+            <button
+              key={`${view}-${index}`}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className={`group/thumbnail relative aspect-[4/3] overflow-hidden rounded-2xl border-2 bg-white transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
+                index === activeIndex
+                  ? 'border-primary-500 shadow-card'
+                  : 'border-transparent opacity-70 hover:border-primary-200 hover:opacity-100'
+              }`}
+              aria-label={label}
+              aria-current={index === activeIndex ? 'true' : undefined}
+            >
+              {isImageReference(view) ? (
+                <img
+                  src={view}
+                  alt={`${listing.brand} ${listing.model}, thumbnail ${index + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <PhoneArtwork
+                  brand={listing.brand}
+                  model={listing.model}
+                  color={listing.color}
+                  view={view}
+                  className="h-full w-full"
+                />
+              )}
+            </button>
+          )
+        })}
         </div>
       )} 
     </div>

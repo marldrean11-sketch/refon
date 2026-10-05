@@ -26,3 +26,6 @@ e2e-ui/state/
 
 # Local development mail outbox (no SMTP relay configured)
 backend/tmp/
+
+# Deployment secrets for docker compose. Never commit this.
+.env

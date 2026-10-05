@@ -44,6 +44,15 @@ export default {
           soft: '#d1fae5',
           strong: '#047857',
         },
+        /** ReFon condition grading scale. A is the best tier. */
+        grade: {
+          a: '#059669',
+          'a-soft': '#d1fae5',
+          b: '#0284c7',
+          'b-soft': '#e0f2fe',
+          c: '#d97706',
+          'c-soft': '#fef3c7',
+        },
       },
       fontFamily: {
         display: [
@@ -89,11 +98,14 @@ export default {
         card: '1rem',
         'card-lg': '1.5rem',
         'card-xl': '2rem',
+        pill: '999px',
       },
       boxShadow: {
         card: '0 8px 30px -12px rgb(15 31 51 / 0.16)',
         'card-hover': '0 20px 45px -18px rgb(15 31 51 / 0.26)',
         glass: '0 8px 30px -16px rgb(7 21 34 / 0.28)',
+        'card-inset': 'inset 0 1px 0 0 rgb(255 255 255 / 0.6)',
+        'focus-ring': '0 0 0 3px rgb(31 78 120 / 0.25)',
       },
       transitionDuration: {
         200: '200ms',

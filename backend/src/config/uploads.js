@@ -1,9 +1,12 @@
-import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import multer from 'multer'
 import { ApiError } from '../utils/api-error.js'
+import {
+  detectImageType,
+  generatePhotoFilename,
+} from '../services/storage.service.js'
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,24 +16,10 @@ fs.mkdirSync(uploadsDirectory, { recursive: true })
 
 const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
-const extensionByMimeType = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, callback) => {
-    callback(null, uploadsDirectory)
-  },
-  filename: (_req, file, callback) => {
-    const extension = extensionByMimeType[file.mimetype]
-    callback(null, `${Date.now()}-${crypto.randomUUID()}${extension}`)
-  },
-})
-
+// Files are held in memory so the bytes can be verified and then handed to whichever
+// storage driver is configured, instead of being written straight to local disk.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     files: 6,
     fileSize: 8 * 1024 * 1024,
@@ -45,25 +34,13 @@ const upload = multer({
   },
 })
 
-export async function removeUploadedFiles(files = []) {
-  await Promise.all(
-    files.map(async (file) => {
-      try {
-        await fs.promises.unlink(file.path)
-      } catch (error) {
-        if (error?.code !== 'ENOENT') {
-          throw error
-        }
-      }
-    }),
-  )
+function invalidUpload(message) {
+  return new ApiError(422, message, 'INVALID_PHOTO_UPLOAD')
 }
 
 export function uploadPhotoFiles(req, res, next) {
-  upload.array('photos', 6)(req, res, async (error) => {
+  upload.array('photos', 6)(req, res, (error) => {
     if (error) {
-      await removeUploadedFiles(req.files ?? []).catch(() => {})
-
       if (error.code === 'LIMIT_FILE_SIZE') {
         return next(
           new ApiError(
@@ -84,13 +61,7 @@ export function uploadPhotoFiles(req, res, next) {
         )
       }
 
-      return next(
-        new ApiError(
-          422,
-          error.message || 'The image upload could not be processed.',
-          'INVALID_PHOTO_UPLOAD',
-        ),
-      )
+      return next(invalidUpload(error.message || 'The image upload could not be processed.'))
     }
 
     if (!req.files || req.files.length === 0) {
@@ -101,6 +72,22 @@ export function uploadPhotoFiles(req, res, next) {
           'PHOTO_REQUIRED',
         ),
       )
+    }
+
+    // A declared Content-Type proves nothing about the payload, so the real bytes are
+    // checked here. One bad file rejects the whole request.
+    for (const file of req.files) {
+      const detected = detectImageType(file.buffer)
+
+      if (detected !== file.mimetype) {
+        return next(
+          invalidUpload('Only JPG, PNG, and WebP images are supported.'),
+        )
+      }
+    }
+
+    for (const file of req.files) {
+      file.filename = generatePhotoFilename(file.mimetype)
     }
 
     return next()

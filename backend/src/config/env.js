@@ -10,6 +10,14 @@ function parsePort(value) {
   return port
 }
 
+function parseBoolean(value, fallback = false) {
+  if (value === undefined || value === '') {
+    return fallback
+  }
+
+  return value === 'true' || value === '1'
+}
+
 const jwtSecret = process.env.JWT_SECRET
 
 if (!jwtSecret || jwtSecret.length < 32) {
@@ -24,6 +32,40 @@ const smtpHost = process.env.SMTP_HOST ?? ''
 // rather than silently dropping password reset and verification links.
 if (nodeEnv === 'production' && !smtpHost) {
   throw new Error('SMTP_HOST must be set in production so ReFon can send account emails.')
+}
+
+const storageDriver = process.env.STORAGE_DRIVER ?? 'local'
+
+if (!['local', 's3'].includes(storageDriver)) {
+  throw new Error('STORAGE_DRIVER must be either "local" or "s3".')
+}
+
+const s3Bucket = process.env.S3_BUCKET ?? ''
+const s3Region = process.env.S3_REGION ?? ''
+const s3AccessKeyId = process.env.S3_ACCESS_KEY_ID ?? ''
+const s3SecretAccessKey = process.env.S3_SECRET_ACCESS_KEY ?? ''
+
+if (storageDriver === 's3') {
+  const missing = [
+    ['S3_BUCKET', s3Bucket],
+    ['S3_REGION', s3Region],
+    ['S3_ACCESS_KEY_ID', s3AccessKeyId],
+    ['S3_SECRET_ACCESS_KEY', s3SecretAccessKey],
+  ]
+    .filter(([, value]) => value === '')
+    .map(([name]) => name)
+
+  if (missing.length > 0) {
+    throw new Error(
+      `STORAGE_DRIVER=s3 requires ${missing.join(', ')}. Point S3_ENDPOINT at your provider when using Cloudflare R2, Backblaze B2, or MinIO.`,
+    )
+  }
+} else if (nodeEnv === 'production') {
+  // Not fatal: a single container with a persistent volume is a legitimate setup.
+  // It only matters when the API runs somewhere with an ephemeral filesystem.
+  console.warn(
+    '[storage] STORAGE_DRIVER=local in production: local uploads require a persistent volume, or uploaded photos are lost on redeploy. Use STORAGE_DRIVER=s3 for object storage.',
+  )
 }
 
 export const env = Object.freeze({
@@ -47,4 +89,15 @@ export const env = Object.freeze({
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPass: process.env.SMTP_PASS ?? '',
   smtpSecure: process.env.SMTP_SECURE === 'true',
+  storageDriver,
+  s3: {
+    bucket: s3Bucket,
+    region: s3Region,
+    // Optional: Cloudflare R2, Backblaze B2, and MinIO need their own endpoint.
+    endpoint: process.env.S3_ENDPOINT ?? '',
+    accessKeyId: s3AccessKeyId,
+    secretAccessKey: s3SecretAccessKey,
+    forcePathStyle: parseBoolean(process.env.S3_FORCE_PATH_STYLE),
+    prefix: (process.env.S3_PREFIX ?? 'uploads/').replace(/^\/+/, ''),
+  },
 })

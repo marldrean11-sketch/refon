@@ -1,0 +1,17 @@
+{
+  "name": "ReFon — Premium Refurbished Phones",
+  "short_name": "ReFon",
+  "description": "Premium phones. Smarter prices. Tested for you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F9FC",
+  "theme_color": "#1F4E78",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
