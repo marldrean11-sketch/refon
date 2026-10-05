@@ -9,6 +9,10 @@ export const AUTH_ROUTES = Object.freeze({
   saved: '/saved',
   myInquiries: '/my-inquiries',
   forbidden: '/forbidden',
+  account: '/account',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
+  verifyEmail: '/verify-email',
 })
 
 export const ROLE_HOME = Object.freeze({

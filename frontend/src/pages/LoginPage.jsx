@@ -137,6 +137,15 @@ export function LoginPage() {
             required
           />
 
+          <div className="-mt-1 text-right">
+            <Link
+              to={AUTH_ROUTES.forgotPassword}
+              className="text-sm font-semibold text-muted underline transition hover:text-primary-700"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={isSubmitting}

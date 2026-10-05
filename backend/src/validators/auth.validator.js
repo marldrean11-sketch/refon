@@ -80,3 +80,34 @@ export function validateParams(schema) {
 
 export const validateRegister = validate(registerSchema)
 export const validateLogin = validate(loginSchema)
+
+const forgotPasswordSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(320, 'Email must be 320 characters or fewer.')
+      .email('Enter a valid email address.'),
+  })
+  .strict()
+
+const resetPasswordSchema = z
+  .object({
+    token: z.string().trim().min(1, 'This reset link is missing its token.'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters.')
+      .max(72, 'Password must be 72 characters or fewer.'),
+  })
+  .strict()
+
+const verifyEmailSchema = z
+  .object({
+    token: z.string().trim().min(1, 'This verification link is missing its token.'),
+  })
+  .strict()
+
+export const validateForgotPassword = validate(forgotPasswordSchema)
+export const validateResetPassword = validate(resetPasswordSchema)
+export const validateVerifyEmail = validate(verifyEmailSchema)

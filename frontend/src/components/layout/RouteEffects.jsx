@@ -31,9 +31,17 @@ export function RouteEffects() {
                         ? 'Seller listing workspace · ReFon'
                         : location.pathname === '/admin'
                           ? 'Admin dashboard · ReFon'
-                          : location.pathname === '/forbidden'
-                            ? 'Access restricted · ReFon'
-                            : 'Page not found · ReFon'
+                          : location.pathname === '/account'
+                            ? 'Account settings · ReFon'
+                            : location.pathname === '/forgot-password'
+                              ? 'Reset your password · ReFon'
+                              : location.pathname === '/reset-password'
+                                ? 'Choose a new password · ReFon'
+                                : location.pathname === '/verify-email'
+                                  ? 'Confirm your email · ReFon'
+                                  : location.pathname === '/forbidden'
+                                    ? 'Access restricted · ReFon'
+                                    : 'Page not found · ReFon'
     document.title = pageTitle
 
     const timer = window.setTimeout(() => {

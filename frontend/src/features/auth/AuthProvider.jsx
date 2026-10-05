@@ -64,6 +64,16 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  /**
+   * Folds a fresh user payload from the API into the session, so a profile edit or
+   * an email verification is reflected everywhere without a full page reload.
+   */
+  const updateUser = useCallback((nextUser) => {
+    if (nextUser) {
+      setUser(nextUser)
+    }
+  }, [])
+
   const value = useMemo(
     () => ({
       user,
@@ -72,8 +82,9 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
+      updateUser,
     }),
-    [initializationError, isLoading, login, logout, register, user],
+    [initializationError, isLoading, login, logout, register, updateUser, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

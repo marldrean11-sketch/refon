@@ -270,6 +270,15 @@ export function RegisterPage() {
             Sign in
           </Link>
         </p>
+
+        <p className="mt-3 text-center text-sm text-muted">
+          <Link
+            to={AUTH_ROUTES.forgotPassword}
+            className="font-semibold text-muted underline transition hover:text-primary-700"
+          >
+            Forgot your password?
+          </Link>
+        </p>
       </section>
     </AuthShell>
   )

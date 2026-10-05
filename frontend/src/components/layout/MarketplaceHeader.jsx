@@ -9,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   Store,
+  UserCog,
   UserPlus,
   X,
 } from 'lucide-react'
@@ -136,11 +137,28 @@ export function MarketplaceHeader() {
               {workspaceLink.label}
             </NavLink>
           )}
+
+          {user && (
+            <Link
+              to={AUTH_ROUTES.account}
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted transition hover:bg-primary-50 hover:text-primary-700"
+            >
+              <UserCog className="size-4" aria-hidden="true" />
+              Account
+            </Link>
+          )}
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
           {user ? (
             <>
+              <Link
+                to={AUTH_ROUTES.account}
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted transition hover:bg-primary-50 hover:text-primary-700"
+              >
+                <UserCog className="size-4" aria-hidden="true" />
+                Account
+              </Link>
               <NotificationBell />
               <div className="mr-1 flex items-center gap-2.5 border-r border-line pr-4">
                 <span className="grid size-9 place-items-center rounded-xl bg-primary-500 text-xs font-bold text-white">
@@ -268,6 +286,21 @@ export function MarketplaceHeader() {
                 >
                   <WorkspaceIcon className="size-5" aria-hidden="true" />
                   {workspaceLink.label}
+                </NavLink>
+              )}
+
+              {user && (
+                <NavLink
+                  to={AUTH_ROUTES.account}
+                  onClick={closeMenu}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                      isActive ? 'bg-primary-50 text-primary-700' : 'text-muted hover:bg-canvas'
+                    }`
+                  }
+                >
+                  <UserCog className="size-5" aria-hidden="true" />
+                  Account
                 </NavLink>
               )}
 

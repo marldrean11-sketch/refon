@@ -35,3 +35,7 @@ export const inquiryLimiter = createLimiter({ windowMs: tenMinutes, limit: 5 })
 export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 })
 
 export const reportLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })
+
+export const passwordResetLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })
+
+export const verificationLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })

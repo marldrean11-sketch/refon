@@ -1,17 +1,40 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
+import { consumeAuthToken, issueAuthToken } from './auth-token.service.js'
+import {
+  sendEmailVerificationEmail,
+  sendPasswordResetEmail,
+} from './mail.service.js'
 
 const PASSWORD_HASH_ROUNDS = 12
 const DUMMY_PASSWORD_HASH = '$2a$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW'
+
+export const PASSWORD_MIN_LENGTH = 8
+export const PASSWORD_MAX_LENGTH = 72
 
 const publicSellerSelect = {
   id: true,
   verificationStatus: true,
 }
 
+export const publicUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  emailVerifiedAt: true,
+  passwordChangedAt: true,
+  seller: { select: publicSellerSelect },
+}
+
 function normalizeEmail(email) {
   return email.trim().toLowerCase()
+}
+
+/** Single place that turns a plaintext password into a stored hash. */
+export function hashPassword(password) {
+  return bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
 }
 
 export function toPublicUser(user) {
@@ -20,6 +43,7 @@ export function toPublicUser(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    emailVerified: Boolean(user.emailVerifiedAt),
     sellerVerificationStatus: user.seller?.verificationStatus ?? null,
     createdAt: user.createdAt,
   }
@@ -27,7 +51,7 @@ export function toPublicUser(user) {
 
 export async function registerUser({ name, email, password, role }) {
   const normalizedEmail = normalizeEmail(email)
-  const passwordHash = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
+  const passwordHash = await hashPassword(password)
 
   try {
     const user = await prisma.$transaction(async (transaction) => {
@@ -56,6 +80,14 @@ export async function registerUser({ name, email, password, role }) {
         include: { seller: { select: publicSellerSelect } },
       })
     })
+
+    // Registration must succeed even if the verification email cannot be sent.
+    try {
+      const { token } = await issueAuthToken(user.id, 'EMAIL_VERIFY')
+      await sendEmailVerificationEmail({ to: user.email, name: user.name, token })
+    } catch (error) {
+      console.error('Could not send the verification email:', error.message)
+    }
 
     return toPublicUser(user)
   } catch (error) {
@@ -93,15 +125,110 @@ export async function authenticateUser({ email, password }) {
   return toPublicUser(user)
 }
 
-export async function getUserById(id) {
+export async function getUserById(id, issuedAt) {
   const user = await prisma.user.findUnique({
     where: { id },
-    include: { seller: { select: publicSellerSelect } },
+    select: publicUserSelect,
   })
 
   if (!user) {
     throw new ApiError(401, 'Your session is no longer valid.', 'SESSION_INVALID')
   }
 
+  // JWT iat is whole seconds, so compare in seconds to keep a cookie issued in
+  // the same second as the password change valid.
+  if (
+    user.passwordChangedAt &&
+    typeof issuedAt === 'number' &&
+    issuedAt < Math.floor(user.passwordChangedAt.getTime() / 1000)
+  ) {
+    throw new ApiError(
+      401,
+      'Your session has expired. Please sign in again.',
+      'SESSION_EXPIRED',
+    )
+  }
+
   return toPublicUser(user)
+}
+
+export async function requestPasswordReset(email) {
+  const user = await prisma.user.findUnique({
+    where: { email: normalizeEmail(email) },
+    select: { id: true, name: true, email: true },
+  })
+
+  // The caller always sees the same generic response so accounts cannot be probed.
+  if (!user) {
+    return
+  }
+
+  const { token } = await issueAuthToken(user.id, 'PASSWORD_RESET')
+  await sendPasswordResetEmail({ to: user.email, name: user.name, token })
+}
+
+export async function resetPassword({ token, password }) {
+  const storedToken = await consumeAuthToken(token, 'PASSWORD_RESET')
+  const passwordHash = await hashPassword(password)
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.user.update({
+      where: { id: storedToken.userId },
+      data: { passwordHash, passwordChangedAt: new Date() },
+    })
+
+    await transaction.authToken.update({
+      where: { id: storedToken.id },
+      data: { usedAt: new Date() },
+    })
+
+    // Retire any other outstanding reset links for this account.
+    await transaction.authToken.deleteMany({
+      where: {
+        userId: storedToken.userId,
+        type: 'PASSWORD_RESET',
+        usedAt: null,
+      },
+    })
+  })
+}
+
+export async function verifyEmail(token) {
+  const storedToken = await consumeAuthToken(token, 'EMAIL_VERIFY')
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.user.update({
+      where: { id: storedToken.userId },
+      data: { emailVerifiedAt: new Date() },
+    })
+
+    await transaction.authToken.update({
+      where: { id: storedToken.id },
+      data: { usedAt: new Date() },
+    })
+  })
+
+  return getUserById(storedToken.userId)
+}
+
+export async function resendVerificationEmail(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, emailVerifiedAt: true },
+  })
+
+  if (!user) {
+    throw new ApiError(401, 'Your session is no longer valid.', 'SESSION_INVALID')
+  }
+
+  if (user.emailVerifiedAt) {
+    throw new ApiError(
+      409,
+      'Your email address is already verified.',
+      'EMAIL_ALREADY_VERIFIED',
+    )
+  }
+
+  const { token } = await issueAuthToken(user.id, 'EMAIL_VERIFY')
+  await sendEmailVerificationEmail({ to: user.email, name: user.name, token })
 }

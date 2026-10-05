@@ -21,3 +21,28 @@ export function meRequest() {
 export function logoutRequest() {
   return apiRequest('/auth/logout', { method: 'POST' })
 }
+
+export function forgotPasswordRequest(email) {
+  return apiRequest('/auth/forgot-password', {
+    method: 'POST',
+    body: { email },
+  })
+}
+
+export function resetPasswordRequest({ token, password }) {
+  return apiRequest('/auth/reset-password', {
+    method: 'POST',
+    body: { token, password },
+  })
+}
+
+export function verifyEmailRequest(token) {
+  return apiRequest('/auth/verify-email', {
+    method: 'POST',
+    body: { token },
+  })
+}
+
+export function resendVerificationRequest() {
+  return apiRequest('/auth/resend-verification', { method: 'POST' })
+}

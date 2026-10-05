@@ -7,6 +7,7 @@ import {
   Search,
   ShieldCheck,
   Store,
+  UserCog,
   X,
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -151,6 +152,20 @@ export function AppNavbar() {
             </NavLink>
           )}
 
+          <NavLink
+            to={AUTH_ROUTES.account}
+            className={({ isActive }) =>
+              `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition duration-200 ${
+                isActive
+                  ? 'bg-primary-50 text-primary-700'
+                  : 'text-muted hover:bg-primary-50/70 hover:text-primary-700'
+              }`
+            }
+          >
+            <UserCog className="size-4" aria-hidden="true" />
+            Account
+          </NavLink>
+
           <div className="h-6 w-px bg-line" aria-hidden="true" />
           <NotificationBell />
           <div className="flex items-center gap-3">
@@ -269,6 +284,19 @@ export function AppNavbar() {
                   My Inquiries
                 </NavLink>
               )}
+
+              <NavLink
+                to={AUTH_ROUTES.account}
+                onClick={() => setIsMenuOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
+                    isActive ? 'bg-primary-50 text-primary-700' : 'text-muted hover:bg-canvas'
+                  }`
+                }
+              >
+                <UserCog className="size-5" aria-hidden="true" />
+                Account
+              </NavLink>
 
               <div className="flex items-center justify-between rounded-2xl bg-canvas px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">

@@ -95,6 +95,14 @@ export async function tryClickHeart(page, name, timeout = 4000) {
 }
 
 export async function heartIsTopmost(page, name) {
+  // Bring the button into view first: elementFromPoint only reports a hit inside
+  // the viewport, and this check is about stacking order, not scroll position.
+  await page
+    .locator(`button[aria-label$="${name}"]`)
+    .first()
+    .scrollIntoViewIfNeeded()
+    .catch(() => {})
+
   return page.evaluate((wanted) => {
     const btn = [...document.querySelectorAll('button[aria-label]')].find((b) =>
       (b.getAttribute('aria-label') || '').endsWith(wanted),

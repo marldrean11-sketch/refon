@@ -26,12 +26,14 @@ async function seedAdmin(passwordHash) {
       name: 'ReFon Test Admin',
       passwordHash,
       role: 'ADMIN',
+      emailVerifiedAt: new Date(),
     },
     create: {
       name: 'ReFon Test Admin',
       email: ADMIN_EMAIL,
       passwordHash,
       role: 'ADMIN',
+      emailVerifiedAt: new Date(),
     },
     select: {
       id: true,
@@ -49,6 +51,7 @@ async function seedSellers(passwordHash) {
         name: sellerData.name,
         passwordHash,
         role: 'SELLER',
+        emailVerifiedAt: new Date(),
       },
       create: {
         id: sellerData.userId,
@@ -56,6 +59,7 @@ async function seedSellers(passwordHash) {
         email: sellerData.email,
         passwordHash,
         role: 'SELLER',
+        emailVerifiedAt: new Date(),
         createdAt: sellerData.createdAt,
       },
     })

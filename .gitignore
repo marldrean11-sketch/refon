@@ -23,4 +23,6 @@ e2e-ui/test-results/
 e2e-ui/playwright-report/
 e2e-ui/screenshots/
 e2e-ui/state/
-*.log
+
+# Local development mail outbox (no SMTP relay configured)
+backend/tmp/

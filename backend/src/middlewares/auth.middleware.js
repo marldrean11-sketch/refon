@@ -22,6 +22,8 @@ export function authenticate(req, res, next) {
     req.user = {
       id: payload.sub,
       role: payload.role,
+      // Copied claim only; this middleware stays free of database access.
+      issuedAt: typeof payload.iat === 'number' ? payload.iat : null,
     }
 
     return next()
@@ -47,6 +49,7 @@ export function optionalAuthenticate(req, res, next) {
       req.user = {
         id: payload.sub,
         role: payload.role,
+        issuedAt: typeof payload.iat === 'number' ? payload.iat : null,
       }
     }
   } catch {

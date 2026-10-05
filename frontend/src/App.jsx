@@ -67,6 +67,24 @@ const ForbiddenPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage.jsx').then((module) => ({ default: module.NotFoundPage })),
 )
+const ForgotPasswordPage = lazy(() =>
+  import('./pages/ForgotPasswordPage.jsx').then((module) => ({
+    default: module.ForgotPasswordPage,
+  })),
+)
+const ResetPasswordPage = lazy(() =>
+  import('./pages/ResetPasswordPage.jsx').then((module) => ({
+    default: module.ResetPasswordPage,
+  })),
+)
+const VerifyEmailPage = lazy(() =>
+  import('./pages/VerifyEmailPage.jsx').then((module) => ({
+    default: module.VerifyEmailPage,
+  })),
+)
+const AccountPage = lazy(() =>
+  import('./pages/AccountPage.jsx').then((module) => ({ default: module.AccountPage })),
+)
 
 function App() {
   return (
@@ -95,10 +113,16 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
             </Route>
 
+            {/* Reachable signed in or out: the links are emailed, not gated. */}
+            <Route path={AUTH_ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+            <Route path={AUTH_ROUTES.resetPassword} element={<ResetPasswordPage />} />
+            <Route path={AUTH_ROUTES.verifyEmail} element={<VerifyEmailPage />} />
+
             <Route element={<RequireAuth />}>
               <Route element={<SellerInquiriesProvider />}>
                 <Route element={<AuthenticatedLayout />}>
                   <Route path="/forbidden" element={<ForbiddenPage />} />
+                  <Route path={AUTH_ROUTES.account} element={<AccountPage />} />
 
                   <Route element={<RequireRole allowedRoles={['ADMIN']} />}>
                     <Route path="/admin" element={<AdminDashboardPage />} />

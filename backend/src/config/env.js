@@ -18,6 +18,14 @@ if (!jwtSecret || jwtSecret.length < 32) {
 
 const nodeEnv = process.env.NODE_ENV ?? 'development'
 
+const smtpHost = process.env.SMTP_HOST ?? ''
+
+// Without a relay there is nowhere to send mail, so refuse to boot in production
+// rather than silently dropping password reset and verification links.
+if (nodeEnv === 'production' && !smtpHost) {
+  throw new Error('SMTP_HOST must be set in production so ReFon can send account emails.')
+}
+
 export const env = Object.freeze({
   nodeEnv,
   isProduction: nodeEnv === 'production',
@@ -32,4 +40,11 @@ export const env = Object.freeze({
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   authCookieName: 'refon_token',
+  appUrl: (process.env.APP_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
+  mailFrom: process.env.MAIL_FROM ?? 'ReFon <no-reply@refon.test>',
+  smtpHost,
+  smtpPort: Number(process.env.SMTP_PORT ?? 587),
+  smtpUser: process.env.SMTP_USER ?? '',
+  smtpPass: process.env.SMTP_PASS ?? '',
+  smtpSecure: process.env.SMTP_SECURE === 'true',
 })

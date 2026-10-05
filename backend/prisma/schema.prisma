@@ -53,13 +53,17 @@ enum ReportStatus {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  name         String   @db.VarChar(120)
-  email        String   @unique @db.VarChar(320)
-  passwordHash String   @map("password_hash") @db.VarChar(255)
-  role         UserRole @default(BUYER)
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                String    @id @default(uuid()) @db.Uuid
+  name              String    @db.VarChar(120)
+  email             String    @unique @db.VarChar(320)
+  passwordHash      String    @map("password_hash") @db.VarChar(255)
+  /// Null until the address is confirmed through a verification link.
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  /// Used to invalidate sessions issued before a password change.
+  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(3)
+  role              UserRole  @default(BUYER)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   seller         Seller?
   notifications  Notification[]
@@ -67,6 +71,7 @@ model User {
   favorites      Favorite[]
   reportsMade    Report[]        @relation("ReportReporter")
   reportsHandled Report[]        @relation("ReportResolver")
+  authTokens     AuthToken[]
 
   @@map("users")
 }
@@ -175,6 +180,27 @@ model Report {
   @@index([status, createdAt])
   @@index([listingId])
   @@map("reports")
+}
+
+enum AuthTokenType {
+  PASSWORD_RESET
+  EMAIL_VERIFY
+}
+
+model AuthToken {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  type      AuthTokenType
+  /// Only the SHA-256 hash is stored; the raw token is emailed once.
+  tokenHash String        @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime      @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?     @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId, type])
+  @@map("auth_tokens")
 }
 
 model Notification {

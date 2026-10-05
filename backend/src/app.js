@@ -13,6 +13,7 @@ import adminRoutes from './routes/admin.routes.js'
 import uploadRoutes from './routes/upload.routes.js'
 import notificationRoutes from './routes/notification.routes.js'
 import inquiryRoutes from './routes/inquiry.routes.js'
+import accountRoutes from './routes/account.routes.js'
 import favoriteRoutes from './routes/favorite.routes.js'
 import myInquiryRoutes from './routes/my-inquiry.routes.js'
 
@@ -61,6 +62,7 @@ if (env.nodeEnv !== 'test') {
 }
 
 app.use('/api/auth', authRoutes)
+app.use('/api/account', accountRoutes)
 app.use('/api/sellers', sellerRoutes)
 app.use('/api/listings', listingRoutes)
 app.use('/api/admin', adminRoutes)
