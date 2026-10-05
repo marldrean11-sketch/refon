@@ -2,20 +2,15 @@ import { useEffect, useState } from 'react'
 import {
   ArrowLeft,
   BadgeCheck,
-  BatteryCharging,
   CalendarDays,
-  CheckCircle2,
   Clock3,
   Flag,
   HardDrive,
   MemoryStick,
   MessageCircle,
-  ScanLine,
   SearchX,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
-  Store,
 } from 'lucide-react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { InquiryModal } from '../features/listings/InquiryModal.jsx'
@@ -25,7 +20,17 @@ import { ListingCard } from '../features/listings/listing-card.jsx'
 import { ListingGallery } from '../features/listings/listing-gallery.jsx'
 import { useListing } from '../features/listings/useListing.js'
 import { FavoriteButton } from '../features/favorites/FavoriteButton.jsx'
-import { useApprovedListings } from '../features/listings/useApprovedListings.js'
+import { GradeExplainer } from '../features/listings/GradeExplainer.jsx'
+import { InspectionPanel } from '../features/listings/InspectionPanel.jsx'
+import { ProductMeta } from '../features/listings/ProductMeta.jsx'
+import { ProductReviews } from '../features/listings/ProductReviews.jsx'
+import { SellerTrustCard } from '../features/listings/SellerTrustCard.jsx'
+import { SpecificationsGrid } from '../features/listings/SpecificationsGrid.jsx'
+import { TrustSummary } from '../features/listings/TrustSummary.jsx'
+import {
+  useListingReviews,
+  useRelatedListings,
+} from '../features/listings/useListingExtras.js'
 import {
   ListingDetailSkeleton,
   RelatedListingsSkeleton,
@@ -38,36 +43,10 @@ import {
   ReturnPolicyBadge,
   WarrantyBadge,
 } from '../components/ui/WarrantyBadge.jsx'
-import { InspectionPanel } from '../features/listings/InspectionPanel.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { productPath } from '../lib/routes.js'
+import { explainBatteryHealth } from '../lib/listing-taxonomy.js'
 import { formatPeso } from '../lib/format.js'
-
-function getBatteryPresentation(percentage) {
-  if (percentage >= 90) {
-    return { label: 'Excellent', bar: 'bg-accent-500', text: 'text-accent-700' }
-  }
-
-  if (percentage >= 80) {
-    return { label: 'Very good', bar: 'bg-primary-500', text: 'text-primary-700' }
-  }
-
-  if (percentage >= 70) {
-    return { label: 'Good', bar: 'bg-warning', text: 'text-amber-700' }
-  }
-
-  return { label: 'Fair', bar: 'bg-danger', text: 'text-danger' }
-}
-
-function getSellerInitials(name) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-}
 
 function ListingUnavailableState({ error, onRetry }) {
   const isMissing =
@@ -123,6 +102,75 @@ function ListingUnavailableState({ error, onRetry }) {
   )
 }
 
+/**
+ * The four facts that decide whether a buyer continues, in the order they ask
+ * them: which phone, what condition, how the battery holds up, and what happens
+ * if something goes wrong. Everything else on the page supports those four.
+ */
+function KeyFacts({ listing }) {
+  const hasWarranty = Number(listing.warrantyMonths ?? 0) > 0
+
+  return (
+    <dl className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="rounded-2xl bg-canvas p-4">
+        <dt className="text-xs font-semibold text-muted">Condition grade</dt>
+        <dd className="mt-1.5">
+          <ConditionBadge grade={listing.grade} size="lg" />
+        </dd>
+        <p className="mt-1.5 text-xs text-muted">{listing.gradeLabel}</p>
+      </div>
+
+      <div className="rounded-2xl bg-canvas p-4">
+        <dt className="mb-2 text-xs font-semibold text-muted">Battery health</dt>
+        <BatteryHealth
+          percent={listing.batteryPercent}
+          size="md"
+          showLabel={false}
+        />
+      </div>
+
+      <div className="rounded-2xl bg-canvas p-4">
+        <dt className="text-xs font-semibold text-muted">Warranty</dt>
+        <dd className="mt-1.5">
+          <WarrantyBadge months={listing.warrantyMonths} />
+        </dd>
+        {!hasWarranty && (
+          <p className="mt-1.5 text-xs font-semibold text-muted">
+            Sold as-is — no warranty on this unit
+          </p>
+        )}
+      </div>
+
+      <div className="rounded-2xl bg-canvas p-4">
+        <dt className="text-xs font-semibold text-muted">Seller</dt>
+        <dd className="mt-1.5 flex items-center gap-1.5">
+          {listing.seller?.verificationStatus === 'APPROVED' ? (
+            <>
+              <BadgeCheck className="size-4 shrink-0 text-accent-600" aria-hidden="true" />
+              <span className="text-sm font-bold text-ink">Verified seller</span>
+            </>
+          ) : (
+            <>
+              <Clock3 className="size-4 shrink-0 text-warning" aria-hidden="true" />
+              <span className="text-sm font-bold text-ink">Verification pending</span>
+            </>
+          )}
+        </dd>
+        {Number(listing.seller?.ratingCount ?? 0) > 0 && (
+          <div className="mt-1.5">
+            <RatingStars
+              value={listing.seller.ratingAverage}
+              count={listing.seller.ratingCount}
+              size="sm"
+              showValue={false}
+            />
+          </div>
+        )}
+      </div>
+    </dl>
+  )
+}
+
 export function ListingDetailPage() {
   // The same component serves the canonical slug route and the legacy id route.
   const { slug, id } = useParams()
@@ -134,41 +182,23 @@ export function ListingDetailPage() {
   const navigate = useNavigate()
   const { listing, isLoading, error, retry } = useListing(identifier)
   const {
-    listings: approvedListings,
+    listings: relatedListings,
     isLoading: relatedLoading,
     error: relatedError,
-  } = useApprovedListings({ sort: 'recommended', pageSize: 6 })
+  } = useRelatedListings(listing?.id, 6)
+  const { reviews, summary, isLoading: reviewsLoading, error: reviewsError } =
+    useListingReviews(listing?.id)
 
   // Arriving via the legacy /listings/:id URL replaces the address with the
   // canonical slug so the shareable form becomes the one in the address bar.
+  const shouldRedirect = Boolean(listing?.slug) && !slug && location.pathname.startsWith('/listings/')
+
   useEffect(() => {
-    if (listing?.slug && !slug && location.pathname.startsWith('/listings/')) {
+    if (shouldRedirect) {
       navigate(productPath(listing), { replace: true })
     }
-  }, [listing, slug, location.pathname, navigate])
+  }, [shouldRedirect, listing, navigate])
 
-  if (isLoading) {
-    return <ListingDetailSkeleton />
-  }
-
-  if (error || !listing) {
-    return <ListingUnavailableState error={error} onRetry={retry} />
-  }
-
-  const battery = getBatteryPresentation(listing.batteryPercent)
-  const seller = listing.seller
-  const isSold = listing.status === 'SOLD'
-
-  const specificationRows = [
-    { label: 'Processor', value: listing.processor },
-    { label: 'Operating system', value: listing.operatingSystem },
-    { label: 'Display', value: listing.displaySpec },
-    { label: 'Camera', value: listing.cameraSpec },
-    { label: 'Network', value: listing.networkType },
-    { label: 'Warranty', value: listing.warrantyLabel },
-  ].filter((row) => Boolean(row.value))
-
-  const hasSpecifications = specificationRows.length > 0
   // Ownership is not exposed on the public listing payload, so the server rejects
   // a seller's own report with CANNOT_REPORT_OWN_LISTING.
   const canReport = Boolean(user) && user.role !== 'ADMIN'
@@ -183,46 +213,65 @@ export function ListingDetailPage() {
 
     setIsReportOpen(true)
   }
-  const otherListings = approvedListings.filter((item) => item.id !== listing.id)
-  const relatedListings = [
-    ...otherListings.filter((item) => item.brand === listing.brand),
-    ...otherListings.filter((item) => item.brand !== listing.brand),
-  ].slice(0, 3)
+
+  if (isLoading) {
+    return <ListingDetailSkeleton />
+  }
+
+  if (error || !listing) {
+    return <ListingUnavailableState error={error} onRetry={retry} />
+  }
+
+  const isSold = listing.status === 'SOLD'
+  const isVerifiedSeller = listing.seller?.verificationStatus === 'APPROVED'
+  const hasWarranty = Number(listing.warrantyMonths ?? 0) > 0
 
   return (
     <>
-      <div className="bg-canvas pb-28 lg:pb-0">
+      <ProductMeta listing={listing} />
+
+      {/* `lib/bottom-action-bar.js` makes the mobile tab bar yield on this route, so
+          this sticky bar owns the bottom edge rather than overlapping it. */}
+      <div className="bg-canvas pb-8">
         <section className="border-b border-line bg-white">
           <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-            <nav className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted" aria-label="Breadcrumb">
+            <nav
+              className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted"
+              aria-label="Breadcrumb"
+            >
               <Link to={AUTH_ROUTES.home} className="transition hover:text-primary-700">
                 Home
               </Link>
               <span aria-hidden="true">/</span>
-              <Link to={AUTH_ROUTES.buyer} className="transition hover:text-primary-700">
-                Browse Phones
+              <Link to={AUTH_ROUTES.shop} className="transition hover:text-primary-700">
+                Shop Phones
               </Link>
               <span aria-hidden="true">/</span>
-              <span aria-current="page" className="break-words text-ink">{listing.brand} {listing.model}</span>
+              <span aria-current="page" className="break-words text-ink">
+                {listing.brand} {listing.model}
+              </span>
             </nav>
 
-            <div className="mt-8 grid items-start gap-9 lg:grid-cols-[minmax(0,1.12fr)_minmax(22rem,0.88fr)] lg:gap-12">
-              <ListingGallery listing={listing} />
+            <div className="mt-8 grid items-start gap-9 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)] lg:gap-12">
+              {/* Both columns stick on desktop. Without this the gallery scrolls
+                  away while the purchase panel stays put, leaving the left half
+                  of the viewport empty through the whole trust section. */}
+              <div className="lg:sticky lg:top-24">
+                <ListingGallery listing={listing} />
+              </div>
 
               <div className="lg:sticky lg:top-24">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
-                    <BadgeCheck className="size-4" aria-hidden="true" />
-                    Verified Seller
-                  </span>
+                  {isVerifiedSeller && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
+                      <BadgeCheck className="size-4" aria-hidden="true" />
+                      Verified Seller
+                    </span>
+                  )}
                   <ConditionBadge grade={listing.grade} size="lg" />
-                  {listing.ratingAverage ? (
-                    <RatingStars
-                      value={listing.ratingAverage}
-                      count={listing.ratingCount}
-                      size="sm"
-                    />
-                  ) : null}
+                  {summary?.average != null && (
+                    <RatingStars value={summary.average} count={summary.count} size="sm" />
+                  )}
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-200 bg-accent-50 px-3 py-1.5 text-xs font-bold text-accent-800">
                     <ShieldCheck className="size-3.5" aria-hidden="true" />
                     Moderated
@@ -235,10 +284,11 @@ export function ListingDetailPage() {
                 <h1 className="mt-2 break-words text-4xl font-semibold tracking-[-0.04em] text-ink sm:text-5xl">
                   {listing.model}
                 </h1>
-                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-muted">
+
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted">
                   <span className="inline-flex items-center gap-2">
                     <CalendarDays className="size-4" aria-hidden="true" />
-                    {listing.year} model
+                    {listing.year}
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <HardDrive className="size-4" aria-hidden="true" />
@@ -250,19 +300,6 @@ export function ListingDetailPage() {
                       {listing.ram} RAM
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-2">
-                    <BatteryCharging className="size-4" aria-hidden="true" />
-                    {listing.batteryPercent}% battery
-                  </span>
-                  {listing.imeiVerified && (
-                    <span className="inline-flex items-center gap-2">
-                      <ScanLine className="size-4" aria-hidden="true" />
-                      IMEI verified
-                      {listing.imeiLast4 ? (
-                        <span className="font-mono text-xs">···{listing.imeiLast4}</span>
-                      ) : null}
-                    </span>
-                  )}
                 </div>
 
                 <div className="mt-7 border-y border-line py-6">
@@ -270,16 +307,21 @@ export function ListingDetailPage() {
                     <PriceDisplay
                       price={listing.price}
                       originalPrice={listing.originalPrice}
+                      discountPercent={listing.discountPercent}
                       size="lg"
                       showSavings={false}
                       className="flex-1"
                     />
-                    {!isSold && <FavoriteButton listing={listing} />}
+                    {!isSold && (
+                      <FavoriteButton listing={listing} className="-mt-1" />
+                    )}
                   </div>
 
+                  {/* A saving is only ever stated when a reference price is
+                      genuinely higher than the selling price. */}
                   {listing.savings ? (
                     <p className="mt-3 text-sm font-semibold text-accent-700">
-                      You save {formatPeso(listing.savings)} versus the original{' '}
+                      You save {formatPeso(listing.savings)} against the original{' '}
                       {formatPeso(listing.originalPrice)} price.
                     </p>
                   ) : (
@@ -290,7 +332,7 @@ export function ListingDetailPage() {
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <WarrantyBadge months={listing.warrantyMonths} size="lg" linkToPolicy />
-                    {listing.warrantyMonths === 0 && (
+                    {!hasWarranty && (
                       <span className="inline-flex items-center gap-1.5 rounded-pill bg-canvas px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-line">
                         Sold as-is · no warranty
                       </span>
@@ -303,7 +345,10 @@ export function ListingDetailPage() {
                       className="mt-4 flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900"
                       role="status"
                     >
-                      <ShoppingBag className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden="true" />
+                      <ShoppingBag
+                        className="mt-0.5 size-5 shrink-0 text-amber-700"
+                        aria-hidden="true"
+                      />
                       <div>
                         <p className="text-sm font-bold">This phone has been sold</p>
                         <p className="mt-1 text-xs leading-relaxed">
@@ -315,31 +360,60 @@ export function ListingDetailPage() {
                   )}
                 </div>
 
-                {isSold ? (
-                  <div className="mt-6 hidden h-14 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-canvas px-6 text-sm font-bold text-muted lg:inline-flex">
-                    <ShoppingBag className="size-5" aria-hidden="true" />
-                    No longer accepting inquiries
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsInquiryOpen(true)}
-                    className="mt-6 hidden h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-6 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 lg:inline-flex"
-                  >
-                    <MessageCircle className="size-5" aria-hidden="true" />
-                    Inquire Now
-                  </button>
-                )}
+                <KeyFacts listing={listing} />
+
+                {/* Conversion panel.
+
+                    Two real actions, because those are the two that exist: the
+                    wishlist already works end to end, and an inquiry already
+                    reaches the seller's inbox. Cart and checkout ship in a later
+                    phase, so they are named as unavailable rather than rendered
+                    as buttons that would appear to complete a purchase. */}
+                <div className="mt-6 hidden lg:block">
+                  {isSold ? (
+                    <div className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-canvas px-6 text-sm font-bold text-muted">
+                      <ShoppingBag className="size-5" aria-hidden="true" />
+                      No longer accepting inquiries
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsInquiryOpen(true)}
+                      className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-6 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                    >
+                      <MessageCircle className="size-5" aria-hidden="true" />
+                      Inquire about this phone
+                    </button>
+                  )}
+
+                  {!isSold && (
+                    <div className="mt-3 grid grid-cols-2 gap-3">
+                      <FavoriteButton listing={listing} variant="button" />
+                      <span
+                        className="inline-flex h-12 items-center justify-center rounded-2xl border border-dashed border-line px-3 text-center text-xs font-bold text-muted"
+                        aria-disabled="true"
+                      >
+                        Cart &amp; checkout
+                        <span className="sr-only"> — coming soon, not yet available</span>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 <p className="mt-3 text-center text-xs leading-relaxed text-muted">
                   No account required · Your details go only to this seller
                 </p>
 
                 <div className="mt-6 flex gap-3 rounded-2xl border border-line bg-canvas p-4">
-                  <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary-600" aria-hidden="true" />
+                  <ShieldCheck
+                    className="mt-0.5 size-5 shrink-0 text-primary-600"
+                    aria-hidden="true"
+                  />
                   <div>
                     <p className="text-sm font-bold text-ink">ReFon moderated</p>
                     <p className="mt-1 text-xs leading-relaxed text-muted">
-                      Listing details were reviewed for clarity and marketplace standards.
+                      Listing details were reviewed for clarity and marketplace standards
+                      before publication.
                     </p>
                   </div>
                 </div>
@@ -349,235 +423,65 @@ export function ListingDetailPage() {
         </section>
 
         <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-700">
-              Transparent condition
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-              Condition details
-            </h2>
-            <p className="mt-3 max-w-2xl leading-body text-muted">
-              The important numbers and cosmetic notes are presented visually so
-              buyers can compare with confidence.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            <div className="rounded-card border border-line bg-white p-6 shadow-card">
-              <div className="flex items-center justify-between gap-4">
-                <span className="grid size-12 place-items-center rounded-2xl bg-accent-50 text-accent-700">
-                  <BatteryCharging className="size-6" aria-hidden="true" />
-                </span>
-                <span className={`rounded-full bg-accent-50 px-3 py-1.5 text-xs font-bold ${battery.text}`}>
-                  {battery.label}
-                </span>
-              </div>
-              <p className="mt-6 text-sm font-semibold text-muted">Battery health</p>
-              <p className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">
-                {listing.batteryPercent}%
-              </p>
-              <div
-                className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-200"
-                role="progressbar"
-                aria-label="Battery health"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={listing.batteryPercent}
-              >
-                <div
-                  className={`h-full rounded-full ${battery.bar}`}
-                  style={{ width: `${listing.batteryPercent}%` }}
-                />
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-muted">
-                Based on the seller-provided health reading and moderated listing data.
-              </p>
-            </div>
-
-            <div className="rounded-card border border-line bg-white p-6 shadow-card">
-              <span className="grid size-12 place-items-center rounded-2xl bg-primary-50 text-primary-700">
-                <HardDrive className="size-6" aria-hidden="true" />
-              </span>
-              <p className="mt-6 text-sm font-semibold text-muted">Storage capacity</p>
-              <p className="mt-1 font-display text-4xl font-bold tracking-tight text-ink">
-                {listing.storage}
-              </p>
-              <div className="mt-5 flex h-12 items-end gap-2" aria-hidden="true">
-                {[28, 48, 68, 88].map((height, index) => (
-                  <span
-                    key={height}
-                    className={`w-full rounded-t-lg ${index < 3 ? 'bg-primary-500' : 'bg-primary-100'}`}
-                    style={{ height: `${height}%` }}
-                  />
-                ))}
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-muted">
-                Capacity is included as a core listing detail for easy comparison.
-              </p>
-            </div>
-
-            <div className="rounded-card border border-line bg-white p-6 shadow-card">
-              <span className="grid size-12 place-items-center rounded-2xl bg-violet-50 text-violet-700">
-                <Sparkles className="size-6" aria-hidden="true" />
-              </span>
-              <p className="mt-6 text-sm font-semibold text-muted">Cosmetic condition</p>
-              <p className="mt-1 font-display text-2xl font-bold tracking-tight text-ink">
-                {listing.condition}
-              </p>
-              <p className="mt-4 text-sm leading-body text-muted">
-                {listing.conditionNotes}
-              </p>
-              <div className="mt-5 flex items-center gap-2 text-xs font-bold text-primary-700">
-                <CheckCircle2 className="size-4" aria-hidden="true" />
-                Notes reviewed for clarity
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_23rem]">
             <div className="space-y-5">
-              <div className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7">
-                <h3 className="font-display text-xl font-semibold text-ink">
-                  Listing overview
-                </h3>
-                <dl className="mt-5 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-canvas p-4">
-                    <dt className="text-xs font-semibold text-muted">Brand</dt>
-                    <dd className="mt-1 font-semibold text-ink">{listing.brand}</dd>
-                  </div>
-                  <div className="rounded-2xl bg-canvas p-4">
-                    <dt className="text-xs font-semibold text-muted">Model year</dt>
-                    <dd className="mt-1 font-semibold text-ink">{listing.year}</dd>
-                  </div>
-                  <div className="rounded-2xl bg-canvas p-4">
-                    <dt className="text-xs font-semibold text-muted">Color</dt>
-                    <dd className="mt-1 font-semibold text-ink">{listing.color}</dd>
-                  </div>
-                  <div className="rounded-2xl bg-canvas p-4">
-                    <dt className="text-xs font-semibold text-muted">Storage</dt>
-                    <dd className="mt-1 font-semibold text-ink">{listing.storage}</dd>
-                  </div>
-                  <div className="rounded-2xl bg-canvas p-4">
-                    <dt className="text-xs font-semibold text-muted">RAM</dt>
-                    <dd className="mt-1 font-semibold text-ink">{listing.ram ?? '—'}</dd>
-                  </div>
-                  <div className="rounded-2xl bg-canvas p-4">
-                    <dt className="text-xs font-semibold text-muted">Condition grade</dt>
-                    <dd className="mt-1 font-semibold text-ink">
-                      Grade {listing.grade} · {listing.gradeLabel}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              {/* Specifications are only rendered when the seller supplied them.
-                  An empty specification table would imply the phone has no
-                  processor or camera, which is not the same as "not recorded". */}
-              {hasSpecifications && (
-                <div className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7">
-                  <h3 className="font-display text-xl font-semibold text-ink">
-                    Full specifications
-                  </h3>
-                  <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-                    {specificationRows.map(({ label, value }) => (
-                      <div key={label} className="rounded-2xl bg-canvas p-4">
-                        <dt className="text-xs font-semibold text-muted">{label}</dt>
-                        <dd className="mt-1 font-semibold text-ink">{value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              )}
-
+              <GradeExplainer grade={listing.grade} conditionNotes={listing.conditionNotes} />
               <InspectionPanel listing={listing} />
+              <SpecificationsGrid listing={listing} />
             </div>
 
             <div className="space-y-5">
-              <div className="rounded-card border border-accent-200 bg-accent-50 p-6">
-                <BadgeCheck className="size-7 text-accent-700" aria-hidden="true" />
-                <h3 className="mt-4 font-display text-lg font-semibold text-accent-950">
-                  Moderation checked
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-accent-900/75">
-                  Core condition fields are complete and the listing follows ReFon
-                  marketplace standards.
-                </p>
-              </div>
-
               <div className="rounded-card border border-line bg-white p-6 shadow-card">
-                <h3 className="font-display text-lg font-semibold text-ink">
-                  Battery health
-                </h3>
+                <h2 className="font-display text-lg font-semibold text-ink">Battery health</h2>
                 <BatteryHealth percent={listing.batteryPercent} size="lg" className="mt-4" />
                 <p className="mt-3 text-xs leading-relaxed text-muted">
-                  {battery.note} This figure was measured during inspection and is
-                  published before purchase.
+                  {explainBatteryHealth(listing.batteryPercent)} The figure is measured
+                  during inspection and published before purchase.
                 </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-y border-line bg-white py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-8">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary-600">
-                Meet the seller
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Seller information</h2>
-              <p className="mt-3 max-w-2xl leading-body text-muted">
-                ReFon keeps seller and listing verification visible so buyers know
-                who they are contacting.
-              </p>
-            </div>
-
-            <div className="rounded-card border border-line bg-canvas p-5 shadow-card">
-              <div className="flex items-center gap-4">
-                <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-primary-500 font-display text-lg font-bold text-white shadow-card">
-                  {getSellerInitials(listing.sellerName)}
-                </span>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="truncate font-display text-lg font-semibold text-ink">
-                      {listing.sellerName}
-                    </h3>
-                    <BadgeCheck className="size-5 shrink-0 text-accent-600" aria-label="Verified seller" />
-                  </div>
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-muted">
-                    <Store className="size-3.5" aria-hidden="true" />
-                    Verified marketplace seller
-                  </p>
-                </div>
-              </div>
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-white p-3">
-                  <p className="text-xs text-muted">Member since</p>
-                  <p className="mt-1 font-semibold text-ink">{seller?.memberSince ?? '—'}</p>
-                </div>
-                <div className="rounded-2xl bg-white p-3">
-                  <p className="text-xs text-muted">Completed sales</p>
-                  <p className="mt-1 font-semibold text-ink">{seller.completedSales}</p>
-                </div>
-              </div>
-              <p className="mt-4 flex gap-2 text-xs leading-relaxed text-muted">
-                <Clock3 className="mt-0.5 size-4 shrink-0 text-primary-600" aria-hidden="true" />
-                {seller.responseTime}
-              </p>
-              {canReport && (
-                <button
-                  type="button"
-                  onClick={handleReportClick}
-                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                <Link
+                  to="/quality-check"
+                  className="mt-3 inline-flex text-xs font-bold text-primary-700 underline underline-offset-2 hover:text-primary-500"
                 >
-                  <Flag className="size-3.5" aria-hidden="true" />
-                  Report this listing
-                </button>
-              )}
+                  How we measure battery health
+                </Link>
+              </div>
+
+              <SellerTrustCard
+                listing={listing}
+                actionSlot={
+                  canReport ? (
+                    <button
+                      type="button"
+                      onClick={handleReportClick}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                    >
+                      <Flag className="size-3.5" aria-hidden="true" />
+                      Report this listing
+                    </button>
+                  ) : null
+                }
+              />
             </div>
+          </div>
+
+          <div className="mt-5">
+            <TrustSummary listing={listing} />
+          </div>
+
+          <div className="mt-5">
+            <ProductReviews
+              reviews={reviews}
+              summary={summary}
+              isLoading={reviewsLoading}
+              error={reviewsError}
+            />
           </div>
         </section>
 
-        <section className="bg-canvas py-12 sm:py-16 lg:py-20" aria-busy={relatedLoading}>
+        <section
+          className="border-t border-line bg-white py-12 sm:py-16 lg:py-20"
+          aria-busy={relatedLoading}
+        >
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -585,24 +489,35 @@ export function ListingDetailPage() {
                   Keep exploring
                 </p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-                  More verified phones
+                  Similar phones
                 </h2>
+                <p className="mt-3 max-w-2xl leading-body text-muted">
+                  Other devices from this seller and comparable phones at a similar price.
+                </p>
               </div>
               <Link
-                to={AUTH_ROUTES.buyer}
+                to={AUTH_ROUTES.shop}
                 className="inline-flex items-center gap-2 text-sm font-bold text-primary-700 transition hover:text-primary-500"
               >
                 View all phones
               </Link>
             </div>
+
             {relatedLoading ? (
               <div className="mt-8">
                 <RelatedListingsSkeleton />
               </div>
             ) : relatedError ? (
-              <div className="mt-8 rounded-card border border-amber-200 bg-amber-50 px-6 py-8 text-center" role="status">
-                <p className="text-lg font-semibold text-amber-950">More phones are taking a moment to load.</p>
-                <p className="mt-2 text-sm text-amber-900">The main listing is still available to browse above.</p>
+              <div
+                className="mt-8 rounded-card border border-amber-200 bg-amber-50 px-6 py-8 text-center"
+                role="status"
+              >
+                <p className="text-lg font-semibold text-amber-950">
+                  More phones are taking a moment to load.
+                </p>
+                <p className="mt-2 text-sm text-amber-900">
+                  The listing you are viewing is unaffected.
+                </p>
               </div>
             ) : relatedListings.length > 0 ? (
               <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -612,36 +527,54 @@ export function ListingDetailPage() {
               </div>
             ) : (
               <div className="mt-8 rounded-card border border-dashed border-primary-200 bg-white px-6 py-12 text-center">
-                <p className="text-lg font-semibold text-ink">You have reached the end of this shelf.</p>
-                <p className="mt-2 text-sm text-muted">Browse all phones to keep exploring.</p>
+                <p className="text-lg font-semibold text-ink">
+                  This is the only phone we have right now.
+                </p>
+                <p className="mt-2 text-sm text-muted">
+                  Browse the full catalog to see everything in stock.
+                </p>
+                <Link
+                  to={AUTH_ROUTES.shop}
+                  className="mt-5 inline-flex h-11 items-center rounded-2xl bg-primary-500 px-5 text-sm font-bold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                >
+                  Shop all phones
+                </Link>
               </div>
             )}
           </div>
         </section>
       </div>
 
+      {/* Mobile action bar. The price stays visible while the buyer scrolls the
+          inspection and specifications, which is the point of a sticky CTA. */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_-18px_rgb(15_31_51/0.35)] backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">Asking price</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
+              Asking price
+            </p>
             <p className="truncate font-display text-xl font-bold text-ink">
               {formatPeso(listing.price)}
             </p>
           </div>
+
           {isSold ? (
             <div className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-canvas px-5 text-sm font-bold text-muted">
               <ShoppingBag className="size-4" aria-hidden="true" />
               Sold
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setIsInquiryOpen(true)}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98]"
-            >
-              <MessageCircle className="size-4" aria-hidden="true" />
-              Inquire Now
-            </button>
+            <>
+              <FavoriteButton listing={listing} variant="button" compact className="shrink-0" />
+              <button
+                type="button"
+                onClick={() => setIsInquiryOpen(true)}
+                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98]"
+              >
+                <MessageCircle className="size-4" aria-hidden="true" />
+                Inquire
+              </button>
+            </>
           )}
         </div>
       </div>

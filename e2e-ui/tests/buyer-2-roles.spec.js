@@ -20,7 +20,7 @@ test.describe('buyer C7', () => {
     const saveResult = await tryClickHeart(page, 'Save Apple iPhone 6s')
     console.log('C7_SAVE', JSON.stringify(saveResult))
 
-    await page.getByRole('button', { name: /Inquire Now/i }).first().click()
+    await page.getByRole('button', { name: /^Inquire( about this phone)?$/i }).first().click()
     await page.getByRole('dialog').waitFor()
     await page.locator('#inquiry-name').fill('E2E Sold Buyer')
     await page.locator('#inquiry-contact').fill('e2e-sold@example.test')

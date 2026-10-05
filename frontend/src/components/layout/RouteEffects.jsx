@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
 const ROUTE_META = {
@@ -206,25 +206,121 @@ function upsertCanonical(href) {
   element.setAttribute('href', href)
 }
 
+/**
+ * Per-page metadata pushed by a page that knows more than its route.
+ *
+ * A product page cannot be described by its path alone — every phone needs its
+ * own title, description, and image — so the page publishes real metadata here
+ * instead of the route table guessing. This extends the existing document-head
+ * ownership rather than adding a second SEO layer; `RouteEffects` still performs
+ * every write, which keeps one place responsible for what ends up in the head.
+ *
+ * The override is keyed by pathname and discarded as soon as the route changes,
+ * so leaving a product page cannot leave its metadata behind.
+ */
+let pageMetaOverride = null
+const pageMetaListeners = new Set()
+
+/**
+ * Publishes metadata for the current page and notifies the document-head owner.
+ *
+ * A notification is required, not optional. `RouteEffects` writes the head in an
+ * effect keyed on the location, so a page that resolves its data asynchronously
+ * — a product page does — would publish after that effect has already run and
+ * the head would keep showing the generic route-level description.
+ */
+export function setPageMeta(override) {
+  pageMetaOverride = override
+
+  for (const listener of pageMetaListeners) {
+    listener()
+  }
+}
+
+function subscribeToPageMeta(listener) {
+  pageMetaListeners.add(listener)
+  return () => pageMetaListeners.delete(listener)
+}
+
+function resolveMeta(pathname) {
+  if (pageMetaOverride && pageMetaOverride.pathname === pathname) {
+    const { pathname: _pathname, ...rest } = pageMetaOverride
+    return { ...rest, canonical: pageMetaOverride.canonical ?? pathname }
+  }
+
+  return metaForPath(pathname)
+}
+
+/** Writes every metadata field for a pathname. Single owner of the document head. */
+function applyRouteMeta(pathname) {
+  const meta = resolveMeta(pathname)
+  document.title = meta.title
+
+  const canonical = `${ORIGIN}${meta.canonical}`
+  upsertMeta('meta[name="description"]', 'name', meta.description)
+  upsertMeta('meta[property="og:title"]', 'property', meta.title)
+  upsertMeta('meta[property="og:description"]', 'property', meta.description)
+  upsertMeta('meta[property="og:url"]', 'property', canonical)
+  upsertMeta('meta[property="og:type"]', 'property', 'website')
+  upsertMeta('meta[name="twitter:title"]', 'name', meta.title)
+  upsertMeta('meta[name="twitter:description"]', 'name', meta.description)
+  upsertCanonical(canonical)
+
+  // A page that publishes an image gets a summary_large_image card; a page that
+  // does not must not inherit the previous page's image.
+  if (meta.image) {
+    upsertMeta('meta[property="og:image"]', 'property', `${ORIGIN}${meta.image}`)
+    upsertMeta('meta[name="twitter:card"]', 'name', 'summary_large_image')
+  } else {
+    document.head.querySelector('meta[property="og:image"]')?.remove()
+    upsertMeta('meta[name="twitter:card"]', 'name', 'summary')
+  }
+
+  upsertJsonLd(meta.jsonLd ?? null)
+}
+
+/**
+ * Removes or installs a JSON-LD block.
+ *
+ * Product structured data is only valid while a product page is open, so the
+ * element is removed rather than left stale — a leftover `Product` schema on the
+ * homepage would be misleading to a crawler.
+ */
+function upsertJsonLd(data) {
+  const existing = document.head.querySelector('script[data-refon-jsonld]')
+
+  if (!data) {
+    existing?.remove()
+    return
+  }
+
+  const element = existing ?? document.createElement('script')
+
+  if (!existing) {
+    element.setAttribute('type', 'application/ld+json')
+    element.setAttribute('data-refon-jsonld', 'true')
+    document.head.appendChild(element)
+  }
+
+  element.textContent = JSON.stringify(data)
+}
+
 export function RouteEffects() {
   const location = useLocation()
   const previousPath = useRef(null)
+  const pathname = location.pathname
+
+  // Bumped whenever a page publishes its own metadata, so the head is rewritten
+  // even though the location never changed.
+  const [metaVersion, setMetaVersion] = useState(0)
+
+  useEffect(() => subscribeToPageMeta(() => setMetaVersion((current) => current + 1)), [])
 
   useEffect(() => {
     const hasNavigated = previousPath.current !== null
-    previousPath.current = `${location.pathname}${location.search}${location.hash}`
+    previousPath.current = `${pathname}${location.search}${location.hash}`
 
-    const meta = metaForPath(location.pathname)
-    document.title = meta.title
-
-    const canonical = `${ORIGIN}${meta.canonical}`
-    upsertMeta('meta[name="description"]', 'name', meta.description)
-    upsertMeta('meta[property="og:title"]', 'property', meta.title)
-    upsertMeta('meta[property="og:description"]', 'property', meta.description)
-    upsertMeta('meta[property="og:url"]', 'property', canonical)
-    upsertMeta('meta[name="twitter:title"]', 'name', meta.title)
-    upsertMeta('meta[name="twitter:description"]', 'name', meta.description)
-    upsertCanonical(canonical)
+    applyRouteMeta(pathname)
 
     const timer = window.setTimeout(() => {
       if (location.hash) {
@@ -242,7 +338,7 @@ export function RouteEffects() {
     }, 0)
 
     return () => window.clearTimeout(timer)
-  }, [location.hash, location.pathname, location.search])
+  }, [location.hash, location.search, metaVersion, pathname])
 
   return null
 }

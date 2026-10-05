@@ -32,6 +32,16 @@ export function getRelatedListingsRequest(id, signal) {
   return apiRequest(`/listings/${id}/related`, { signal })
 }
 
+/**
+ * Published reviews for a listing.
+ *
+ * Read-only. There is no review submission endpoint until orders and delivery
+ * exist, so nothing here can create a review.
+ */
+export function getListingReviewsRequest(id, signal) {
+  return apiRequest(`/listings/${id}/reviews`, { signal })
+}
+
 export function getMyListingsRequest() {
   return apiRequest('/listings/mine')
 }

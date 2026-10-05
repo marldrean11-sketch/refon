@@ -225,7 +225,7 @@ test.describe('signed-in buyer', () => {
     const all = watchErrors(page)
     await openListing(page, LISTINGS.galaxyS8)
 
-    await page.getByRole('button', { name: /Inquire Now/i }).first().click()
+    await page.getByRole('button', { name: /^Inquire( about this phone)?$/i }).first().click()
     await page.getByRole('dialog').waitFor()
     await page.screenshot({ path: 'screenshots/C6-01-inquiry-modal.png' })
     await page.locator('#inquiry-name').fill('E2E Buyer')

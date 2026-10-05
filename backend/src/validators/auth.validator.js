@@ -39,14 +39,19 @@ const loginSchema = z
   })
   .strict()
 
-function formatIssues(issues) {
+/**
+ * Flattens Zod issues into the `errors` map the API returns.
+ *
+ * A `.strict()` rejection of an unrecognised key carries an empty issue path, so
+ * there is no field name to report. Rather than emitting a field literally called
+ * "undefined", the issue is keyed by the request source it came from — `_body`,
+ * `_query`, or `_params` — which tells a client where to look.
+ */
+function formatIssues(issues, source) {
+  const fallback = source === 'query' ? '_query' : source === 'params' ? '_params' : '_body'
+
   return Object.fromEntries(
-    issues.map((issue) => [
-      // Unrecognised keys from `.strict()` carry an empty path, which would
-      // otherwise surface to the client as a field literally named "undefined".
-      issue.path[0] ?? '_query',
-      issue.message,
-    ]),
+    issues.map((issue) => [issue.path[0] ?? fallback, issue.message]),
   )
 }
 
@@ -55,7 +60,7 @@ function createValidationMiddleware(schema, source, targetProperty) {
     const result = schema.safeParse(req[source])
 
     if (!result.success) {
-      const details = formatIssues(result.error.issues)
+      const details = formatIssues(result.error.issues, source)
       return next(
         new ApiError(
           422,

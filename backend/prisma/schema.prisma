@@ -80,6 +80,7 @@ model User {
   reportsHandled Report[]        @relation("ReportResolver")
   authTokens     AuthToken[]
   reviews        Review[]
+  carts          Cart[]
 
   @@map("users")
 }
@@ -168,6 +169,8 @@ model Listing {
   favorites     Favorite[]
   reports       Report[]
   reviews       Review[]
+  cartItems     CartItem[]
+  reservations  Reservation[]
 
   @@index([sellerId, status])
   @@index([status, createdAt])
@@ -271,6 +274,72 @@ model Report {
 enum AuthTokenType {
   PASSWORD_RESET
   EMAIL_VERIFY
+}
+
+/// A ReFon cart. Exactly one owner field is set, enforced by a check constraint.
+model Cart {
+  id     String  @id @default(uuid()) @db.Uuid
+  userId String? @unique @map("user_id") @db.Uuid
+  /// SHA-256 of the guest cookie token. Only the hash is stored, so a database
+  /// leak cannot hand out live guest carts the way a stored secret would.
+  guestTokenHash String? @unique @map("guest_token_hash") @db.Char(64)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  items CartItem[]
+
+  @@index([userId])
+  @@index([guestTokenHash])
+  @@map("carts")
+}
+
+/// One line in a cart. A ReFon listing is a single physical refurbished device,
+/// so the unique (cart, listing) pair is what structurally prevents a buyer from
+/// holding the same phone twice — no quantity arithmetic can create an impossible
+/// amount of one device.
+model CartItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  cartId        String   @map("cart_id") @db.Uuid
+  listingId     String   @map("listing_id") @db.Uuid
+  /// The listing price when the item was added. Kept so a later price change is
+  /// detectable rather than silently applied or silently ignored.
+  priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(12, 2)
+  quantity      Int      @default(1)
+  addedAt       DateTime @default(now()) @map("added_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  cart         Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  listing      Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reservations Reservation[]
+
+  @@unique([cartId, listingId])
+  @@index([listingId])
+  @@map("cart_items")
+}
+
+/// A short-lived hold on one listing so two buyers cannot proceed with the same
+/// physical phone.
+///
+/// A partial unique index on `listing_id` where `released_at IS NULL` is the
+/// database-level guarantee that a listing has at most one live hold. Expiry is
+/// handled by setting `released_at` rather than by deleting, because the index
+/// predicate would otherwise keep the slot taken by a lapsed reservation.
+model Reservation {
+  id         String    @id @default(uuid()) @db.Uuid
+  listingId  String    @map("listing_id") @db.Uuid
+  cartItemId String    @map("cart_item_id") @db.Uuid
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  releasedAt DateTime? @map("released_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  cartItem CartItem @relation(fields: [cartItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  listing  Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([listingId, releasedAt])
+  @@index([cartItemId])
+  @@index([expiresAt, releasedAt])
+  @@map("reservations")
 }
 
 model AuthToken {

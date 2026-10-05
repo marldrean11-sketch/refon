@@ -10,6 +10,8 @@ import {
 import { asyncHandler } from '../utils/async-handler.js'
 import { clearAuthCookie, setAuthCookie } from '../utils/auth-cookie.js'
 import { createAccessToken } from '../utils/jwt.js'
+import { mergeGuestCartIntoAccount } from '../services/cart.service.js'
+import { clearGuestCartCookie, readGuestCartToken } from '../utils/cart-token.js'
 import { ApiError } from '../utils/api-error.js'
 
 function sendUser(res, user, statusCode = 200) {
@@ -17,15 +19,47 @@ function sendUser(res, user, statusCode = 200) {
   return res.status(statusCode).json({ user })
 }
 
+/**
+ * Folds a guest cart into the account cart as part of establishing a session.
+ *
+ * Doing this here rather than leaving it to the client means the buyer never has
+ * to ask for it, and it happens on both register and login so a guest cart survives
+ * either path.
+ *
+ * A merge failure must never block sign-in. A buyer who cannot sign in because of a
+ * cart problem is a far worse outcome than a buyer who has to retry the merge, and
+ * the merge itself is idempotent. The failure is logged and the guest cart is left
+ * untouched so nothing is lost.
+ */
+async function mergeGuestCartQuietly(req, res, userId) {
+  const guestToken = readGuestCartToken(req)
+
+  if (!guestToken) {
+    return
+  }
+
+  try {
+    const merged = await mergeGuestCartIntoAccount({ userId, guestToken })
+
+    if (merged) {
+      clearGuestCartCookie(res)
+    }
+  } catch (error) {
+    console.error('Could not merge the guest cart into the account cart:', error.message)
+  }
+}
+
 export const register = asyncHandler(async (req, res) => {
   const user = await registerUser(req.validatedBody)
   setAuthCookie(res, createAccessToken(user))
+  await mergeGuestCartQuietly(req, res, user.id)
   return sendUser(res, user, 201)
 })
 
 export const login = asyncHandler(async (req, res) => {
   const user = await authenticateUser(req.validatedBody)
   setAuthCookie(res, createAccessToken(user))
+  await mergeGuestCartQuietly(req, res, user.id)
   return sendUser(res, user)
 })
 

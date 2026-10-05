@@ -756,6 +756,104 @@ export async function getRelatedListings(id, limit = 6) {
   return rows.map(presentListing)
 }
 
+/**
+ * Attribution label for a review author.
+ *
+ * Reviews are attributed by initials only. Publishing a full name or email would
+ * tie a real account identity to a public page for no benefit to a buyer
+ * evaluating a phone, and the marketplace does not need to identify anyone to be
+ * credible. Falling back to a positional label keeps every review renderable even
+ * if an author record is ever missing a name.
+ */
+function reviewAuthorLabel(name, index) {
+  const parts = String(name ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (parts.length === 0) {
+    return `Buyer ${index + 1}`
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase()
+  }
+
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+}
+
+function toIso(value) {
+  return value instanceof Date ? value.toISOString() : value
+}
+
+/**
+ * Published reviews for a listing, plus the rating distribution.
+ *
+ * Read-only. Writing reviews requires the order and delivery records, which is a
+ * later phase, so there is deliberately no create, update, or delete path here —
+ * only the `PUBLISHED` rows the seed or a future order flow inserts.
+ *
+ * Only PUBLISHED reviews are selected at the query level rather than filtered in
+ * application code, so a PENDING or REJECTED review can never be leaked by a
+ * missed condition.
+ */
+export async function getListingReviews(id) {
+  const listing = await prisma.listing.findFirst({
+    where: { id, status: { in: ['APPROVED', 'SOLD'] } },
+    select: { id: true },
+  })
+
+  if (!listing) {
+    throw new ApiError(404, 'Approved listing not found.', 'LISTING_NOT_FOUND')
+  }
+
+  const rows = await prisma.review.findMany({
+    where: { listingId: id, status: 'PUBLISHED' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    select: {
+      id: true,
+      rating: true,
+      title: true,
+      comment: true,
+      conditionRating: true,
+      sellerRating: true,
+      verifiedPurchase: true,
+      createdAt: true,
+      user: { select: { name: true } },
+    },
+  })
+
+  const reviews = rows.map((row, index) => ({
+    id: row.id,
+    rating: row.rating,
+    title: row.title ?? null,
+    comment: row.comment,
+    conditionRating: row.conditionRating ?? null,
+    sellerRating: row.sellerRating ?? null,
+    // The badge is driven purely by the stored flag. It is never inferred from
+    // rating or comment text.
+    verifiedPurchase: row.verifiedPurchase === true,
+    author: reviewAuthorLabel(row.user?.name, index),
+    createdAt: toIso(row.createdAt),
+  }))
+
+  const total = reviews.reduce((sum, review) => sum + review.rating, 0)
+
+  return {
+    reviews,
+    summary: {
+      count: reviews.length,
+      average: reviews.length > 0 ? Number((total / reviews.length).toFixed(2)) : null,
+      // Every star band is present, including the zero ones, so the breakdown can
+      // render five bars without inventing rows.
+      breakdown: [5, 4, 3, 2, 1].map((stars) => ({
+        stars,
+        count: reviews.filter((review) => review.rating === stars).length,
+      })),
+    },
+  }
+}
+
 export async function markListingSold(id, userId) {
   return prisma.$transaction(async (transaction) => {
     const listing = await transaction.listing.findFirst({

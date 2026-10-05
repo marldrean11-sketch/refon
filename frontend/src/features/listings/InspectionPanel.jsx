@@ -12,24 +12,46 @@ import { INSPECTION_CHECKS } from '../../lib/listing-taxonomy.js'
 export function InspectionPanel({ listing }) {
   const passed = new Set(listing.inspectionChecks ?? [])
   const hasRecord = Boolean(listing.inspectionRecorded)
+  const isComplete = Boolean(listing.inspectionComplete)
 
   return (
-    <div className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7">
+    <section
+      aria-labelledby="inspection-heading"
+      className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-display text-xl font-semibold text-ink">
-            Quality inspection
-          </h3>
+          <h2
+            id="inspection-heading"
+            className="font-display text-xl font-semibold text-ink"
+          >
+            11-point quality inspection
+          </h2>
           <p className="mt-1 text-sm text-muted">
             {hasRecord
               ? `${passed.size} of ${listing.inspectionTotal} checks recorded on this device`
               : 'No inspection results recorded for this device yet'}
           </p>
         </div>
-        {hasRecord && listing.inspectionComplete && (
+
+        {/* Three distinct badges, because three different situations. A device
+            with no record must never look like a device that passed. */}
+        {!hasRecord && (
+          <span className="inline-flex items-center gap-1.5 rounded-pill bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 ring-1 ring-inset ring-amber-200">
+            <CircleDashed className="size-3.5" aria-hidden="true" />
+            Not recorded
+          </span>
+        )}
+        {hasRecord && isComplete && (
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-accent-50 px-3 py-1.5 text-xs font-bold text-accent-800 ring-1 ring-inset ring-accent-200">
             <ShieldCheck className="size-3.5" aria-hidden="true" />
             Full inspection
+          </span>
+        )}
+        {hasRecord && !isComplete && (
+          <span className="inline-flex items-center gap-1.5 rounded-pill bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 ring-1 ring-inset ring-amber-200">
+            <CircleDashed className="size-3.5" aria-hidden="true" />
+            Incomplete
           </span>
         )}
       </div>
@@ -72,18 +94,19 @@ export function InspectionPanel({ listing }) {
                       {check.detail}
                     </span>
                   </span>
-                  <span className="sr-only">
-                    {didPass ? 'Passed' : 'Not recorded'}
-                  </span>
+                  {/* A missing check reads as "not recorded", never as a failure —
+                      the seller may simply not have run it yet. */}
+                  <span className="sr-only">{didPass ? 'Passed' : 'Not recorded'}</span>
                 </li>
               )
             })}
           </ul>
 
-          {!listing.inspectionComplete && (
+          {!isComplete && (
             <p className="mt-4 text-xs leading-relaxed text-muted">
-              Some checks are not recorded for this device. The seller can add them from
-              the listing form.
+              {listing.inspectionTotal - passed.size} of {listing.inspectionTotal} checks have
+              no recorded result for this device. Unrecorded is not the same as failed — it
+              means nobody has logged an outcome yet. Ask the seller before you buy.
             </p>
           )}
         </>
@@ -103,6 +126,6 @@ export function InspectionPanel({ listing }) {
           </span>
         )}
       </div>
-    </div>
+    </section>
   )
 }

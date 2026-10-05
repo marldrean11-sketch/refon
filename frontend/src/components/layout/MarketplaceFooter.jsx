@@ -91,7 +91,7 @@ export function MarketplaceFooter() {
         className="absolute -right-24 -top-24 size-80 rounded-full bg-primary-500/20 blur-3xl"
         aria-hidden="true"
       />
-      <div className="relative mx-auto max-w-7xl px-5 py-14 sm:px-6 lg:px-8 lg:py-18">
+      <div className="relative mx-auto max-w-7xl px-5 py-14 pb-28 sm:px-6 md:pb-24 lg:px-8 lg:py-18 lg:pb-14">
         <div className="grid gap-12 border-b border-white/10 pb-12 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
           <div>
             <BrandMark inverse />

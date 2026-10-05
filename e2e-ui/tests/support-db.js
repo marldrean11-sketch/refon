@@ -42,6 +42,20 @@ const SEEDED_LISTING_ID_RANGE = [
   '40000000-0000-4000-8000-0000000000ff',
 ]
 
+/**
+ * Brand marker for listings the UI suite creates for negative-path fixtures.
+ *
+ * These are made with the seeded `seller@refon.test` account so they inherit real
+ * moderation, which means they are not owned by a `PREFIX` suite user and are not
+ * removed by the account cascade below. An APPROVED listing is locked against
+ * deletion through the API, so the reset is the only route that can remove them and
+ * they have to be identified by marker rather than by owner.
+ *
+ * `product-detail.spec.js` writes this brand, which is what keeps the two sides in
+ * agreement.
+ */
+const FIXTURE_LISTING_BRAND = 'ReFon'
+
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]', '0.0.0.0'])
 
 export function assertTestCleanupAllowed(env = process.env) {
@@ -122,6 +136,20 @@ export async function resetTestData(prisma = new PrismaClient()) {
   // Reports filed against listings the suite did not create.
   const strayReports = await prisma.report.deleteMany({ where: { reporterId: { notIn: suiteUserIds } } })
 
+  // Fixtures left by a previous run. Their dependent rows go first: reservations and
+  // cart lines restrict the listing, while inquiries, favorites, reviews, and
+  // reports cascade from it but are listed explicitly so the counts below stay
+  // readable.
+  const fixtures = { brand: FIXTURE_LISTING_BRAND }
+
+  const fixtureReviews = await prisma.review.deleteMany({ where: { listing: fixtures } })
+  const fixtureInquiries = await prisma.inquiry.deleteMany({ where: { listing: fixtures } })
+  const fixtureFavorites = await prisma.favorite.deleteMany({ where: { listing: fixtures } })
+  const fixtureReports = await prisma.report.deleteMany({ where: { listing: fixtures } })
+  const fixtureReservations = await prisma.reservation.deleteMany({ where: { listing: fixtures } })
+  const fixtureCartItems = await prisma.cartItem.deleteMany({ where: { listing: fixtures } })
+  const fixtureListings = await prisma.listing.deleteMany({ where: fixtures })
+
   // Seeded listings mutated by a previous run: restored to the approved state
   // so inquiry, moderation, and mark-sold tests start from a known baseline.
   // Seeded listing ids are a contiguous UUID range; `startsWith` is not valid on
@@ -137,12 +165,16 @@ export async function resetTestData(prisma = new PrismaClient()) {
   return {
     users: users.count,
     sellers: suiteSellers.length,
-    inquiries: inquiries.count,
-    favorites: favorites.count,
-    reports: reportsBySuite.count + strayReports.count,
+    inquiries: inquiries.count + fixtureInquiries.count,
+    favorites: favorites.count + fixtureFavorites.count,
+    reports: reportsBySuite.count + strayReports.count + fixtureReports.count,
+    reviews: fixtureReviews.count,
     notifications: notifications.count,
     authTokens: authTokens.count,
     listingsRestored: listings.count,
+    fixtureListingsRemoved: fixtureListings.count,
+    fixtureCartItemsRemoved: fixtureCartItems.count,
+    fixtureReservationsRemoved: fixtureReservations.count,
   }
 }
 
@@ -155,6 +187,10 @@ export function summarize(result) {
     `reports -${result.reports}`,
     `notifications -${result.notifications}`,
     `authTokens -${result.authTokens}`,
+    `reviews -${result.reviews}`,
+    `fixture listings -${result.fixtureListingsRemoved}`,
+    `fixture cart items -${result.fixtureCartItemsRemoved}`,
+    `fixture reservations -${result.fixtureReservationsRemoved}`,
     `listings restored ${result.listingsRestored}`,
   ].join(', ')
 }

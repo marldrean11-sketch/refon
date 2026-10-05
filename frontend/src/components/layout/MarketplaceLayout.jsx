@@ -11,11 +11,12 @@ export function MarketplaceLayout() {
     <div className="min-h-screen bg-canvas">
       <MarketplaceHeader />
       <EmailVerificationBanner />
-      {/* Bottom padding clears the fixed mobile tab bar. */}
+      {/* Bottom padding clears the fixed mobile tab bar. The footer carries its own
+          clearance because it sits below <main> and would otherwise be covered. */}
       <main
         id="main-content"
         tabIndex={-1}
-        className="pb-20 focus:outline-none md:pb-0"
+        className="pb-8 focus:outline-none md:pb-0"
       >
         <Suspense fallback={<LoadingScreen label="Loading this ReFon experience…" />}>
           <PageTransition>

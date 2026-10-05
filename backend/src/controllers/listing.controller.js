@@ -9,6 +9,7 @@ import {
   getCatalogSuggestions,
   getListingInquiries,
   getRelatedListings,
+  getListingReviews,
   getSellerListings,
   markListingSold,
   updateListing,
@@ -64,6 +65,17 @@ export const getOneBySlug = asyncHandler(async (req, res) => {
 export const getRelated = asyncHandler(async (req, res) => {
   const listings = await getRelatedListings(req.validatedParams.id)
   return res.status(200).json({ listings })
+})
+
+/**
+ * Published reviews for a listing.
+ *
+ * Read-only by design — submitting a verified review requires an order and a
+ * delivered state, which do not exist yet. Public, like the listing itself.
+ */
+export const getReviews = asyncHandler(async (req, res) => {
+  const data = await getListingReviews(req.validatedParams.id)
+  return res.status(200).json(data)
 })
 
 /**

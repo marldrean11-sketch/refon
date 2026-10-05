@@ -225,6 +225,14 @@ export const WARRANTY_TERMS = Object.freeze([
   },
 ])
 
+/**
+ * Length of the return window, in days.
+ *
+ * Single source for the badge on product cards and detail pages so the promise
+ * shown next to a price can never drift from the policy it links to.
+ */
+export const RETURN_WINDOW_DAYS = 7
+
 export const RETURN_TERMS = Object.freeze([
   {
     title: 'Seven days from delivery',

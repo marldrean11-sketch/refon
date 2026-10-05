@@ -34,6 +34,11 @@ export const inquiryLimiter = createLimiter({ windowMs: tenMinutes, limit: 5 })
 
 export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 })
 
+// Cart writes reserve physical inventory, so they are deliberately more generous
+// than they look: a buyer assembling several phones should not be throttled, but a
+// script hammering add/remove to probe which phones are held should be.
+export const cartLimiter = createLimiter({ windowMs: tenMinutes, limit: 120 })
+
 export const reportLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })
 
 export const passwordResetLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })

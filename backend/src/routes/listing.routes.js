@@ -8,6 +8,7 @@ import {
   getOne,
   getOneBySlug,
   getRelated,
+  getReviews,
   getSuggestions,
   markSold,
   remove,
@@ -49,6 +50,7 @@ router.get('/', validateListingQuery, getAll)
 router.get('/mine', authenticate, requireSeller, getMine)
 router.post('/', authenticate, requireSeller, validateCreateListing, create)
 router.get('/:id/related', validateRelatedParams, getRelated)
+router.get('/:id/reviews', validateRelatedParams, getReviews)
 // Slug lookup is a second, static-prefixed path rather than a sibling of
 // `/:id`, so it must be declared before it or Express would try to parse the
 // literal "slug" as a listing UUID.

@@ -207,8 +207,10 @@ export function PhoneArtwork({
   model,
   color,
   view = 'default',
+  batteryPercent,
   className = 'aspect-[4/3]',
   showLabel = true,
+  showColor = true,
 }) {
   const surface = BRAND_SURFACES[brand] ?? DEFAULT_SURFACE
   const body = resolveBody(color)
@@ -218,6 +220,14 @@ export function PhoneArtwork({
   const isBack = view === 'detail' || view === 'angle'
   const isScreen = view === 'screen'
   const isAngle = view === 'angle'
+
+  // The screen view shows the battery reading on screen. It must be this device's
+  // actual figure, not a placeholder: a hard-coded number on a product page would
+  // be a claim about a specific phone that is not true. When the caller does not
+  // supply one, the screen renders the device's identity mark instead of a
+  // battery claim.
+  const hasBatteryReading = Number.isFinite(Number(batteryPercent))
+  const screenBattery = hasBatteryReading ? Math.min(100, Math.max(0, Number(batteryPercent))) : null
 
   const rotation = isAngle ? 'rotate-[-8deg]' : view === 'front' ? 'rotate-[-2deg]' : ''
   const tilt = view === 'detail' ? 'rotate-[6deg]' : ''
@@ -298,7 +308,7 @@ export function PhoneArtwork({
               <>
                 <Notch kind={frame.notch} />
                 {isScreen ? (
-                  <ScreenContent />
+                  <ScreenContent batteryPercent={screenBattery} brand={brand} />
                 ) : (
                   <div
                     className="grid h-full place-items-center"
@@ -321,7 +331,7 @@ export function PhoneArtwork({
         </div>
       </div>
 
-      {color && (
+      {showColor && color && (
         <span className="absolute bottom-3.5 right-3.5 rounded-pill bg-white/85 px-2.5 py-1 text-[10px] font-semibold text-muted backdrop-blur">
           {color}
         </span>
@@ -330,17 +340,35 @@ export function PhoneArtwork({
   )
 }
 
-function ScreenContent() {
+function ScreenContent({ batteryPercent, brand }) {
   return (
     <div className="flex h-full flex-col justify-between p-2.5" aria-hidden="true">
       <div>
-        <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-white/55">
-          Battery health
-        </p>
-        <p className="font-display text-xl font-bold leading-none text-white">92%</p>
-        <div className="mt-1.5 h-1 overflow-hidden rounded-pill bg-white/20">
-          <div className="h-full w-[92%] rounded-pill bg-accent-400" />
-        </div>
+        {batteryPercent != null ? (
+          <>
+            <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-white/55">
+              Battery health
+            </p>
+            <p className="font-display text-xl font-bold leading-none text-white">
+              {batteryPercent}%
+            </p>
+            <div className="mt-1.5 h-1 overflow-hidden rounded-pill bg-white/20">
+              <div
+                className="h-full rounded-pill bg-accent-400"
+                style={{ width: `${batteryPercent}%` }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-white/55">
+              Tested device
+            </p>
+            <p className="font-display text-lg font-bold leading-none text-white">
+              {brandLabelInitials(brand)}
+            </p>
+          </>
+        )}
       </div>
       <div className="flex items-end gap-1">
         {[38, 62, 88, 100].map((height) => (

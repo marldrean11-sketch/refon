@@ -18,6 +18,7 @@ import inquiryRoutes from './routes/inquiry.routes.js'
 import accountRoutes from './routes/account.routes.js'
 import favoriteRoutes from './routes/favorite.routes.js'
 import myInquiryRoutes from './routes/my-inquiry.routes.js'
+import cartRoutes from './routes/cart.routes.js'
 
 const app = express()
 
@@ -91,6 +92,7 @@ app.use('/api/notifications', notificationRoutes)
 app.use('/api/inquiries', inquiryRoutes)
 app.use('/api/favorites', favoriteRoutes)
 app.use('/api/my-inquiries', myInquiryRoutes)
+app.use('/api/cart', cartRoutes)
 app.use(notFoundHandler)
 app.use(errorHandler)
 

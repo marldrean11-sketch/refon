@@ -1,4 +1,21 @@
 import { expect } from '@playwright/test'
+import fs from 'node:fs'
+
+/**
+ * Session cookie for a saved account.
+ *
+ * `globalSetup` already signs in the seller and administrator once per run and
+ * writes the cookie jars to `state/`. Specs that need to call the API as one of
+ * those accounts read the cookie from here instead of logging in again.
+ *
+ * This matters because the auth endpoints are rate limited to 10 requests per 15
+ * minutes per IP, and a handful of specs each logging in twice exhausts that
+ * budget and turns later tests into 429s that look like application failures.
+ */
+export function authCookie(name) {
+  const state = JSON.parse(fs.readFileSync(`state/${name}.json`, 'utf8'))
+  return state.cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')
+}
 
 /**
  * Several scenarios deliberately trigger non-2xx API responses (the anonymous

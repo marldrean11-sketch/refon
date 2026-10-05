@@ -4,6 +4,7 @@ import { useAuth } from '../../features/auth/useAuth.js'
 import { AUTH_ROUTES, MARKETPLACE_ROUTES } from '../../features/auth/auth.routes.js'
 import { useSavedListings } from '../../features/favorites/useSavedListings.js'
 import { useCartSummary } from '../../features/cart/useCartSummary.js'
+import { useOwnsBottomActionBar } from '../../lib/bottom-action-bar.js'
 
 const TAB_BASE =
   'flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-2 text-[10px] font-bold transition min-h-14'
@@ -39,8 +40,16 @@ export function MobileTabBar() {
   const { itemCount } = useCartSummary()
   const savedCount = savedIds?.size ?? 0
 
+  // A product page replaces this bar with its own price-and-action bar. Yielding
+  // keeps the two from competing for the same strip.
+  const yieldsToActionBar = useOwnsBottomActionBar()
+
   const showSaved = Boolean(user) && user.role !== 'ADMIN'
   const accountTo = user ? AUTH_ROUTES.account : AUTH_ROUTES.login
+
+  if (yieldsToActionBar) {
+    return null
+  }
 
   return (
     <nav

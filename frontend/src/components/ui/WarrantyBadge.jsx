@@ -1,6 +1,7 @@
 import { ShieldCheck, Undo2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
+import { RETURN_WINDOW_DAYS } from '../../content/policy-content.js'
 
 export function formatWarrantyLabel(months) {
   const value = Number(months)
@@ -49,7 +50,7 @@ export function WarrantyBadge({ months, size = 'md', linkToPolicy = false, class
   )
 }
 
-export function ReturnPolicyBadge({ days = 7, size = 'md', className = '' }) {
+export function ReturnPolicyBadge({ days = RETURN_WINDOW_DAYS, size = 'md', className = '' }) {
   const padding = size === 'lg' ? 'px-3.5 py-2 text-sm' : 'px-2.5 py-1 text-[11px]'
 
   return (

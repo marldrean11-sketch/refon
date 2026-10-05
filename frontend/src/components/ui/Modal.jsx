@@ -28,6 +28,7 @@ export function Modal({
   size = 'md',
   initialFocusRef,
   className = '',
+  bodyClassName = '',
 }) {
   const panelRef = useRef(null)
   const previouslyFocused = useRef(null)
@@ -160,7 +161,11 @@ export function Modal({
                 </button>
               </header>
             )}
-            <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{children}</div>
+            <div
+              className={`max-h-[70vh] overflow-y-auto px-6 py-5 ${bodyClassName}`}
+            >
+              {children}
+            </div>
             {footer && (
               <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-canvas px-6 py-4">
                 {footer}

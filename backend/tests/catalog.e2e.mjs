@@ -412,12 +412,38 @@ async function main() {
   const overlap = firstIds.filter((id) => secondIds.includes(id))
   assert.equal(overlap.length, 0, 'pages do not repeat a listing')
 
-  const fullCatalog = await json('/api/listings?pageSize=48')
+  // The invariant is about pagination, not about the size of the demo catalog.
+  // Asserting "one page returns everything" only holds while the catalog happens to
+  // fit the maximum page size, which silently couples this suite to the seed and to
+  // whatever other suites left behind.
+  const maxPage = await json('/api/listings?pageSize=48')
   assert.equal(
-    fullCatalog.body.listings.length,
-    fullCatalog.body.pagination.total,
-    'pagination returns the whole catalog only when one page covers it',
+    maxPage.body.listings.length,
+    Math.min(48, maxPage.body.pagination.total),
+    'a page never returns more than the requested size',
   )
+
+  const singlePage = await json('/api/listings?pageSize=48')
+  if (singlePage.body.pagination.totalPages === 1) {
+    assert.equal(
+      singlePage.body.listings.length,
+      singlePage.body.pagination.total,
+      'when one page covers the catalog, it returns every listing',
+    )
+  } else {
+    assert.equal(
+      singlePage.body.listings.length,
+      48,
+      'when the catalog needs more than one page, only one page is returned',
+    )
+  }
+
+  // Past the end of the catalog there is nothing left to return.
+  const beyondEnd = await json(
+    `/api/listings?page=${singlePage.body.pagination.totalPages + 5}&pageSize=48`,
+  )
+  assert.equal(beyondEnd.status, 200)
+  assert.equal(beyondEnd.body.listings.length, 0, 'a page past the end is empty, not an error')
 
   // -------------------------------------------------- slug and id lookups
   const bySlug = await json(`/api/listings/slug/${listing.slug}`)

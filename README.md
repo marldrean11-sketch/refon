@@ -138,6 +138,33 @@ from the listing columns rather than duplicated as tags, so they cannot drift fr
 data. `GET /api/listings/facets` returns both the accepted option lists and live counts,
 which is why the filter sidebar can only ever offer a filter the endpoint understands.
 
+### Product page honesty
+
+The product page states what is known and admits what is not. That is a set of
+deliberate rules rather than incidental copy:
+
+- **A grade letter is always explained.** `GradeExplainer` reads the same
+  `lib/listing-taxonomy.js` definitions the catalog filters and the grader use, so
+  the explanation cannot drift from the policy it describes.
+- **Missing inspection data is never a pass.** `InspectionPanel` distinguishes
+  *Not recorded* (nothing captured), *Incomplete* (some checks captured), and
+  *Full inspection*. A check with no result reads "Not recorded", never "failed".
+- **No saving is claimed without a reference price.** The API refuses to store a
+  reference price at or below the selling price, so a fabricated discount is not
+  representable. With none recorded, the page says so in those words.
+- **IMEI is never exposed in full.** Only the last four digits are stored and
+  rendered; the rest is never returned by the API.
+- **Seller contact details are absent from the public payload.** Seller rows show
+  name, verification, rating, location, and tagline — never a phone number or email.
+- **Verified-purchase badges follow the stored flag only.** They are never inferred
+  from a rating or from the wording of a comment.
+- **Reviews are labelled as seeded sample data** while ReFon has no delivered
+  orders, and there is no submission path in the UI.
+
+Cart and checkout are a later phase, so the conversion panel offers the two
+actions that work — wishlist and seller inquiry — and names cart as unavailable
+rather than rendering a button that would appear to complete a purchase.
+
 - `/phones/:slug` — canonical product URL. `/listings/:id` still resolves and replaces the
   address with the slug, so existing links and bookmarks keep working.
 - `/seller` — protected seller overview backed by `/api/listings/mine`
@@ -175,7 +202,7 @@ favicon, all served from `frontend/public/`.
 
 ## Database
 
-The Prisma schema is in `backend/prisma/schema.prisma` and targets PostgreSQL. It defines users, seller verification profiles, moderated listings, listing inquiries, and in-app notifications with foreign keys, uniqueness constraints, and query indexes. PostgreSQL check constraints enforce listing years from 2015 through 2024 and battery percentages from 0 through 100.
+The Prisma schema is in `backend/prisma/schema.prisma` and targets PostgreSQL. It defines users, seller verification profiles, moderated listings, listing inquiries, reviews, favorites, reports, carts and inventory reservations, and in-app notifications with foreign keys, uniqueness constraints, and query indexes. PostgreSQL check constraints enforce listing years from 2015 through 2024 and battery percentages from 0 through 100, plus the cart ownership, reservation window, and guest-token format invariants described below.
 
 Use these commands from `backend/`:
 
@@ -210,6 +237,121 @@ uploaded photo always takes priority over artwork.
 
 The seed refuses to run when `NODE_ENV=production`.
 
+## Cart and inventory reservations
+
+### Inventory model
+
+A ReFon listing is **one specific refurbished physical device**, not a stock-keeping
+unit. Availability is therefore a lock, not a counter: a phone is free, held by one
+buyer, or sold — never available in multiples. `Listings.quantity` exists and is
+validated, but every cart line carries a quantity of exactly 1, and the schema makes
+holding one device twice unrepresentable rather than merely discouraged.
+
+### Data model
+
+`Cart` belongs to exactly one owner, enforced by a check constraint rather than by
+convention:
+
+| Table | Purpose |
+| --- | --- |
+| `carts` | One owner: `user_id` (account) **or** `guest_token_hash` (guest), never both and never neither |
+| `cart_items` | One line per `(cart_id, listing_id)`, with `price_snapshot` and `quantity` |
+| `reservations` | A short-lived hold: `listing_id`, `cart_item_id`, `expires_at`, `released_at` |
+
+### Guest carts
+
+A visitor can build a cart before signing in. The browser holds an opaque 256-bit
+random token in the `refon_cart` cookie and nothing else — no cart contents, no
+listing ids, no prices. The database stores only the **SHA-256** of that token, so a
+database leak cannot hand out live guest carts, the same reason `auth_tokens` stores
+only a reset-link hash. The cookie is `httpOnly`, `SameSite=Lax`, `Secure` in
+production, and scoped to `/`.
+
+### Merge on sign-in
+
+Registering or signing in merges the guest cart into the account cart in a single
+transaction:
+
+- A listing present in both carts stays **one line**, and the buyer's hold is
+  *transferred* onto the account's line rather than dropped.
+- A guest hold is released before the account hold is taken, so a buyer is never
+  blocked by their own reservation.
+- An item whose listing is no longer available is **carried over and marked**, never
+  silently discarded.
+- A lapsed guest hold is refreshed to a fresh window on sign-in, which is what keeps
+  the merged cart actionable. If another buyer took the phone in the meantime the
+  line is kept and reported as unavailable.
+- The guest cart row is deleted and its cookie cleared, so the identity cannot be
+  replayed to re-claim the same items.
+
+A merge failure is logged and never blocks sign-in: a buyer who cannot sign in
+because of a cart problem is a worse outcome than one who retries the merge.
+
+### Reservations
+
+Adding a listing takes a **15-minute hold** (`RESERVATION_MINUTES`, bounded 1–1440).
+Expiry is lazy and always judged against the **database clock** — a client-supplied
+timestamp is never read. There is no background worker: a lapsed hold is retired the
+next time the listing or the cart is touched.
+
+Expiry is recorded by setting `released_at` rather than by deleting the row. A partial
+unique index cannot use a volatile predicate like `expires_at > now()`, so a
+lapsed-but-unreleased row would hold the one-slot-per-listing guarantee forever.
+
+### Concurrency
+
+Two buyers must never both hold the same physical phone. Three mechanisms combine:
+
+1. **A row lock** — `SELECT … FROM listings WHERE id = $1::uuid FOR UPDATE`, taken as
+   the first statement of the reserving transaction. Concurrent attempts on one
+   listing serialise here.
+2. **A check inside that transaction**, after the lock is held.
+3. **A partial unique index** — `UNIQUE (listing_id) WHERE released_at IS NULL`. Even
+   if 1 and 2 were bypassed, the second insert cannot commit.
+
+Relying on (2) alone would be the classic check-then-act race. Mechanism (3) makes the
+database the final authority. `tests/cart.e2e.mjs` fires eight simultaneous adds at one
+listing and asserts that exactly one is granted.
+
+### Price snapshots
+
+A cart line stores the listing price at the moment it was added. If a seller later
+changes the price, the cart reports **both** figures plus `priceChanged` and
+`priceDelta`, and flags the line `PRICE_INCREASED` or `PRICE_DECREASED`. The cart
+subtotal is computed from the **live** price, never the snapshot, so a stale snapshot
+can never become the number charged. No client-supplied price is accepted at all —
+the add schema is strict and rejects `price`, `quantity`, `userId`, and `expiresAt`.
+
+### Availability states
+
+`availability` is computed from stored state on every read, so it cannot go stale:
+
+| State | Meaning |
+| --- | --- |
+| `AVAILABLE` | The listing is approved and the line holds a live reservation |
+| `RESERVATION_EXPIRED` | The hold lapsed; the phone may be free or taken |
+| `UNAVAILABLE` | The listing was taken down, rejected, sold, or never approved |
+
+An unapproved listing and a non-existent one are both reported as `404`
+`LISTING_NOT_AVAILABLE`, so the catalog cannot be probed for draft work.
+
+### Endpoints
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/api/cart` | optional | Current cart, guest or account |
+| `POST` | `/api/cart/items` | optional | Add a listing and hold it |
+| `DELETE` | `/api/cart/items/:listingId` | optional | Remove a line and release its hold |
+| `DELETE` | `/api/cart` | optional | Empty the cart and release every hold |
+| `POST` | `/api/cart/merge` | required | Explicit merge; sign-in does this automatically |
+
+There is deliberately **no `PATCH`**. Quantity editing is not a question a
+single-device marketplace needs to answer, and a quantity endpoint would be an
+invitation to create an impossible amount of one phone.
+
+Not implemented here, by design: checkout, payment, order creation, delivery, and
+fulfilment belong to Phases 6 and 7.
+
 ## Authentication
 
 ReFon uses JWT sessions stored in an `httpOnly` cookie rather than `localStorage` or a JavaScript-readable token. This reduces token exposure to XSS, lets the browser send credentials automatically, and allows logout to clear the session server-side through `Set-Cookie`. Cookies are `SameSite=Lax`, `Secure` in production, and scoped to `/`.
@@ -241,6 +383,16 @@ Seller APIs require an authenticated session:
 - `GET /api/health` — public health check; `200` with `status: ok` when the database answers, `503` with `status: degraded` otherwise
 - `GET /api/notifications/mine`
 - `PATCH /api/notifications/:id/read`
+
+Public read endpoints used by the product page:
+
+- `GET /api/listings/slug/:slug` — canonical product lookup
+- `GET /api/listings/:id/related` — related phones, excluding the listing itself
+- `GET /api/listings/:id/reviews` — **read-only** published reviews plus a rating
+  distribution. There is deliberately no write path: a verified review requires a
+  delivered order, which does not exist yet. Only `PUBLISHED` rows are selected at
+  the query level, and reviewers are attributed by initials rather than by name or
+  email.
 - `PATCH /api/notifications/read-all`
 
 Public marketplace APIs:
@@ -375,6 +527,7 @@ Backend (`backend/.env`, or the compose/host environment):
 | `DATABASE_URL` | yes | none | PostgreSQL connection string |
 | `JWT_SECRET` | yes | none | Session signing secret, 32+ characters |
 | `JWT_EXPIRES_IN` | no | `7d` | Session lifetime |
+| `RESERVATION_MINUTES` | no | `15` | How long a cart holds a physical listing, 1–1440 |
 | `PORT` | no | `4000` | API port |
 | `CLIENT_URL` | yes in prod | localhost Vite URLs | Comma-separated CORS allowlist |
 | `APP_URL` | no | `http://localhost:5173` | Base URL used in account emails |
@@ -451,8 +604,9 @@ Validate the frontend build, lint both workspaces, and run the test suites:
 ```bash
 npm run build          # frontend build
 npm run lint           # oxlint in both workspaces
-npm run test:api       # test:auth, test:marketplace, test:catalog, sequentially
+npm run test:api       # test:auth, test:marketplace, test:catalog, test:cart, sequentially
 npm run test:catalog   # catalog filters, sorting, pagination, slugs, search
+npm run test:cart      # carts, guest carts, merge, reservations, price snapshots
 npm run test:storage   # local storage driver
 npm run test:ui        # Playwright; needs ports 4000 and 5173 free
 ```

@@ -40,6 +40,20 @@ if (!['local', 's3'].includes(storageDriver)) {
   throw new Error('STORAGE_DRIVER must be either "local" or "s3".')
 }
 
+// How long a cart holds a physical listing before the hold lapses.
+//
+// Bounded to a sane window: an unbounded hold would let one buyer park a phone
+// indefinitely, and an instant one would be useless during checkout.
+const reservationMinutes = Number(process.env.RESERVATION_MINUTES ?? 15)
+
+if (
+  !Number.isFinite(reservationMinutes) ||
+  reservationMinutes < 1 ||
+  reservationMinutes > 1440
+) {
+  throw new Error('RESERVATION_MINUTES must be between 1 and 1440.')
+}
+
 const s3Bucket = process.env.S3_BUCKET ?? ''
 const s3Region = process.env.S3_REGION ?? ''
 const s3AccessKeyId = process.env.S3_ACCESS_KEY_ID ?? ''
@@ -82,6 +96,12 @@ export const env = Object.freeze({
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   authCookieName: 'refon_token',
+  /// Guest cart identifier cookie. Holds an opaque random token only — never cart
+  /// contents — so the browser cannot read or edit what is in the cart.
+  cartCookieName: 'refon_cart',
+  cartCookieMaxAgeMs: 30 * 24 * 60 * 60 * 1000,
+  reservationMinutes,
+  reservationMs: reservationMinutes * 60 * 1000,
   appUrl: (process.env.APP_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
   mailFrom: process.env.MAIL_FROM ?? 'ReFon <no-reply@refon.test>',
   smtpHost,

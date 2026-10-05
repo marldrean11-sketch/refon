@@ -8,6 +8,7 @@ import { formatPeso } from '../../lib/format.js'
 export function PriceDisplay({
   price,
   originalPrice,
+  discountPercent,
   size = 'md',
   showSavings = true,
   className = '',
@@ -17,7 +18,14 @@ export function PriceDisplay({
   const hasDiscount =
     Number.isFinite(reference) && Number.isFinite(current) && reference > current && reference > 0
   const savings = hasDiscount ? reference - current : 0
-  const percentOff = hasDiscount ? Math.round((savings / reference) * 100) : 0
+  // Prefer the percentage the API calculated and the catalog sorted by, so the
+  // figure on the card is the same one that determined its position in
+  // "Biggest discount". Falls back to deriving it when a caller has no API value.
+  const derivedPercent = hasDiscount ? Math.round((savings / reference) * 100) : 0
+  const percentOff =
+    hasDiscount && Number.isInteger(discountPercent) && discountPercent > 0
+      ? discountPercent
+      : derivedPercent
 
   const priceSize =
     size === 'lg' ? 'text-4xl' : size === 'sm' ? 'text-lg' : 'text-2xl'
