@@ -12,13 +12,15 @@
 #    process can bind 4000 and then crash while starting its remaining
 #    subsystems, so readiness is probed over HTTP.
 #
-#   .\qa\dev-run.ps1                     # restart both, run the phase 1 spec
-#   .\qa\dev-run.ps1 -Grep "P1-06"       # one test
+#   .\qa\dev-run.ps1                     # phase 1 verification
+#   .\qa\dev-run.ps1 -Phase 2            # phase 2 navigation + smoke
+#   .\qa\dev-run.ps1 -Phase 2 -Grep "P2-07"   # one test
 #   .\qa\dev-run.ps1 -Full               # the existing regression suite
 #   .\qa\dev-run.ps1 -NoRestart          # reuse whatever is already running
 param(
   [string]$Grep = "",
   [switch]$Full,
+  [ValidateSet(1, 2)][int]$Phase = 1,
   [switch]$NoRestart,
   [string]$Reporter = "list"
 )
@@ -96,13 +98,19 @@ Get-Content (Join-Path $repo "backend\.env") | ForEach-Object {
   }
 }
 
+# Which spec to run. Defaults to the phase 1 verification; `-Phase 2` switches to
+# the phase 2 navigation spec and its smoke set.
 $pwArgs = @("playwright", "test")
 
 if ($Full) {
   # Exclude this spec: it is the phase 1 verification, not the regression suite.
   $pwArgs += @("--grep-invert", "P1 Phase 1 foundation")
-} else {
+} elseif ($Phase -eq 2) {
+  $pwArgs += @("tests/phase2-navigation.spec.js", "tests/phase2-smoke.spec.js")
+} elseif ($Phase -eq 1) {
   $pwArgs += @("tests/phase1-foundation.spec.js")
+} else {
+  throw "specify -Full, -Phase 1, or -Phase 2"
 }
 
 if ($Grep) {

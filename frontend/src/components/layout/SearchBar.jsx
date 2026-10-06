@@ -16,7 +16,7 @@ const MAX_RECENT = 5
  * them in `localStorage` means a returning shopper gets their own history
  * without a profile lookup.
  */
-function readRecent() {
+export function readRecentSearches() {
   try {
     const stored = window.localStorage.getItem(POPULAR_KEY)
     const parsed = stored ? JSON.parse(stored) : []
@@ -34,10 +34,11 @@ function writeRecent(terms) {
   }
 }
 
-function rememberSearch(term) {
+/** Exported so the navbar's search overlay writes to the same history. */
+export function rememberSearch(term) {
   const trimmed = term.trim()
   if (!trimmed) return
-  writeRecent([trimmed, ...readRecent().filter((entry) => entry !== trimmed)])
+  writeRecent([trimmed, ...readRecentSearches().filter((entry) => entry !== trimmed)])
 }
 
 /**
@@ -79,7 +80,7 @@ export function SearchBar({
 
   useEffect(() => {
     if (isOpen) {
-      setRecent(readRecent())
+      setRecent(readRecentSearches())
     }
   }, [isOpen])
 
@@ -114,7 +115,7 @@ export function SearchBar({
 
   function goTo(query) {
     rememberSearch(query)
-    setRecent(readRecent())
+    setRecent(readRecentSearches())
     setIsOpen(false)
     inputRef.current?.blur()
     onSubmitted?.(query)

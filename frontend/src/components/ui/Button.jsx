@@ -22,6 +22,36 @@ const variantClasses = {
     'bg-primary-950 text-white ring-1 ring-inset ring-primary-950 hover:bg-primary-800 active:bg-primary-900',
   accent:
     'bg-accent-600 text-white ring-1 ring-inset ring-accent-600 hover:bg-accent-700 active:bg-accent-800',
+  /**
+   * The vivid brand green, carried as a filled action.
+   *
+   * The label is near-black rather than white, and that is a contrast decision
+   * rather than a stylistic one. White on the brand green `#10B981` is 2.54:1 and
+   * even on the `accent-600` step the existing `accent` variant uses it is only
+   * 3.23:1, so both fall short of the 4.5:1 AA threshold for a 15px label. Ink on
+   * the same fill is 7.60:1, and it keeps the exact accent the design system
+   * specifies instead of substituting a darker green that is not the brand hue.
+   *
+   * Hover steps *darker* (`accent-hover`), which is the opposite of a tint
+   * convention but is what keeps the ratio above 4.5:1; `accent-strong` at 4.42:1
+   * is deliberately not used here.
+   */
+  brand:
+    'bg-accent text-dark ring-1 ring-inset ring-accent-hover hover:bg-accent-hover active:bg-accent-300',
+  /**
+   * A quiet, bordered, low-stakes destructive action.
+   *
+   * Reads as a control rather than as a label — the `ghost` variant next to a
+   * bordered button had no ring, no fill, and no underline, so it looked like
+   * stray text.
+   *
+   * The label is `text-muted` (5.36:1 on white), *not* `text-danger`: `#EF4444` on
+   * white is 3.76:1 and fails AA at this size, which is the same defect the
+   * existing `danger-outline` variant has. The red arrives on hover, at
+   * `red-700` so that state passes too.
+   */
+  'quiet-danger':
+    'bg-transparent text-muted ring-1 ring-inset ring-line-2 hover:bg-red-50 hover:text-red-700 hover:ring-red-300',
   secondary:
     'bg-white text-primary-900 ring-1 ring-inset ring-line-2 hover:bg-surface-2 hover:ring-primary-400',
   outline:

@@ -228,8 +228,17 @@ export default {
         /** Above the header: the progress bar reads as a property of the page. */
         progress: '60',
         drawer: '80',
+        /**
+         * Above the dimmed backdrop but below every modal surface.
+         *
+         * A toast used to sit at 200, on top of the cart drawer — which put
+         * "added to your cart" directly over the Checkout button for the few
+         * seconds it was on screen. A transient confirmation must never be able
+         * to sit on top of a modal surface's own controls, and it should still
+         * be readable through a dimmed backdrop.
+         */
+        toast: '90',
         modal: '100',
-        toast: '200',
         /** The splash owns the screen until it leaves. */
         preloader: '300',
       },
