@@ -20,6 +20,7 @@ import { ListingCard } from '../features/listings/listing-card.jsx'
 import { ListingGallery } from '../features/listings/listing-gallery.jsx'
 import { useListing } from '../features/listings/useListing.js'
 import { FavoriteButton } from '../features/favorites/FavoriteButton.jsx'
+import { AddToCartButton } from '../features/cart/components/AddToCartButton.jsx'
 import { GradeExplainer } from '../features/listings/GradeExplainer.jsx'
 import { InspectionPanel } from '../features/listings/InspectionPanel.jsx'
 import { ProductMeta } from '../features/listings/ProductMeta.jsx'
@@ -364,11 +365,9 @@ export function ListingDetailPage() {
 
                 {/* Conversion panel.
 
-                    Two real actions, because those are the two that exist: the
-                    wishlist already works end to end, and an inquiry already
-                    reaches the seller's inbox. Cart and checkout ship in a later
-                    phase, so they are named as unavailable rather than rendered
-                    as buttons that would appear to complete a purchase. */}
+                    Two real actions, because those are the two that exist for a
+                    shopper who wants this specific device: buying it, and asking
+                    the seller about it. Both work end to end. */}
                 <div className="mt-6 hidden lg:block">
                   {isSold ? (
                     <div className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-canvas px-6 text-sm font-bold text-muted">
@@ -376,32 +375,29 @@ export function ListingDetailPage() {
                       No longer accepting inquiries
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsInquiryOpen(true)}
-                      className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-6 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-                    >
-                      <MessageCircle className="size-5" aria-hidden="true" />
-                      Inquire about this phone
-                    </button>
+                    <>
+                      <AddToCartButton listing={listing} fullWidth />
+                      <button
+                        type="button"
+                        onClick={() => setIsInquiryOpen(true)}
+                        className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-primary-200 bg-white px-5 text-sm font-bold text-primary-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                      >
+                        <MessageCircle className="size-4" aria-hidden="true" />
+                        Inquire about this phone
+                      </button>
+                    </>
                   )}
 
                   {!isSold && (
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <FavoriteButton listing={listing} variant="button" />
-                      <span
-                        className="inline-flex h-12 items-center justify-center rounded-2xl border border-dashed border-line px-3 text-center text-xs font-bold text-muted"
-                        aria-disabled="true"
-                      >
-                        Cart &amp; checkout
-                        <span className="sr-only"> — coming soon, not yet available</span>
-                      </span>
+                    <div className="mt-3">
+                      <FavoriteButton listing={listing} variant="button" compact />
                     </div>
                   )}
                 </div>
 
                 <p className="mt-3 text-center text-xs leading-relaxed text-muted">
-                  No account required · Your details go only to this seller
+                  Adding to your cart holds this exact device for a short time · No account
+                  required
                 </p>
 
                 <div className="mt-6 flex gap-3 rounded-2xl border border-line bg-canvas p-4">
@@ -564,17 +560,23 @@ export function ListingDetailPage() {
               Sold
             </div>
           ) : (
-            <>
-              <FavoriteButton listing={listing} variant="button" compact className="shrink-0" />
-              <button
-                type="button"
-                onClick={() => setIsInquiryOpen(true)}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98]"
-              >
-                <MessageCircle className="size-4" aria-hidden="true" />
-                Inquire
-              </button>
-            </>
+            <AddToCartButton
+              listing={listing}
+              size="sm"
+              placement="mobile-bar"
+              className="flex min-w-0 flex-1"
+            />
+          )}
+
+          {!isSold && (
+            <button
+              type="button"
+              onClick={() => setIsInquiryOpen(true)}
+              aria-label="Inquire about this phone"
+              className="grid size-12 shrink-0 place-items-center rounded-xl border border-line bg-white text-muted shadow-sm transition duration-200 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+            >
+              <MessageCircle className="size-5" aria-hidden="true" />
+            </button>
           )}
         </div>
       </div>

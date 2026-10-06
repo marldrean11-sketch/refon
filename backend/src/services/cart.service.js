@@ -28,7 +28,11 @@ import {
 /** A cart may not grow without bound; a runaway client gets a clear error. */
 const MAX_CART_ITEMS = 20
 
-const cartInclude = {
+/**
+ * Cart read shape, shared with the checkout service so both read the same columns
+ * instead of each maintaining its own include.
+ */
+export const cartInclude = {
   items: {
     orderBy: { addedAt: 'asc' },
     include: {

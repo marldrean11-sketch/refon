@@ -1,4 +1,4 @@
-import { AlertTriangle, RotateCcw, SearchX } from 'lucide-react'
+import { AlertTriangle, RotateCcw, SearchX, ShoppingBag } from 'lucide-react'
 import { Button, ButtonLink } from './Button.jsx'
 
 /**
@@ -86,13 +86,19 @@ export function NoResultsState({ onClearFilters, className = '' }) {
   )
 }
 
-/** The copy the brief asks for when a visitor has not added anything yet. */
+/**
+ * The empty cart.
+ *
+ * Lead with the plain fact, then explain what a ReFon cart does that a generic
+ * basket does not — a phone added here is held for a short window, which is why
+ * coming back to it is worth doing.
+ */
 export function EmptyCartState({ actionLabel = 'Browse Refurbished Phones', actionHref = '/phones' }) {
   return (
     <EmptyState
-      icon={SearchX}
-      title="Your cart is waiting for its next upgrade."
-      description="Every phone you add shows its condition grade, battery health, and warranty before checkout."
+      icon={ShoppingBag}
+      title="Your cart is empty"
+      description="Find a refurbished phone that fits your budget. Every phone you add shows its condition grade, battery health, and warranty, and is held for you while you decide."
       actionLabel={actionLabel}
       actionHref={actionHref}
     />

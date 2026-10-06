@@ -42,6 +42,15 @@ const loginSchema = z
 /**
  * Flattens Zod issues into the `errors` map the API returns.
  *
+ * Two rules, both of which preserve the existing contract:
+ *
+ *  - Numeric segments are dropped. A bad array element reports under the field
+ *    name (`photos`), not under `photos.0`, so an array field stays one key.
+ *  - Remaining segments are joined, so a nested object keeps its fields
+ *    distinguishable: two bad keys inside `details` produce `details.mobile` and
+ *    `details.postalCode` instead of collapsing onto one `details` key and leaving
+ *    only the last message standing.
+ *
  * A `.strict()` rejection of an unrecognised key carries an empty issue path, so
  * there is no field name to report. Rather than emitting a field literally called
  * "undefined", the issue is keyed by the request source it came from — `_body`,
@@ -51,7 +60,14 @@ function formatIssues(issues, source) {
   const fallback = source === 'query' ? '_query' : source === 'params' ? '_params' : '_body'
 
   return Object.fromEntries(
-    issues.map((issue) => [issue.path[0] ?? fallback, issue.message]),
+    issues.map((issue) => {
+      const path = issue.path.filter(
+        (segment) => typeof segment === 'string' || typeof segment === 'number',
+      )
+      const named = path.filter((segment) => typeof segment === 'string')
+
+      return [named.length > 0 ? named.join('.') : fallback, issue.message]
+    }),
   )
 }
 

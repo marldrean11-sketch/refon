@@ -8,6 +8,10 @@ import { PageTransition } from '../components/layout/PageTransition.jsx'
  *
  * Keeps every navigation target in the header and footer a working page, so the
  * site has no dead ends while the remaining phases are built out.
+ *
+ * `/cart`, `/checkout`, and the confirmation screen moved out in Phase 6 and now
+ * have real pages; what remains here is comparison, seller application, and the
+ * seller storefront.
  */
 function PendingPage({ title, phase, description, links = [] }) {
   return (
@@ -41,20 +45,6 @@ function PendingPage({ title, phase, description, links = [] }) {
         </p>
       </div>
     </PageTransition>
-  )
-}
-
-export function CartPage() {
-  return (
-    <PendingPage
-      phase="Phase 6 — Cart and checkout"
-      title="Your cart is being set up"
-      description="Add-to-cart, quantity editing, save for later, and a server-calculated order summary land in the next build phase."
-      links={[
-        { label: 'How we test', to: MARKETPLACE_ROUTES.qualityCheck },
-        { label: 'Warranty policy', to: MARKETPLACE_ROUTES.warranty },
-      ]}
-    />
   )
 }
 

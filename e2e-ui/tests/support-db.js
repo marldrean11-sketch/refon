@@ -136,6 +136,17 @@ export async function resetTestData(prisma = new PrismaClient()) {
   // Reports filed against listings the suite did not create.
   const strayReports = await prisma.report.deleteMany({ where: { reporterId: { notIn: suiteUserIds } } })
 
+  // Carts and reservations left by a previous run.
+  //
+  // A guest cart is the interesting case: it belongs to a browser cookie the suite
+  // discards, so the cart row survives with a live 15-minute reservation on a real
+  // device. The next run then gets `LISTING_RESERVED` when it tries to hold the same
+  // phone, which looks like an application failure and is not one. Emptying every
+  // cart releases those holds and returns the devices to the catalog.
+  const reservations = await prisma.reservation.deleteMany({})
+  const cartItems = await prisma.cartItem.deleteMany({})
+  const carts = await prisma.cart.deleteMany({})
+
   // Fixtures left by a previous run. Their dependent rows go first: reservations and
   // cart lines restrict the listing, while inquiries, favorites, reviews, and
   // reports cascade from it but are listed explicitly so the counts below stay
@@ -146,8 +157,6 @@ export async function resetTestData(prisma = new PrismaClient()) {
   const fixtureInquiries = await prisma.inquiry.deleteMany({ where: { listing: fixtures } })
   const fixtureFavorites = await prisma.favorite.deleteMany({ where: { listing: fixtures } })
   const fixtureReports = await prisma.report.deleteMany({ where: { listing: fixtures } })
-  const fixtureReservations = await prisma.reservation.deleteMany({ where: { listing: fixtures } })
-  const fixtureCartItems = await prisma.cartItem.deleteMany({ where: { listing: fixtures } })
   const fixtureListings = await prisma.listing.deleteMany({ where: fixtures })
 
   // Seeded listings mutated by a previous run: restored to the approved state
@@ -172,10 +181,96 @@ export async function resetTestData(prisma = new PrismaClient()) {
     notifications: notifications.count,
     authTokens: authTokens.count,
     listingsRestored: listings.count,
+    cartsEmptied: carts.count,
+    cartItemsRemoved: cartItems.count,
+    reservationsReleased: reservations.count,
     fixtureListingsRemoved: fixtureListings.count,
-    fixtureCartItemsRemoved: fixtureCartItems.count,
-    fixtureReservationsRemoved: fixtureReservations.count,
   }
+}
+
+/**
+ * Stages a price change on a listing, for the cart's price-change UI.
+ *
+ * A shopper's cart records the price a listing had when the device was added, and
+ * the cart reports both figures when they diverge. That divergence cannot be staged
+ * through the API on purpose: an APPROVED listing is locked against editing, so a
+ * seller cannot reprice a live device while buyers hold it. That is correct product
+ * behaviour and the suite must not weaken it to make a test easier.
+ *
+ * So the change is written directly, through the same guarded module that owns the
+ * reset. The production guards still apply — this refuses to touch a production or
+ * non-local database exactly as `resetTestData` does.
+ *
+ * Returns a snapshot of every column it touched. Handing the whole snapshot back to
+ * `restoreListing` is the only supported way to undo this: `discount_percent` is a
+ * denormalised column the catalog sorts by, so restoring only the price would leave
+ * a listing whose stored discount disagrees with its own price and reference price,
+ * and the "biggest discount" ordering would quietly change for the rest of the suite.
+ *
+ * Not for general use: only for state the API deliberately cannot produce.
+ */
+export async function setListingPriceForTest(listingId, price, prisma = new PrismaClient()) {
+  assertTestCleanupAllowed()
+
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    select: { price: true, discountPercent: true, originalPrice: true },
+  })
+
+  if (!listing) {
+    throw new Error(`Cannot stage a price change: listing ${listingId} does not exist.`)
+  }
+
+  await prisma.listing.update({
+    where: { id: listingId },
+    // Zeroing the stored percentage keeps the column consistent with the staged
+    // price; `restoreListing` puts the original figure back.
+    data: { price, discountPercent: 0 },
+  })
+
+  return {
+    price: Number(listing.price),
+    discountPercent: listing.discountPercent,
+    originalPrice: listing.originalPrice,
+  }
+}
+
+/** Puts every column `setListingPriceForTest` touched back the way it was. */
+export async function restoreListing(listingId, snapshot, prisma = new PrismaClient()) {
+  assertTestCleanupAllowed()
+
+  if (!snapshot) {
+    throw new Error(
+      'restoreListing needs the snapshot returned by setListingPriceForTest. ' +
+        'Restoring only the price would leave discount_percent inconsistent with it.',
+    )
+  }
+
+  await prisma.listing.update({
+    where: { id: listingId },
+    data: {
+      price: snapshot.price,
+      discountPercent: snapshot.discountPercent ?? 0,
+      originalPrice: snapshot.originalPrice ?? null,
+    },
+  })
+}
+
+/**
+ * Returns a seeded listing to APPROVED.
+ *
+ * A test that withdraws a device — marking it sold, say — must put it back, or the
+ * next run finds a catalog smaller than the seed. The one-off reset does this too,
+ * but a test that leaves the database wrong for its whole run is testing against a
+ * fixture it broke itself.
+ */
+export async function restoreListingStatus(listingId, prisma = new PrismaClient()) {
+  assertTestCleanupAllowed()
+
+  await prisma.listing.update({
+    where: { id: listingId },
+    data: { status: 'APPROVED', moderatorFeedback: null },
+  })
 }
 
 export function summarize(result) {
@@ -188,9 +283,10 @@ export function summarize(result) {
     `notifications -${result.notifications}`,
     `authTokens -${result.authTokens}`,
     `reviews -${result.reviews}`,
+    `carts -${result.cartsEmptied}`,
+    `cart items -${result.cartItemsRemoved}`,
+    `reservations -${result.reservationsReleased}`,
     `fixture listings -${result.fixtureListingsRemoved}`,
-    `fixture cart items -${result.fixtureCartItemsRemoved}`,
-    `fixture reservations -${result.fixtureReservationsRemoved}`,
     `listings restored ${result.listingsRestored}`,
   ].join(', ')
 }

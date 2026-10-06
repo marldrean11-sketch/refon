@@ -665,7 +665,7 @@ test.describe('D13 gallery, wishlist, and related products', () => {
 test.describe('D17 pricing honesty and page structure', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('D17 no fake commerce: no working checkout, no order claims', async ({ page }) => {
+  test('D17 no fake commerce: no order claims, no purchase-completing control', async ({ page }) => {
     const all = watchErrors(page)
     await page.goto(PRODUCT)
     await page.waitForSelector('h1', { timeout: 25_000 })
@@ -673,21 +673,25 @@ test.describe('D17 pricing honesty and page structure', () => {
 
     const body = await page.locator('main').innerText()
 
-    // Nothing may claim an order exists.
+    // Nothing may claim an order exists. Adding a phone to the cart holds a device;
+    // it is not a purchase, and the page must not dress it up as one.
     expect(body).not.toMatch(/order (placed|confirmed|complete)/i)
     expect(body).not.toMatch(/payment (successful|confirmed|received)/i)
     expect(body).not.toMatch(/thank you for your (order|purchase)/i)
     expect(body).not.toMatch(/you will receive your phone/i)
 
-    // No live checkout control exists in this phase.
+    // Adding to the cart is real as of Phase 6, and it says what it does: it holds
+    // the device, it does not buy it.
+    const addToCart = page.locator('[data-testid="add-to-cart"]:visible').first()
+    await expect(addToCart, 'add to cart is a real control').toBeVisible()
+    expect(body).toMatch(/holds? this (exact )?device for a short time/i)
+
+    // No control on a product page can complete a purchase. That belongs to
+    // checkout, which is a separate page the shopper has to fill in.
     expect(
       await page.getByRole('button', { name: /buy now|checkout|place order|pay now/i }).count(),
       'no purchase-completing control is rendered',
     ).toBe(0)
-
-    // Cart is named as unavailable rather than presented as working.
-    const cartSlot = page.getByText(/cart\s*&\s*checkout/i).first()
-    await expect(cartSlot, 'the unavailable cart slot is labelled').toBeVisible()
 
     expectNoFatalErrors(all, 'D17-no-fake-commerce')
   })
@@ -856,11 +860,13 @@ test.describe('D21 responsive product page', () => {
       console.log('D21_DUPLICATE_IDS', JSON.stringify(duplicates))
       expect(duplicates, 'no duplicate element ids').toEqual([])
 
-      // A purchase action is reachable at every width.
-      const inquire = page
-        .getByRole('button', { name: /^Inquire( about this phone)?$/i })
-        .first()
-      await expect(inquire, 'the primary action is reachable').toBeVisible()
+      // The primary action is reachable at every width. As of Phase 6 that is
+      // add to cart; asking about the phone is the secondary action beside it. Both
+      // must be reachable, since at some widths the layout keeps only one of them.
+      await expect(
+        page.locator('[data-testid="add-to-cart"]:visible').first(),
+        'the primary action is reachable',
+      ).toBeVisible()
 
       // On mobile the sticky bar must not sit on top of the last content row.
       if (viewport.width < 1024) {

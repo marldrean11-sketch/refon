@@ -12,6 +12,7 @@ import { LoadingScreen } from './components/ui/LoadingScreen.jsx'
 import { SellerListingsProvider } from './features/seller/SellerListingsProvider.jsx'
 import { SellerInquiriesProvider } from './features/inquiries/SellerInquiriesProvider.jsx'
 import { SavedListingsProvider } from './features/favorites/SavedListingsProvider.jsx'
+import { CartProvider } from './features/cart/CartProvider.jsx'
 import { ToastProvider } from './components/ui/Toast.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
 
@@ -107,7 +108,15 @@ const ContactPage = lazy(() =>
   import('./pages/PolicyPages.jsx').then((module) => ({ default: module.ContactPage })),
 )
 const CartPage = lazy(() =>
-  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.CartPage })),
+  import('./pages/CartPage.jsx').then((module) => ({ default: module.CartPage })),
+)
+const CheckoutPage = lazy(() =>
+  import('./pages/CheckoutPage.jsx').then((module) => ({ default: module.CheckoutPage })),
+)
+const CheckoutConfirmedPage = lazy(() =>
+  import('./pages/CheckoutConfirmedPage.jsx').then((module) => ({
+    default: module.CheckoutConfirmedPage,
+  })),
 )
 const ComparePage = lazy(() =>
   import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.ComparePage })),
@@ -128,6 +137,9 @@ function App() {
         <AuthProvider>
         {/* Above both layouts so public listing cards and the headers share one poller. */}
         <SavedListingsProvider>
+        {/* The header badge, the mobile tab bar, the product page's add button, the
+            cart, and checkout all read one cart, so they cannot disagree. */}
+        <CartProvider>
         <ToastProvider>
         <RouteEffects />
         <a
@@ -162,6 +174,11 @@ function App() {
               <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
               <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
               <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
+              <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
+              <Route
+                path={MARKETPLACE_ROUTES.checkoutConfirmed}
+                element={<CheckoutConfirmedPage />}
+              />
             </Route>
 
             <Route element={<PublicOnlyRoute />}>
@@ -216,6 +233,7 @@ function App() {
           </Routes>
         </Suspense>
         </ToastProvider>
+        </CartProvider>
         </SavedListingsProvider>
         </AuthProvider>
       </MotionConfig>

@@ -39,6 +39,11 @@ export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 
 // script hammering add/remove to probe which phones are held should be.
 export const cartLimiter = createLimiter({ windowMs: tenMinutes, limit: 120 })
 
+// Checkout repricing is a read of the buyer's cart with a little arithmetic on
+// top, so it stays generous; a buyer changing address or delivery method naturally
+// triggers several in a row.
+export const checkoutLimiter = createLimiter({ windowMs: tenMinutes, limit: 90 })
+
 export const reportLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })
 
 export const passwordResetLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })

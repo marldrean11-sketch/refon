@@ -77,7 +77,23 @@ const ROUTE_META = {
     description:
       'Compare refurbished phones side by side on price, grade, battery health, camera, display, processor, and warranty.',
   },
-  '/cart': { title: 'Your Cart · ReFon', description: 'Review the phones in your cart before checkout.' },
+  '/cart': {
+    title: 'Your Cart · ReFon',
+    description: 'Review the phones reserved for you before checkout.',
+    // Per-visitor and holds no indexable content.
+    robots: 'noindex, nofollow',
+  },
+  '/checkout': {
+    title: 'Checkout · ReFon',
+    description:
+      'Confirm your delivery address, delivery method, and payment preference for the refurbished phones in your cart.',
+    robots: 'noindex, nofollow',
+  },
+  '/checkout/confirmed': {
+    title: 'Checkout Confirmed · ReFon',
+    description: 'Your ReFon checkout summary and delivery details.',
+    robots: 'noindex, nofollow',
+  },
   '/saved': {
     title: 'Saved Phones · ReFon',
     description: 'The refurbished phones you have saved for later.',
@@ -207,6 +223,31 @@ function upsertCanonical(href) {
 }
 
 /**
+ * Sets or removes the robots directive.
+ *
+ * A cart or a checkout form is per-visitor and holds no content worth a search
+ * result; indexing either would be pointless at best and misleading at worst. The
+ * tag is removed again on every other route rather than left behind, so the absence
+ * of `noindex` always means the page is indexable.
+ */
+function upsertRobots(directive) {
+  let element = document.head.querySelector('meta[name="robots"]')
+
+  if (!directive) {
+    element?.remove()
+    return
+  }
+
+  if (!element) {
+    element = document.createElement('meta')
+    element.setAttribute('name', 'robots')
+    document.head.appendChild(element)
+  }
+
+  element.setAttribute('content', directive)
+}
+
+/**
  * Per-page metadata pushed by a page that knows more than its route.
  *
  * A product page cannot be described by its path alone — every phone needs its
@@ -277,6 +318,7 @@ function applyRouteMeta(pathname) {
   }
 
   upsertJsonLd(meta.jsonLd ?? null)
+  upsertRobots(meta.robots ?? null)
 }
 
 /**

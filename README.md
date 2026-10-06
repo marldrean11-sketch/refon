@@ -349,8 +349,78 @@ There is deliberately **no `PATCH`**. Quantity editing is not a question a
 single-device marketplace needs to answer, and a quantity endpoint would be an
 invitation to create an impossible amount of one phone.
 
-Not implemented here, by design: checkout, payment, order creation, delivery, and
-fulfilment belong to Phases 6 and 7.
+There is deliberately **no `PATCH`**. Quantity editing is not a question a
+single-device marketplace needs to answer, and a quantity endpoint would be an
+invitation to create an impossible amount of one phone.
+
+The cart and checkout pages are `noindex, nofollow`: they are per-visitor and hold no
+content worth a search result.
+
+## Checkout
+
+Checkout is a single page that prices a purchase and stops there. It does **not**
+create an order, because no order domain exists yet — see
+[What checkout does not do](#what-checkout-does-not-do) below.
+
+### Money is decided by the server
+
+Every peso figure comes from the backend. The request carries only *choices*
+(delivery method, payment method) and *contact details*; there is deliberately no
+`subtotal`, `deliveryFee`, `total`, `quantity`, or `listingIds` field, so a schema
+that cannot express a client-supplied price cannot be tricked into using one.
+
+`GET /api/checkout/options` returns the delivery and payment catalogue, and the
+frontend renders whatever it is given. Fee numbers therefore live in exactly one
+place — `backend/src/config/checkout.config.js` — rather than as constants in
+components that could drift from each other.
+
+Fees are zone-based and follow the published shipping policy:
+
+| Zone | Standard | Express |
+| --- | --- | --- |
+| Metro Manila | ₱79 | ₱199 |
+| Rest of Luzon | ₱129 | — |
+| Visayas and Mindanao | ₱169 | — |
+
+Standard delivery is free at ₱15,000 and above. Express is offered only in Metro
+Manila, and that limit is enforced in the fee lookup rather than only in the UI, so
+a direct API call cannot quote next-day delivery to Davao.
+
+### A quote is not an order
+
+`POST /api/checkout/quote` prices the checkout, validates the contact block, and
+refuses anything that cannot proceed — an empty cart, an unavailable listing, or a
+lapsed reservation, each with a distinct code the UI can act on. It **creates
+nothing**. The response is already the shape an order-creation call would return,
+so Phase 7 replaces that one request with a transactional write and neither the form
+nor the review changes.
+
+The confirmation screen says plainly that no order was placed and no payment was
+taken. It shows a **quote reference**, not an order number, and claims no receipt
+and no delivery date — a screen implying a purchase had happened would be a claim
+this build cannot support.
+
+### Payment methods are selections, not integrations
+
+Cash on delivery, GCash, Maya, and bank transfer are all available as *preferences*.
+No gateway is contacted, no money moves, and **no credential of any kind is
+collected** — no GCash number, no Maya account, no card or bank login. The three
+non-cash options are labelled `Demo payment method` in the interface and carry a
+`demo` flag from the server so the UI can say so wherever they appear.
+
+### Endpoints
+
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/api/checkout/options` | optional | Delivery methods, payment methods, and zones |
+| `POST` | `/api/checkout/quote` | optional | Price a checkout and validate it can proceed |
+
+### What checkout does not do
+
+No order is created, no payment is processed, and no reservation is converted into a
+purchase. Order creation, payment capture, delivery status, tracking, refunds, and
+returns all belong to Phase 7 and later. The reservation taken when a phone enters
+the cart is the only thing holding a device, and it still lapses on its own timer.
 
 ## Authentication
 
@@ -607,6 +677,7 @@ npm run lint           # oxlint in both workspaces
 npm run test:api       # test:auth, test:marketplace, test:catalog, test:cart, sequentially
 npm run test:catalog   # catalog filters, sorting, pagination, slugs, search
 npm run test:cart      # carts, guest carts, merge, reservations, price snapshots
+npm run test:checkout  # checkout pricing, delivery catalogue, quote validation
 npm run test:storage   # local storage driver
 npm run test:ui        # Playwright; needs ports 4000 and 5173 free
 ```

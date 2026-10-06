@@ -42,6 +42,8 @@ export const MARKETPLACE_ROUTES = Object.freeze({
   compare: '/compare',
   cart: '/cart',
   checkout: '/checkout',
+  /** Post-checkout summary. Phase 6 shows a quote; Phase 7 shows an order. */
+  checkoutConfirmed: '/checkout/confirmed',
   sellerApply: '/sell',
   about: '/about',
   faq: '/faq',

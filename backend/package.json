@@ -11,6 +11,7 @@
     "test:marketplace": "node tests/marketplace.e2e.mjs",
     "test:catalog": "node tests/catalog.e2e.mjs",
     "test:cart": "node tests/cart.e2e.mjs",
+    "test:checkout": "node tests/checkout.e2e.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
