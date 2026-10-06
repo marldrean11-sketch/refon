@@ -1,40 +1,46 @@
 import { Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-const baseClasses =
-  'inline-flex items-center justify-center gap-2 rounded-control font-bold transition duration-200 disabled:cursor-not-allowed disabled:opacity-55'
-
 /**
  * One set of button shapes for the whole site.
  *
- * The 8px `rounded-control` radius is what stops a dense marketplace interface
- * reading as soft and rounded-off. The hover lift is 1px rather than 2px for the
- * same reason: a half-pixel of travel is a change in emphasis, two pixels is a bounce.
+ * The primary action is Obsidian, not a brand hue. On a page whose only saturated
+ * colours are trust-jade and value-solar, a near-black button is the loudest
+ * object on screen, and a black button is also the one control that reads as
+ * hardware rather than software.
  *
- * The global `prefers-reduced-motion` rule in `index.css` collapses `transition-duration`,
- * so the lift still applies but arrives instantly rather than as movement. That is
- * intentional and is why the value lives here in a variant rather than in a
- * per-page utility.
+ * Corners are 4px and travel on hover is 0. Pressed and hovered states are
+ * distinguished by surface and border rather than by motion, because motion
+ * alone is invisible to anyone who does not look for it — and the whole point
+ * of a control is that people look at it.
  */
+const baseClasses =
+  'inline-flex items-center justify-center gap-2 rounded-control font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-55'
+
 const variantClasses = {
   primary:
-    'bg-primary-500 text-white shadow-card hover:-translate-y-px hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0',
+    'bg-primary-950 text-white ring-1 ring-inset ring-primary-950 hover:bg-primary-800 active:bg-primary-900',
   accent:
-    'bg-accent-600 text-white shadow-card hover:-translate-y-px hover:bg-accent-700 hover:shadow-card-hover active:translate-y-0',
+    'bg-accent-600 text-white ring-1 ring-inset ring-accent-600 hover:bg-accent-700 active:bg-accent-800',
   secondary:
-    'border border-line bg-white text-primary-700 shadow-sm hover:-translate-y-px hover:border-primary-200 hover:bg-primary-50 hover:shadow-card',
-  outline: 'border border-primary-200 bg-transparent text-primary-700 hover:bg-primary-50',
-  ghost: 'bg-transparent text-muted hover:bg-primary-50 hover:text-primary-700',
+    'bg-white text-primary-900 ring-1 ring-inset ring-line-2 hover:bg-surface-2 hover:ring-primary-400',
+  outline:
+    'bg-transparent text-primary-900 ring-1 ring-inset ring-primary-300 hover:bg-primary-950 hover:text-white hover:ring-primary-950',
+  ghost: 'bg-transparent text-muted hover:bg-surface-2 hover:text-ink',
   danger:
-    'border border-red-200 bg-white text-danger hover:-translate-y-px hover:bg-red-50 hover:shadow-card',
-  dark: 'bg-primary-950 text-white shadow-card hover:-translate-y-px hover:bg-primary-900',
+    'bg-danger text-white ring-1 ring-inset ring-danger hover:bg-red-700 active:bg-red-800',
+  'danger-outline':
+    'bg-white text-danger ring-1 ring-inset ring-red-300 hover:bg-red-50 hover:ring-red-400',
+  dark: 'bg-primary-950 text-white ring-1 ring-inset ring-primary-950 hover:bg-primary-800',
+  light: 'bg-white text-primary-950 ring-1 ring-inset ring-white hover:bg-primary-50',
 }
 
 const sizeClasses = {
-  sm: 'h-10 px-4 text-sm',
-  md: 'h-12 px-5 text-[15px]',
-  lg: 'h-14 px-7 text-base',
+  sm: 'h-9 px-3.5 text-[13px]',
+  md: 'h-11 px-5 text-sm',
+  lg: 'h-[3.25rem] px-7 text-base',
   icon: 'size-11 p-0',
+  'icon-sm': 'size-9 p-0',
 }
 
 function classesFor({ variant = 'primary', size = 'md', fullWidth = false, className = '' }) {

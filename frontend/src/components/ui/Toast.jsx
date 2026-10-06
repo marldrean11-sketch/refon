@@ -63,7 +63,7 @@ export function ToastProvider({ children }) {
       {typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="pointer-events-none fixed inset-x-0 bottom-4 z-[200] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:items-end sm:px-6"
+            className="pointer-events-none fixed inset-x-0 bottom-4 z-toast flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:items-end sm:px-6"
             role="region"
             aria-label="Notifications"
           >

@@ -144,55 +144,63 @@ function App() {
         <RouteEffects />
         <a
           href="#main-content"
-          className="sr-only fixed left-4 top-4 z-[200] rounded-xl bg-primary-500 px-4 py-3 text-sm font-bold text-white shadow-card focus:not-sr-only"
+          className="sr-only fixed left-4 top-4 z-toast rounded-control bg-primary-500 px-4 py-3 text-sm font-bold text-white shadow-card focus:not-sr-only"
         >
           Skip to main content
         </a>
         <Suspense fallback={<LoadingScreen label="Loading this ReFon experience…" />}>
           <Routes>
-            <Route element={<MarketplaceLayout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path={MARKETPLACE_ROUTES.shop} element={<BrowsePage />} />
-              {/* Legacy alias so existing bookmarks and tests keep resolving. */}
-              <Route path={MARKETPLACE_ROUTES.browse} element={<BrowsePage />} />
-              <Route path="/phones/:slug" element={<ListingDetailPage />} />
-              <Route path="/listings/:id" element={<ListingDetailPage />} />
+            {/* Above every layout, not just the authenticated one.
 
-              <Route path={MARKETPLACE_ROUTES.categories} element={<CategoriesPage />} />
-              <Route path={MARKETPLACE_ROUTES.compare} element={<ComparePage />} />
-              <Route path={MARKETPLACE_ROUTES.howItWorks} element={<HowItWorksPage />} />
-              <Route path={MARKETPLACE_ROUTES.qualityCheck} element={<QualityCheckPage />} />
-              <Route path={MARKETPLACE_ROUTES.about} element={<AboutPage />} />
-              <Route path={MARKETPLACE_ROUTES.faq} element={<FaqPage />} />
-              <Route path={MARKETPLACE_ROUTES.warranty} element={<WarrantyPage />} />
-              <Route path={MARKETPLACE_ROUTES.returns} element={<ReturnsPage />} />
-              <Route path={MARKETPLACE_ROUTES.shipping} element={<ShippingPage />} />
-              <Route path={MARKETPLACE_ROUTES.sustainability} element={<SustainabilityPage />} />
-              <Route path={MARKETPLACE_ROUTES.privacy} element={<PrivacyPage />} />
-              <Route path={MARKETPLACE_ROUTES.terms} element={<TermsPage />} />
-              <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
-              <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
-              <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
-              <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
-              <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
-              <Route
-                path={MARKETPLACE_ROUTES.checkoutConfirmed}
-                element={<CheckoutConfirmedPage />}
-              />
-            </Route>
+                `SiteHeader` is shared by the marketplace shell and the signed-in
+                shell, so the seller's unread inquiry count has to exist on both.
+                It previously only mounted under `RequireAuth`, which meant the
+                badge silently vanished the moment a seller walked into the shop.
+                The provider no-ops for anyone who is not a seller, so this costs
+                anonymous and buyer visits nothing. */}
+            <Route element={<SellerInquiriesProvider />}>
+              <Route element={<MarketplaceLayout />}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path={MARKETPLACE_ROUTES.shop} element={<BrowsePage />} />
+                {/* Legacy alias so existing bookmarks and tests keep resolving. */}
+                <Route path={MARKETPLACE_ROUTES.browse} element={<BrowsePage />} />
+                <Route path="/phones/:slug" element={<ListingDetailPage />} />
+                <Route path="/listings/:id" element={<ListingDetailPage />} />
 
-            <Route element={<PublicOnlyRoute />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-            </Route>
+                <Route path={MARKETPLACE_ROUTES.categories} element={<CategoriesPage />} />
+                <Route path={MARKETPLACE_ROUTES.compare} element={<ComparePage />} />
+                <Route path={MARKETPLACE_ROUTES.howItWorks} element={<HowItWorksPage />} />
+                <Route path={MARKETPLACE_ROUTES.qualityCheck} element={<QualityCheckPage />} />
+                <Route path={MARKETPLACE_ROUTES.about} element={<AboutPage />} />
+                <Route path={MARKETPLACE_ROUTES.faq} element={<FaqPage />} />
+                <Route path={MARKETPLACE_ROUTES.warranty} element={<WarrantyPage />} />
+                <Route path={MARKETPLACE_ROUTES.returns} element={<ReturnsPage />} />
+                <Route path={MARKETPLACE_ROUTES.shipping} element={<ShippingPage />} />
+                <Route path={MARKETPLACE_ROUTES.sustainability} element={<SustainabilityPage />} />
+                <Route path={MARKETPLACE_ROUTES.privacy} element={<PrivacyPage />} />
+                <Route path={MARKETPLACE_ROUTES.terms} element={<TermsPage />} />
+                <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
+                <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
+                <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
+                <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
+                <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
+                <Route
+                  path={MARKETPLACE_ROUTES.checkoutConfirmed}
+                  element={<CheckoutConfirmedPage />}
+                />
+              </Route>
 
-            {/* Reachable signed in or out: the links are emailed, not gated. */}
-            <Route path={AUTH_ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
-            <Route path={AUTH_ROUTES.resetPassword} element={<ResetPasswordPage />} />
-            <Route path={AUTH_ROUTES.verifyEmail} element={<VerifyEmailPage />} />
+              <Route element={<PublicOnlyRoute />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+              </Route>
 
-            <Route element={<RequireAuth />}>
-              <Route element={<SellerInquiriesProvider />}>
+              {/* Reachable signed in or out: the links are emailed, not gated. */}
+              <Route path={AUTH_ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+              <Route path={AUTH_ROUTES.resetPassword} element={<ResetPasswordPage />} />
+              <Route path={AUTH_ROUTES.verifyEmail} element={<VerifyEmailPage />} />
+
+              <Route element={<RequireAuth />}>
                 <Route element={<AuthenticatedLayout />}>
                   <Route path="/forbidden" element={<ForbiddenPage />} />
                   <Route path={AUTH_ROUTES.account} element={<AccountPage />} />
@@ -225,11 +233,11 @@ function App() {
                   </Route>
                 </Route>
               </Route>
-            </Route>
 
-            {/* /cart lives in the marketplace shell; the trailing route below is a
-                safety net for a stale client-side path. */}
-            <Route path="*" element={<NotFoundPage />} />
+              {/* /cart lives in the marketplace shell; the trailing route below is a
+                  safety net for a stale client-side path. */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
           </Routes>
         </Suspense>
         </ToastProvider>

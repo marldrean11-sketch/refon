@@ -14,34 +14,37 @@ export function FaqSection() {
 
   return (
     <Section tone="muted" id="faq">
-      <SectionHeading
-        align="center"
-        eyebrow="Questions"
-        title="Frequently asked questions"
-        description="What refurbished actually means, how we test, and what happens if something is wrong."
-        action={
-          <ButtonLink to={MARKETPLACE_ROUTES.faq} variant="secondary" size="md">
-            Read all questions
-          </ButtonLink>
-        }
-      />
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-16">
+        <div>
+          <SectionHeading
+            eyebrow="Questions"
+            title="Frequently asked questions"
+            description="What refurbished actually means, how we test, and what happens if something is wrong."
+            action={
+              <ButtonLink to={MARKETPLACE_ROUTES.faq} variant="secondary" size="md">
+                Read all questions
+              </ButtonLink>
+            }
+          />
+        </div>
 
-      <div className="mx-auto mt-10 max-w-3xl">
-        <AccordionList items={preview} openId={openId} onToggle={setOpenId} />
-      </div>
+        <div>
+          <AccordionList items={preview} openId={openId} onToggle={setOpenId} />
 
-      <div className="mt-10 flex flex-col items-center gap-2 text-center">
-        <HelpCircle className="size-6 text-primary-600" aria-hidden="true" />
-        <p className="text-sm text-muted">
-          Still unsure about something?{' '}
-          <Link
-            to={MARKETPLACE_ROUTES.contact}
-            className="font-bold text-primary-700 underline underline-offset-2"
-          >
-            Contact us
-          </Link>{' '}
-          — we answer within one business day.
-        </p>
+          <p className="mt-8 flex items-start gap-2 border-t border-line pt-6 text-sm leading-relaxed text-muted">
+            <HelpCircle className="mt-0.5 size-4 shrink-0 text-accent-600" aria-hidden="true" />
+            <span>
+              Still unsure about something?{' '}
+              <Link
+                to={MARKETPLACE_ROUTES.contact}
+                className="font-bold text-primary-800 underline underline-offset-2 hover:text-primary-950"
+              >
+                Contact us
+              </Link>{' '}
+              — we answer within one business day.
+            </span>
+          </p>
+        </div>
       </div>
     </Section>
   )

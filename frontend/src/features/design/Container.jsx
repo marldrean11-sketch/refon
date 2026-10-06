@@ -16,6 +16,8 @@ const WIDTHS = {
   prose: 'max-w-3xl',
   /** Short forms where the field column should stay narrow. */
   narrow: 'max-w-2xl',
+  /** Full-bleed: the gutter is kept but no maximum width is imposed. */
+  full: '',
 }
 
 export function Container({

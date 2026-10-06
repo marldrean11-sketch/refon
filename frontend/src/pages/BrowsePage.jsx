@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, LayoutGrid, SlidersHorizontal, X } from 'lucide-react'
+import { ArrowUpDown, SlidersHorizontal, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Button } from '../components/ui/Button.jsx'
 import { Breadcrumb } from '../components/ui/Breadcrumb.jsx'
 import { ErrorState, NoResultsState } from '../components/ui/StateViews.jsx'
 import { Pagination } from '../components/ui/Pagination.jsx'
@@ -13,20 +12,36 @@ import {
   activeFilterChips,
   countActiveFilters,
   hasAnyFilter,
-  toApiQuery,
 } from '../features/catalog/catalog-filters.js'
 import { useCatalog, useCatalogFacets } from '../features/catalog/useCatalog.js'
 import { ListingCard } from '../features/listings/listing-card.jsx'
 import { SearchBar } from '../components/layout/SearchBar.jsx'
+import { Container } from '../features/design/Container.jsx'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 
 /**
- * Shop page.
+ * The shop.
  *
- * Filter state lives entirely in the URL, so the back button, a refresh, and a
- * pasted link all produce the same result set. The sidebar reads its option
- * lists from the API rather than hardcoding them, which is what guarantees a
- * control never appears for a filter the endpoint would ignore.
+ * The old page opened with a full-width white band containing a breadcrumb, an
+ * `h1`, a paragraph, and a search box, then dropped into a two-column grid whose
+ * left column was a rounded card with an `h2` reading "Filters". That is a
+ * generic listing layout and it wasted a third of the fold on furniture.
+ *
+ * What it does now:
+ *
+ *   - A compact masthead: breadcrumb, title, and live result count on one band,
+ *     with the sort control inline on the right. The search field moves into the
+ *     filter rail, where it belongs, because on this page it *is* a filter.
+ *   - The filter rail becomes a real **control column**: a bordered panel with a
+ *     search field, grouped filter sets, and a clear-all action pinned at the
+ *     top. It is the instrument panel for the results grid beside it.
+ *   - The result count and sort share a single toolbar above the grid, so the
+ *     two facts about the result set are stated in one place.
+ *   - The grid is denser on desktop (four columns) because the cards now carry
+ *     their measurements in a compact strip rather than in stacked boxes.
+ *
+ * Filter state still lives entirely in the URL, so the back button, a refresh,
+ * and a pasted link all produce the same result set.
  */
 export function BrowsePage() {
   const {
@@ -77,7 +92,7 @@ export function BrowsePage() {
   const resultSummary = isLoading
     ? 'Loading phones…'
     : pagination
-      ? `${pagination.total} phone${pagination.total === 1 ? '' : 's'} found`
+      ? `${pagination.total} phone${pagination.total === 1 ? '' : 's'}`
       : ''
 
   const sortOptions = (options?.sorts ?? []).map((entry) => ({
@@ -98,69 +113,98 @@ export function BrowsePage() {
   )
 
   return (
-    <div className="min-h-screen">
-      <div className="border-b border-line bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+    <div className="min-h-screen bg-canvas">
+      {/* ── Masthead. One band, three facts: where you are, what this is, how
+          many results exist. */}
+      <div className="border-b border-line bg-surface">
+        <Container className="py-8 sm:py-10">
           <Breadcrumb
             items={[
               { label: 'Home', to: MARKETPLACE_ROUTES.home },
               { label: 'Shop Phones' },
             ]}
           />
-          <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+
+          <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <h1 className="font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-[2.5rem] sm:leading-[1.05]">
                 Shop tested refurbished phones
               </h1>
-              <p className="mt-3 text-base leading-body text-muted">
+              <p className="mt-3 max-w-2xl leading-body text-muted">
                 Every listing shows its condition grade, measured battery health, and
                 warranty term. Filter down to what you can prove, not what is claimed.
               </p>
             </div>
 
-            <SearchBar
-              className="w-full lg:max-w-sm"
-              defaultValue={filters.search}
-            />
+            <div className="shrink-0 border-l-2 border-primary-950 pl-4 lg:mb-1">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle">
+                Matching
+              </p>
+              <p
+                className="font-display text-2xl font-bold tabular-nums leading-none tracking-tight text-ink"
+                aria-live="polite"
+              >
+                {resultSummary}
+              </p>
+            </div>
           </div>
-        </div>
+        </Container>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="lg:grid lg:grid-cols-[17rem_1fr] lg:gap-10">
+      <Container className="py-8 sm:py-10">
+        <div className="lg:grid lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-10">
+          {/* ── The control column. */}
           <aside className="hidden lg:block" aria-label="Catalog filters">
-            <div className="sticky top-24 rounded-card-lg border border-line bg-white p-6">
-              <h2 className="font-display text-lg font-semibold text-ink">Filters</h2>
-              <p className="mt-1 text-xs text-muted">
-                    {brands.length} brands in stock
-              </p>
-              <div className="mt-6">{sidebar}</div>
+            <div className="sticky top-24 overflow-hidden rounded-card border border-line bg-surface">
+              <div className="border-b border-line px-4 py-3.5">
+                <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink">
+                  Refine
+                </h2>
+                <p className="mt-1 font-mono text-[11px] text-subtle">
+                  {brands.length} brands in stock
+                </p>
+              </div>
+
+              <div className="border-b border-line p-4">
+                <SearchBar defaultValue={filters.search} />
+              </div>
+
+              <div className="max-h-[calc(100dvh-16rem)] overflow-y-auto px-4 py-4">
+                {sidebar}
+              </div>
             </div>
           </aside>
 
           <div className="min-w-0">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-muted" aria-live="polite">
-                {resultSummary}
-              </p>
-
+            {/* ── Toolbar. */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsDrawerOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink shadow-sm transition hover:border-primary-200 hover:bg-primary-50 lg:hidden"
+                  className="inline-flex items-center gap-2 rounded-control border border-line-2 bg-surface px-3.5 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-ink transition hover:border-primary-950 lg:hidden"
                   aria-expanded={isDrawerOpen}
                   aria-controls="catalog-filter-drawer"
                 >
                   <SlidersHorizontal className="size-4" aria-hidden="true" />
                   Filters
                   {activeCount > 0 && (
-                    <span className="rounded-pill bg-primary-500 px-1.5 text-[10px] font-bold text-white">
+                    <span className="rounded-[3px] bg-primary-950 px-1.5 py-0.5 font-mono text-[10px] text-white">
                       {activeCount}
                     </span>
                   )}
                 </button>
 
+                <p
+                  className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-muted lg:hidden"
+                  aria-live="polite"
+                >
+                  {resultSummary}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="size-4 shrink-0 text-subtle" aria-hidden="true" />
                 <SelectField
                   label="Sort by"
                   srOnlyLabel
@@ -171,8 +215,8 @@ export function BrowsePage() {
                       ? sortOptions
                       : [{ value: 'recommended', label: 'Recommended' }]
                   }
-                  selectClassName="h-12 text-sm"
-                  className="w-full sm:w-56"
+                  selectClassName="h-10 border-line-2 text-[13px]"
+                  className="w-full sm:w-52"
                 />
               </div>
             </div>
@@ -182,7 +226,7 @@ export function BrowsePage() {
                 chips={chips}
                 onRemove={clearOne}
                 onClearAll={reset}
-                className="mt-5"
+                className="mt-4"
               />
             )}
 
@@ -199,7 +243,7 @@ export function BrowsePage() {
                 <NoResultsState onClearFilters={isFiltered ? reset : undefined} />
               ) : (
                 <>
-                  <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  <ul className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
                     {listings.map((listing) => (
                       <li key={listing.id} className="flex">
                         <ListingCard listing={listing} />
@@ -220,18 +264,21 @@ export function BrowsePage() {
             </div>
 
             {!isLoading && listings.length > 0 && (
-              <div className="mt-12 flex flex-col items-center gap-3 rounded-card-lg border border-line bg-white px-6 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+              <div className="mt-12 flex flex-col items-start gap-4 rounded-card border border-dashed border-line-2 bg-surface px-6 py-7 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="font-display text-lg font-semibold text-ink">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+                    Looking for something specific
+                  </p>
+                  <h2 className="mt-1.5 font-display text-lg font-bold tracking-tight text-ink">
                     Cannot find the grade you need?
                   </h2>
-                  <p className="mt-1 text-sm text-muted">
+                  <p className="mt-1.5 text-sm text-muted">
                     Tell us what you are looking for and we will tell you when it lands.
                   </p>
                 </div>
                 <Link
                   to={MARKETPLACE_ROUTES.contact}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-control border border-line-2 bg-surface px-4 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
                 >
                   Request a phone
                 </Link>
@@ -239,10 +286,10 @@ export function BrowsePage() {
             )}
           </div>
         </div>
-      </div>
+      </Container>
 
       {isDrawerOpen && (
-        <div className="fixed inset-0 z-[120] lg:hidden">
+        <div className="fixed inset-0 z-modal lg:hidden">
           <div
             className="absolute inset-0 bg-primary-950/60 backdrop-blur-sm"
             onClick={() => setIsDrawerOpen(false)}
@@ -253,38 +300,44 @@ export function BrowsePage() {
             role="dialog"
             aria-modal="true"
             aria-label="Catalog filters"
-            className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-white shadow-2xl"
+            className="absolute inset-y-0 right-0 flex w-full max-w-sm flex-col bg-surface shadow-2xl"
           >
             <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
-              <h2 className="inline-flex items-center gap-2 font-display text-lg font-semibold text-ink">
-                <LayoutGrid className="size-4 text-primary-600" aria-hidden="true" />
-                Filters
+              <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-ink">
+                Refine results
               </h2>
               <button
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
-                className="grid size-10 place-items-center rounded-xl text-muted transition hover:bg-canvas hover:text-ink"
+                className="grid size-10 place-items-center rounded-control border border-line-2 text-muted transition hover:bg-surface-2 hover:text-ink"
                 aria-label="Close filters"
               >
                 <X className="size-5" aria-hidden="true" />
               </button>
             </header>
 
+            <div className="border-b border-line px-5 py-4">
+              <SearchBar defaultValue={filters.search} />
+            </div>
+
             <div className="flex-1 overflow-y-auto px-5 py-5">{sidebar}</div>
 
             <footer className="flex items-center gap-3 border-t border-line bg-canvas px-5 py-4">
-              <Button variant="secondary" size="md" fullWidth onClick={reset} disabled={activeCount === 0}>
+              <button
+                type="button"
+                onClick={reset}
+                disabled={activeCount === 0}
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-control border border-line-2 bg-surface px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted transition hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 Clear all
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                fullWidth
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsDrawerOpen(false)}
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-control bg-primary-950 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-primary-800"
               >
                 Show {pagination?.total ?? listings.length} results
-                <ChevronDown className="size-4 -rotate-90" aria-hidden="true" />
-              </Button>
+              </button>
             </footer>
           </div>
         </div>

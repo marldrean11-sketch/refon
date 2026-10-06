@@ -67,20 +67,20 @@ function Lightbox({ isOpen, onClose, onPrevious, onNext, children, counter }) {
         <button
           type="button"
           onClick={onPrevious}
-          className="absolute left-1 z-10 grid size-11 place-items-center rounded-full bg-white/85 text-ink shadow-card backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="absolute left-1 z-10 grid size-11 place-items-center rounded-control border border-line-2 bg-surface/90 text-ink transition hover:bg-primary-950 hover:text-white"
           aria-label="Show previous view"
         >
           <ChevronLeft className="size-6" aria-hidden="true" />
         </button>
 
-        <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl bg-canvas">
+        <div className="aspect-[16/10] w-full overflow-hidden rounded-card bg-surface-2">
           {children}
         </div>
 
         <button
           type="button"
           onClick={onNext}
-          className="absolute right-1 z-10 grid size-11 place-items-center rounded-full bg-white/85 text-ink shadow-card backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="absolute right-1 z-10 grid size-11 place-items-center rounded-control border border-line-2 bg-surface/90 text-ink transition hover:bg-primary-950 hover:text-white"
           aria-label="Show next view"
         >
           <ChevronRight className="size-6" aria-hidden="true" />
@@ -178,7 +178,7 @@ export function ListingGallery({ listing }) {
   return (
     <div>
       <div
-        className="group relative aspect-[4/3] overflow-hidden rounded-card-xl border border-line bg-white shadow-card sm:aspect-[16/10]"
+        className="group relative aspect-[4/3] overflow-hidden rounded-card border border-line bg-surface sm:aspect-[4/3] lg:aspect-[4/3]"
         role="region"
         aria-label={`${listing.brand} ${listing.model} gallery, showing ${activeLabel}`}
         aria-roledescription="carousel"
@@ -221,21 +221,19 @@ export function ListingGallery({ listing }) {
           onPointerDown={(event) => event.stopPropagation()}
           onPointerUp={(event) => event.stopPropagation()}
           onClick={() => setIsLightboxOpen(true)}
-          className="absolute right-4 top-4 z-20 grid size-11 place-items-center rounded-2xl border border-white/70 bg-white/85 text-ink shadow-card backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="absolute right-3 top-3 z-20 grid size-10 place-items-center rounded-control border border-line-2 bg-surface/90 text-ink backdrop-blur transition hover:bg-primary-950 hover:text-white"
           aria-label={`Expand ${activeLabel} to full screen`}
         >
-          <Maximize2 className="size-5" aria-hidden="true" />
+          <Maximize2 className="size-4.5" style={{ width: 18, height: 18 }} aria-hidden="true" />
         </button>
 
         <div
           aria-live="polite"
-          className="pointer-events-none absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-white/80 px-3 py-1.5 text-xs font-bold text-ink shadow-sm backdrop-blur"
+          className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-sm bg-primary-950 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-white"
         >
-          <Images className="size-3.5" aria-hidden="true" />
+          <Images className="size-3" aria-hidden="true" />
           {activeIndex + 1} / {photos.length}
-          {!hasPhotos && (
-            <span className="font-semibold text-muted">· illustration</span>
-          )}
+          {!hasPhotos && <span className="text-primary-400">· illustration</span>}
         </div>
 
         {photos.length > 1 && (
@@ -245,7 +243,7 @@ export function ListingGallery({ listing }) {
               onPointerDown={(event) => event.stopPropagation()}
               onPointerUp={(event) => event.stopPropagation()}
               onClick={showPrevious}
-              className="absolute left-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-white/85 text-ink shadow-card backdrop-blur transition duration-200 hover:-translate-x-0.5 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="absolute left-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-control border border-line-2 bg-surface/90 text-ink backdrop-blur transition hover:bg-primary-950 hover:text-white"
               aria-label="Show previous view"
             >
               <ChevronLeft className="size-5" aria-hidden="true" />
@@ -255,7 +253,7 @@ export function ListingGallery({ listing }) {
               onPointerDown={(event) => event.stopPropagation()}
               onPointerUp={(event) => event.stopPropagation()}
               onClick={showNext}
-              className="absolute right-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-white/85 text-ink shadow-card backdrop-blur transition duration-200 hover:translate-x-0.5 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              className="absolute right-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-control border border-line-2 bg-surface/90 text-ink backdrop-blur transition hover:bg-primary-950 hover:text-white"
               aria-label="Show next view"
             >
               <ChevronRight className="size-5" aria-hidden="true" />
@@ -265,7 +263,11 @@ export function ListingGallery({ listing }) {
       </div>
 
       {photos.length > 1 && (
-        <div className="mt-4 grid grid-cols-4 gap-3" role="group" aria-label="Choose a gallery view">
+        <div
+          className="mt-3 grid grid-cols-4 gap-2"
+          role="group"
+          aria-label="Choose a gallery view"
+        >
           {photos.map((view, index) => {
             const label = hasPhotos
               ? `Show photo ${index + 1} of ${photos.length}`
@@ -278,15 +280,15 @@ export function ListingGallery({ listing }) {
                 aria-label={label}
                 aria-current={index === activeIndex ? 'true' : undefined}
                 onClick={() => setActiveIndex(index)}
-                className={`group/thumbnail relative aspect-[4/3] overflow-hidden rounded-2xl border-2 bg-white transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
+                className={`group/thumbnail relative aspect-[4/3] overflow-hidden rounded-control border-2 bg-surface transition duration-150 ${
                   index === activeIndex
-                    ? 'border-primary-500 shadow-card'
-                    : 'border-transparent opacity-70 hover:border-primary-200 hover:opacity-100'
+                    ? 'border-primary-950'
+                    : 'border-transparent opacity-70 hover:border-line-2 hover:opacity-100'
                 }`}
               >
                 {renderView(view, VIEW_LABELS[view] ?? `view ${index + 1}`, { compact: true })}
                 {index === activeIndex && (
-                  <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-primary-950/70 py-0.5 text-center text-[10px] font-bold text-white">
+                  <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-primary-950 py-0.5 text-center font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-white">
                     Selected
                   </span>
                 )}

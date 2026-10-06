@@ -1,22 +1,11 @@
-import { useMemo } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Section, SectionHeading } from '../../components/ui/Section.jsx'
 import { ButtonLink } from '../../components/ui/Button.jsx'
+import { ListingCard } from '../listings/listing-card.jsx'
 import { ProductCardSkeleton } from '../../components/ui/Skeleton.jsx'
 import { ErrorState, NoResultsState } from '../../components/ui/StateViews.jsx'
-import { ListingCard } from '../listings/listing-card.jsx'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
-import { gradeFromLegacyCondition } from '../../lib/listing-taxonomy.js'
-
-/**
- * Resolves the grade for a listing, falling back to the legacy condition label
- * until the graded column lands. Cards and sections read the grade from one
- * place so a card never disagrees with the section around it.
- */
-export function gradeFor(listing) {
-  return listing?.grade ?? gradeFromLegacyCondition(listing?.condition)
-}
 
 /** Phone grid with consistent loading, empty, and error states. */
 export function PhoneGrid({
@@ -24,11 +13,9 @@ export function PhoneGrid({
   isLoading,
   error,
   onRetry,
-  tone = 'canvas',
   className = '',
 }) {
-  const gridClasses =
-    'mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+  const gridClasses = 'mt-10 grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4'
 
   if (error) {
     return (
@@ -73,34 +60,55 @@ export function PhoneGrid({
 }
 
 /**
+ * A section header with a link on the right.
+ *
+ * Every product section on the homepage opens with this exact arrangement —
+ * kicker, title, one line of explanation, and a link out — which is what makes
+ * ten sections on one page read as one page instead of ten blocks.
+ */
+export function SectionIntro({ eyebrow, title, description, to, toLabel, className = '' }) {
+  return (
+    <div className={`flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between ${className}`}>
+      <SectionHeading
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        className="sm:max-w-2xl"
+      />
+      {to && (
+        <Link
+          to={to}
+          className="group inline-flex shrink-0 items-center gap-2 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-800 transition hover:text-primary-950"
+        >
+          {toLabel}
+          <ArrowRight
+            className="size-4 transition-transform duration-150 group-hover:translate-x-1 motion-reduce:transform-none"
+            aria-hidden="true"
+          />
+        </Link>
+      )}
+    </div>
+  )
+}
+
+/**
  * Featured phones.
  *
  * Lists the newest approved inventory so the homepage reflects what is actually
  * buyable right now, and never shows a placeholder price or stock count.
  */
 export function FeaturedPhonesSection({ listings, isLoading, error, onRetry }) {
-  const featured = useMemo(() => listings.slice(0, 8), [listings])
+  const featured = listings.slice(0, 8)
 
   return (
     <Section tone="white" id="featured">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-        <SectionHeading
-          eyebrow="Featured phones"
-          title="Tested devices, ready to compare"
-          description="Every card shows the condition grade, the measured battery health, and the warranty term, so you can narrow the catalog without opening each phone."
-          className="sm:max-w-2xl"
-        />
-        <Link
-          to={MARKETPLACE_ROUTES.shop}
-          className="group inline-flex shrink-0 items-center gap-2 text-sm font-bold text-primary-700 transition hover:text-primary-500"
-        >
-          Browse all phones
-          <ArrowRight
-            className="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
-            aria-hidden="true"
-          />
-        </Link>
-      </div>
+      <SectionIntro
+        eyebrow="Featured phones"
+        title="Tested devices, ready to compare"
+        description="Every card shows the condition grade, the measured battery health, and the warranty term, so you can narrow the catalog without opening each phone."
+        to={MARKETPLACE_ROUTES.shop}
+        toLabel="Browse all phones"
+      />
 
       <PhoneGrid
         listings={featured}
@@ -121,30 +129,30 @@ export function FeaturedPhonesSection({ listings, isLoading, error, onRetry }) {
  * not higher, so an empty section is a truthful "no deals right now".
  */
 export function BestValueSection({ listings, isLoading, error, onRetry }) {
-  const bestValue = useMemo(() => {
-    return [...listings]
-      .filter((listing) => Number(listing.discountPercent ?? 0) > 0)
-      .sort((left, right) => {
-        const percentDelta =
-          Number(right.discountPercent ?? 0) - Number(left.discountPercent ?? 0)
+  const bestValue = [...listings]
+    .filter((listing) => Number(listing.discountPercent ?? 0) > 0)
+    .sort((left, right) => {
+      const percentDelta =
+        Number(right.discountPercent ?? 0) - Number(left.discountPercent ?? 0)
 
-        if (percentDelta !== 0) {
-          return percentDelta
-        }
+      if (percentDelta !== 0) {
+        return percentDelta
+      }
 
-        return Number(left.price) - Number(right.price)
-      })
-      .slice(0, 4)
-  }, [listings])
+      return Number(left.price) - Number(right.price)
+    })
+    .slice(0, 4)
 
   const hasValue = !isLoading && !error && bestValue.length > 0
 
   return (
-    <Section tone="muted" id="best-value">
-      <SectionHeading
+    <Section tone="canvas" id="best-value">
+      <SectionIntro
         eyebrow="Biggest savings"
         title="Where the peso saving is largest"
         description="Sorted by how far below the original retail price each phone is selling. Only genuine reference prices appear here."
+        to={MARKETPLACE_ROUTES.shop}
+        toLabel="See every phone"
       />
 
       {hasValue ? (
@@ -155,13 +163,15 @@ export function BestValueSection({ listings, isLoading, error, onRetry }) {
           onRetry={onRetry}
         />
       ) : (
-        <div className="mt-10 rounded-card-lg border border-line bg-white p-8 text-center">
-          <p className="text-sm font-semibold text-muted">
-            {isLoading
-              ? 'Loading the biggest savings…'
-              : 'No phones are listed below their original price right now. Browse the full catalog to see what is available.'}
+        <div className="mt-10 rounded-card border border-dashed border-line-2 bg-surface p-10 text-center">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-subtle">
+            No discounts right now
           </p>
-          <div className="mt-5">
+          <p className="mx-auto mt-3 max-w-md text-sm leading-body text-muted">
+            No phones are listed below their original price at this moment. Browse the
+            full catalog to see what is available.
+          </p>
+          <div className="mt-6">
             <ButtonLink to={MARKETPLACE_ROUTES.shop} variant="secondary" size="md">
               Browse all phones
             </ButtonLink>

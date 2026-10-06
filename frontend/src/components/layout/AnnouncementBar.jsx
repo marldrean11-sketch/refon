@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Megaphone, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
 
 /**
  * Announcement bar.
  *
- * Dismissible per browser session so it never nags on repeat visits, and the
- * message links to the warranty page rather than to a dead promo.
+ * A utility strip, not a banner. It is one line of monospace text on Obsidian
+ * with a jade tick marking it as a verified claim, and it links to the inspection
+ * page rather than to a promotion. Dismissal is per browser session so it never
+ * nags on repeat visits.
  */
 export function AnnouncementBar() {
   const [isVisible, setIsVisible] = useState(() => {
@@ -28,14 +30,17 @@ export function AnnouncementBar() {
   }
 
   return (
-    <div className="relative bg-primary-950 text-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-10 py-2.5 text-center">
-        <Megaphone className="hidden size-4 shrink-0 text-accent-400 sm:block" aria-hidden="true" />
-        <p className="text-xs font-semibold leading-relaxed sm:text-[13px]">
+    <div className="relative bg-primary-950 text-primary-100">
+      {/* `pl-12` rather than `pl-10`: the dismiss button is a 32px target inset
+          12px from the edge, so it needs 44px of clearance. At 375px this message
+          wraps to two lines, and at 40px the link ran underneath the button. */}
+      <div className="mx-auto flex max-w-7xl items-center justify-center gap-2.5 py-2 pl-12 pr-12 text-center">
+        <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] sm:text-xs">
+          <span className="mr-2 inline-block size-1.5 rounded-full bg-accent-400 align-middle" aria-hidden="true" />
           Every phone is tested and graded before it is listed.{' '}
           <Link
             to={MARKETPLACE_ROUTES.qualityCheck}
-            className="underline decoration-accent-400/60 underline-offset-2 transition hover:text-accent-300"
+            className="text-white underline decoration-accent-400/60 underline-offset-4 transition hover:decoration-accent-300"
           >
             See exactly how we test
           </Link>
@@ -44,7 +49,7 @@ export function AnnouncementBar() {
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-lg text-primary-200 transition hover:bg-white/10 hover:text-white"
+        className="absolute right-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-control text-primary-300 transition hover:bg-white/10 hover:text-white"
         aria-label="Dismiss announcement"
       >
         <X className="size-4" aria-hidden="true" />

@@ -86,15 +86,15 @@ export function FavoriteButton({
           aria-disabled={isBusy || undefined}
           aria-pressed={canSave ? saved : undefined}
           aria-label={fullLabel}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border font-bold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 aria-disabled:opacity-60 ${sizing} ${
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-control font-mono font-semibold uppercase tracking-[0.1em] ring-1 ring-inset transition duration-150 aria-disabled:opacity-60 ${sizing} ${
             saved
-              ? 'border-danger/30 bg-danger/10 text-danger hover:bg-danger/15'
-              : 'border-line bg-white text-ink hover:border-primary-200 hover:bg-primary-50'
+              ? 'bg-surface-2 text-ink ring-line-2 hover:bg-surface-3'
+              : 'bg-surface text-primary-900 ring-line-2 hover:border-primary-950 hover:bg-primary-950 hover:text-white hover:ring-primary-950'
           }`}
         >
           <Heart
-            className={`size-5 ${saved ? 'fill-current' : ''}`}
-            strokeWidth={2.2}
+            className={`size-4.5 ${saved ? 'fill-current' : ''}`}
+            style={{ width: 18, height: 18 }}
             aria-hidden="true"
           />
           {!compact && (saved ? 'Saved to wishlist' : 'Add to wishlist')}
@@ -120,8 +120,8 @@ export function FavoriteButton({
       aria-pressed={canSave ? saved : undefined}
       aria-label={fullLabel}
       title={saved ? 'Remove from saved listings' : 'Save this listing'}
-      className={`relative grid size-9 place-items-center rounded-xl bg-white/90 shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 aria-disabled:opacity-60 ${
-        saved ? 'text-danger' : 'text-muted hover:text-danger'
+      className={`relative grid size-9 place-items-center rounded-control border border-line-2 bg-surface/90 text-muted backdrop-blur transition duration-150 hover:border-primary-950 hover:bg-primary-950 hover:text-white aria-disabled:opacity-60 ${
+        saved ? 'border-primary-950 bg-primary-950 text-white' : ''
       } ${className}`}
     >
       <Heart

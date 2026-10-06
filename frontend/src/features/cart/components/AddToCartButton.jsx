@@ -8,18 +8,20 @@ import { deviceName } from '../cart-state.js'
 import { MARKETPLACE_ROUTES } from '../../../lib/routes.js'
 
 const SIZE_CLASSES = {
-  sm: 'h-12 px-5 text-[15px]',
-  md: 'h-14 px-7 text-base',
+  sm: 'h-12 px-5 text-[13px]',
+  md: 'h-14 px-7 text-sm',
 }
 
 const BASE_CLASSES =
-  'inline-flex items-center justify-center gap-2 rounded-2xl font-bold transition duration-200'
+  'inline-flex items-center justify-center gap-2 rounded-control font-mono font-semibold uppercase tracking-[0.1em] transition duration-150'
 
 const IDLE_CLASSES =
-  'bg-primary-500 text-white shadow-card hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0'
+  'bg-primary-950 text-white ring-1 ring-inset ring-primary-950 hover:bg-primary-800 active:bg-primary-900'
 
+// "Already held" is a state, not a warning, so it inverts rather than turning
+// green. A jade button beside an Obsidian one would read as a second offer.
 const HELD_CLASSES =
-  'border border-accent-200 bg-accent-50 text-accent-800 shadow-sm hover:bg-accent-100'
+  'bg-surface-2 text-ink ring-1 ring-inset ring-line-2 hover:bg-surface-3 hover:text-primary-950'
 
 /**
  * Add a listing to the cart and hold it.
@@ -166,7 +168,7 @@ export function AddToCartButton({
       <div aria-live="assertive" className="empty:hidden">
         {errorMessage && (
           <p
-            className="mt-3 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium leading-relaxed text-danger"
+            className="mt-3 flex items-start gap-2 rounded-control border border-red-300 bg-red-50 px-3.5 py-2.5 text-xs font-medium leading-relaxed text-danger"
             data-testid="add-to-cart-error"
             role="alert"
           >

@@ -75,7 +75,7 @@ export function EmailVerificationBanner() {
             type="button"
             onClick={handleResend}
             disabled={isSending}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition duration-200 hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-11 items-center gap-2 rounded-control bg-amber-600 px-3 text-xs font-bold text-white transition duration-150 hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSending ? (
               <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
@@ -90,7 +90,7 @@ export function EmailVerificationBanner() {
           type="button"
           onClick={handleDismiss}
           aria-label="Dismiss email verification reminder"
-          className="grid size-8 shrink-0 place-items-center rounded-xl text-amber-800 transition hover:bg-amber-100 hover:text-amber-950"
+          className="grid size-11 shrink-0 place-items-center rounded-control text-amber-800 transition duration-150 hover:bg-amber-100 hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
         >
           <X className="size-4" aria-hidden="true" />
         </button>

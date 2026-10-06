@@ -3,11 +3,9 @@ import {
   AlertCircle,
   ArrowRight,
   LoaderCircle,
-  Mail,
   ShieldCheck,
   ShoppingBag,
   Store,
-  UserRound,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
@@ -105,29 +103,30 @@ export function RegisterPage() {
 
   return (
     <AuthShell>
-      <section className="rounded-card-xl border border-line bg-white/95 p-5 shadow-card backdrop-blur sm:p-9 lg:p-10">
+      <section className="rounded-card-lg border border-line bg-surface p-5 sm:p-8">
         <div className="mb-7">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-accent-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-accent-800">
-            <ShieldCheck className="size-3.5" aria-hidden="true" />
-            Join with confidence
-          </span>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Create your ReFon account
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700">
+            Join ReFon
+          </p>
+          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink">
+            Create your account
           </h1>
-          <p className="mt-3 leading-body text-muted">
-            Start as a buyer or seller. You can sign in securely immediately after
+          <p className="mt-2.5 leading-body text-muted">
+            Start as a buyer or a seller. You can sign in securely immediately after
             registration.
           </p>
         </div>
 
         {visibleError && (
           <div
-            className="mb-6 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            className="mb-6 rounded-control border border-danger bg-red-50 p-4 text-sm text-danger"
             role="alert"
             aria-live="assertive"
           >
-            <AlertCircle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden="true" />
-            <p className="leading-relaxed">{visibleError}</p>
+            <p className="flex gap-2.5 leading-relaxed">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              {visibleError}
+            </p>
           </div>
         )}
 
@@ -139,7 +138,6 @@ export function RegisterPage() {
             type="text"
             autoComplete="name"
             placeholder="Alex Morgan"
-            icon={UserRound}
             value={form.name}
             onChange={updateField}
             error={fieldErrors.name}
@@ -155,7 +153,6 @@ export function RegisterPage() {
             inputMode="email"
             autoComplete="email"
             placeholder="you@example.com"
-            icon={Mail}
             value={form.email}
             onChange={updateField}
             error={fieldErrors.email}
@@ -177,9 +174,18 @@ export function RegisterPage() {
             required
           />
 
+          {/* The role choice is a segmented control rather than two icon cards.
+              It is one question with two answers, so it reads as one control —
+              and it immediately shows what picking each one actually does. */}
           <fieldset aria-describedby={fieldErrors.role ? 'register-role-error' : undefined}>
-            <legend className="text-sm font-semibold text-ink">How will you use ReFon?</legend>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Account type">
+            <legend className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-ink">
+              How will you use ReFon?
+            </legend>
+            <div
+              className="mt-2 grid gap-px overflow-hidden rounded-control border border-line-2 bg-line sm:grid-cols-2"
+              role="radiogroup"
+              aria-label="Account type"
+            >
               {roleOptions.map((option) => {
                 const Icon = option.icon
                 const isSelected = form.role === option.value
@@ -188,7 +194,7 @@ export function RegisterPage() {
                   <label key={option.value} className="group cursor-pointer">
                     <input
                       id={`register-role-${option.value}`}
-                       type="radio"
+                      type="radio"
                       name="role"
                       value={option.value}
                       checked={isSelected}
@@ -197,23 +203,38 @@ export function RegisterPage() {
                       className="peer sr-only"
                     />
                     <span
-                      className={`flex h-full min-h-28 flex-col rounded-2xl border p-4 transition duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500 peer-focus-visible:ring-offset-2 ${
+                      className={`flex h-full flex-col p-4 transition duration-150 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:-outline-offset-2 peer-focus-visible:outline-primary-950 ${
                         isSelected
-                          ? 'border-primary-500 bg-primary-50 shadow-sm'
-                          : 'border-line bg-white hover:border-primary-200 hover:bg-primary-50/40'
+                          ? 'bg-primary-950 text-white'
+                          : 'bg-surface hover:bg-surface-2'
                       }`}
                     >
+                      <span className="flex items-center justify-between gap-2">
+                        <Icon
+                          className={`size-4 ${isSelected ? 'text-accent-300' : 'text-subtle'}`}
+                          aria-hidden="true"
+                        />
+                        <span
+                          className={`grid size-4 place-items-center rounded-full border ${
+                            isSelected ? 'border-white bg-white' : 'border-line-2 bg-surface'
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {isSelected ? <span className="block size-1.5 rounded-full bg-primary-950" /> : null}
+                        </span>
+                      </span>
                       <span
-                        className={`grid size-10 place-items-center rounded-xl transition duration-200 ${
-                          isSelected
-                            ? 'bg-primary-500 text-white'
-                            : 'bg-primary-50 text-primary-600 group-hover:bg-primary-100'
+                        className={`mt-3 text-sm font-bold ${
+                          isSelected ? 'text-white' : 'text-ink'
                         }`}
                       >
-                        <Icon className="size-5" aria-hidden="true" />
+                        {option.label}
                       </span>
-                      <span className="mt-3 text-sm font-bold text-ink">{option.label}</span>
-                      <span className="mt-1 text-xs leading-relaxed text-muted">
+                      <span
+                        className={`mt-1 text-xs leading-relaxed ${
+                          isSelected ? 'text-primary-300' : 'text-muted'
+                        }`}
+                      >
                         {option.description}
                       </span>
                     </span>
@@ -222,15 +243,19 @@ export function RegisterPage() {
               })}
             </div>
             {fieldErrors.role && (
-              <p id="register-role-error" className="mt-2 text-xs font-medium text-danger" role="alert">
+              <p
+                id="register-role-error"
+                className="mt-2 text-xs font-medium text-danger"
+                role="alert"
+              >
                 {fieldErrors.role}
               </p>
             )}
           </fieldset>
 
           {form.role === 'SELLER' && (
-            <div className="flex gap-3 rounded-2xl border border-accent-200 bg-accent-50 p-4 text-sm text-accent-900">
-              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-accent-700" aria-hidden="true" />
+            <div className="flex gap-3 rounded-control border border-accent-300 bg-accent-50 p-4 text-sm text-accent-900">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent-700" aria-hidden="true" />
               <p className="leading-relaxed">
                 We’ll create your seller profile with{' '}
                 <span className="font-bold">PENDING</span> verification. Seller tools
@@ -242,18 +267,18 @@ export function RegisterPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-primary-950 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition duration-150 hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>
-                <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                 Creating your account…
               </>
             ) : (
               <>
                 Create account
                 <ArrowRight
-                  className="size-4 transition duration-200 group-hover:translate-x-0.5"
+                  className="size-4 transition duration-150 group-hover:translate-x-0.5 motion-reduce:transform-none"
                   aria-hidden="true"
                 />
               </>
@@ -265,16 +290,16 @@ export function RegisterPage() {
           Already have an account?{' '}
           <Link
             to={AUTH_ROUTES.login}
-            className="font-bold text-primary-700 transition hover:text-primary-500 hover:underline"
+            className="font-bold text-primary-800 transition hover:text-primary-950 hover:underline"
           >
             Sign in
           </Link>
         </p>
 
-        <p className="mt-3 text-center text-sm text-muted">
+        <p className="mt-2 text-center font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
           <Link
             to={AUTH_ROUTES.forgotPassword}
-            className="font-semibold text-muted underline transition hover:text-primary-700"
+            className="underline underline-offset-4 transition hover:text-primary-950"
           >
             Forgot your password?
           </Link>

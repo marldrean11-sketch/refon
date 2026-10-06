@@ -83,40 +83,44 @@ export function TrustSummary({ listing }) {
   return (
     <section
       aria-labelledby="trust-summary-heading"
-      className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7"
+      className="rounded-card border border-line bg-surface"
     >
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary-600">
-        Buying with confidence
-      </p>
-      <h2
-        id="trust-summary-heading"
-        className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink"
-      >
-        What ReFon publishes about this phone
-      </h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        Every claim below comes from this listing's record. Where something has not been
-        captured, it says so rather than assuming the best.
-      </p>
+      <div className="border-b border-line px-5 py-5 sm:px-6">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">
+          Buying with confidence
+        </p>
+        <h2
+          id="trust-summary-heading"
+          className="mt-1.5 font-display text-xl font-bold tracking-tight text-ink"
+        >
+          What ReFon publishes about this phone
+        </h2>
+        <p className="mt-2 max-w-3xl text-sm leading-body text-muted">
+          Every claim below comes from this listing's record. Where something has not been
+          captured, it says so rather than assuming the best.
+        </p>
+      </div>
 
-      <ul className="mt-6 grid gap-5 sm:grid-cols-2">
+      <ul className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-3">
         {rows.map((row) => (
-          <li key={row.title} className="flex gap-3">
-            <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-700">
-              <row.icon className="size-4.5" style={{ width: 18, height: 18 }} aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-ink">{row.title}</p>
-              <p className="mt-1 text-sm leading-relaxed text-muted">{row.body}</p>
-              {row.link && (
-                <Link
-                  to={row.link.to}
-                  className="mt-1.5 inline-flex text-xs font-bold text-primary-700 underline underline-offset-2 hover:text-primary-500"
-                >
-                  {row.link.label}
-                </Link>
-              )}
-            </div>
+          <li key={row.title} className="bg-surface p-5">
+            <p className="flex items-start gap-2.5 text-sm font-bold leading-snug text-ink">
+              <row.icon
+                className="mt-0.5 size-4 shrink-0 text-accent-600"
+                style={{ width: 16, height: 16 }}
+                aria-hidden="true"
+              />
+              {row.title}
+            </p>
+            <p className="mt-2 text-sm leading-body text-muted">{row.body}</p>
+            {row.link && (
+              <Link
+                to={row.link.to}
+                className="mt-2 inline-flex font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-800 underline underline-offset-2 hover:text-primary-950"
+              >
+                {row.link.label}
+              </Link>
+            )}
           </li>
         ))}
       </ul>

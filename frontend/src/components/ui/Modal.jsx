@@ -137,12 +137,12 @@ export function Modal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: 16, scale: 0.99 }}
             transition={quickTransition}
-            className={`relative z-10 my-auto w-full ${widthClasses[size] ?? widthClasses.md} overflow-hidden rounded-t-card-xl bg-white shadow-2xl sm:rounded-card-xl ${className}`}
+            className={`relative z-10 my-auto w-full ${widthClasses[size] ?? widthClasses.md} overflow-hidden rounded-t-card-lg border border-line-2 bg-surface shadow-pop sm:rounded-card-lg ${className}`}
           >
             {title && (
-              <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+              <header className="flex items-start justify-between gap-4 border-b border-line bg-surface-2 px-5 py-4 sm:px-6">
                 <div>
-                  <h2 id={titleId} className="font-display text-xl font-semibold text-ink">
+                  <h2 id={titleId} className="font-display text-lg font-bold tracking-tight text-ink">
                     {title}
                   </h2>
                   {description && (
@@ -154,7 +154,7 @@ export function Modal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="grid size-10 shrink-0 place-items-center rounded-xl text-muted transition hover:bg-canvas hover:text-ink"
+                  className="grid size-10 shrink-0 place-items-center rounded-control border border-line-2 text-muted transition hover:bg-surface-3 hover:text-ink"
                   aria-label="Close dialog"
                 >
                   <X className="size-5" aria-hidden="true" />
@@ -162,12 +162,12 @@ export function Modal({
               </header>
             )}
             <div
-              className={`max-h-[70vh] overflow-y-auto px-6 py-5 ${bodyClassName}`}
+              className={`max-h-[70vh] overflow-y-auto px-5 py-5 sm:px-6 ${bodyClassName}`}
             >
               {children}
             </div>
             {footer && (
-              <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-canvas px-6 py-4">
+              <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-2 px-5 py-4 sm:px-6">
                 {footer}
               </footer>
             )}

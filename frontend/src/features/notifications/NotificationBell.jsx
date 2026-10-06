@@ -250,7 +250,7 @@ export function NotificationBell() {
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="relative grid size-11 place-items-center rounded-xl border border-line bg-white text-muted shadow-sm transition duration-200 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+        className="relative grid size-11 place-items-center rounded-control border border-line bg-white text-muted transition duration-200 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
         aria-label={
           unreadCount > 0
             ? `Notifications, ${unreadCount} unread`
@@ -280,7 +280,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -8, scale: 0.98 }}
             transition={quickTransition}
-            className="absolute right-0 top-14 z-[70] w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-line bg-white shadow-2xl"
+            className="absolute right-0 top-14 z-drawer w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-card-lg border border-line bg-white shadow-2xl"
           >
             <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-4">
               <div>

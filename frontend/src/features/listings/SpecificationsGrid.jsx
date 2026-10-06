@@ -78,39 +78,46 @@ export function SpecificationsGrid({ listing }) {
   return (
     <section
       aria-labelledby="specifications-heading"
-      className="rounded-card border border-line bg-white p-6 shadow-card sm:p-7"
+      className="rounded-card border border-line bg-surface"
     >
-      <h2
-        id="specifications-heading"
-        className="font-display text-2xl font-semibold tracking-tight text-ink"
-      >
-        Full specifications
-      </h2>
-      <p className="mt-1.5 text-sm text-muted">
-        As recorded by the seller for this device. Fields the seller has not entered are
-        left out rather than filled in.
-      </p>
+      <div className="border-b border-line px-5 py-5 sm:px-6">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">
+          Recorded data
+        </p>
+        <h2
+          id="specifications-heading"
+          className="mt-1.5 font-display text-xl font-bold tracking-tight text-ink"
+        >
+          Full specifications
+        </h2>
+        <p className="mt-2 text-sm leading-body text-muted">
+          As recorded by the seller for this device. Fields the seller has not entered are
+          left out rather than filled in.
+        </p>
+      </div>
 
-      <div className="mt-6 space-y-7">
+      <div className="px-5 py-5 sm:px-6">
         {groups.map((group) => (
-          <div key={group.id}>
+          <div key={group.id} className="mb-6 last:mb-0">
             {group.rows.length > 1 && (
-              <h3 className="text-xs font-bold uppercase tracking-[0.14em] text-primary-600">
+              <h3 className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
                 {group.title}
               </h3>
             )}
             <dl
-              className={`grid gap-3 sm:grid-cols-2 ${
+              className={`grid gap-x-8 sm:grid-cols-2 ${
                 group.rows.length > 1 ? 'mt-3' : ''
               }`}
             >
               {group.rows.map((row) => (
                 <div
                   key={row.key}
-                  className="rounded-2xl bg-canvas px-4 py-3 sm:flex sm:items-baseline sm:justify-between sm:gap-4"
+                  className="grid grid-cols-[minmax(6rem,42%)_1fr] items-baseline gap-4 border-b border-line py-2.5 last:border-b-0"
                 >
-                  <dt className="text-xs font-semibold text-muted">{row.label}</dt>
-                  <dd className="mt-1 text-sm font-semibold text-ink sm:mt-0 sm:text-right">
+                  <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                    {row.label}
+                  </dt>
+                  <dd className="min-w-0 break-words text-[13px] font-semibold text-ink">
                     {row.value}
                   </dd>
                 </div>

@@ -20,18 +20,34 @@ export function gradeFor(listing) {
 }
 
 /**
- * Product card.
+ * The listing card.
  *
- * Scan order is deliberate and fixed: model, price, grade, battery, warranty.
- * Those five answer "is this the phone I want, is it affordable, is it actually
- * in the condition claimed, will the battery last, and am I covered" — in that
- * order, because that is the order a buyer actually asks them.
+ * This is the object the whole marketplace is made of, so its architecture is
+ * argued rather than inherited. A product card has two jobs that pull against
+ * each other: show the device as an object, and show enough measurement to decide
+ * without opening it. The old card solved that with two rounded boxes and a
+ * badge row, which made twelve cards look like twelve identical tiles.
  *
- * Everything else is deliberately kept out or secondary: a real photo outranks
- * the illustration, RAM is a small line rather than a card, and seller rating
- * appears only when it exists. A discount badge is never invented; `PriceDisplay`
- * renders one only when the listing carries a reference price above the selling
- * price.
+ * What it does now:
+ *
+ *   1. A portrait image plate that owns the top two thirds of the card. Devices
+ *      are tall; a 4/3 landscape crop of a phone is mostly empty background, so a
+ *      4/5 plate lets the device fill the frame and makes the grid read as a
+ *      shelf of products rather than a wall of thumbnails.
+ *   2. A measurement strip — three cells divided by hairlines, the way a spec
+ *      sheet divides columns. Grade, battery, warranty are the three facts a
+ *      buyer asks for in that order, and giving them equal cells states that they
+ *      carry equal weight instead of decorating them as rounded chips.
+ *   3. Price as the loudest element on the card, which is what it is on a
+ *      marketplace.
+ *   4. Seller and trust state in a single quiet footer line, in words.
+ *
+ * Scan order is therefore image → model → price → measurements → seller, and
+ * everything that is merely available (RAM, listing year when the model implies
+ * it, seller rating) is secondary by construction.
+ *
+ * A discount badge is never invented: `PriceDisplay` renders one only when the
+ * listing carries a reference price above the selling price.
  */
 export function ListingCard({ listing, preview = false, hideSaveButton = false }) {
   const reduceMotion = useReducedMotion()
@@ -44,25 +60,26 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
 
   return (
     <motion.article
-      initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
-      whileHover={reduceMotion || preview ? undefined : { y: -6 }}
-      whileTap={reduceMotion || preview ? undefined : { scale: 0.99 }}
+      viewport={{ once: true, amount: 0.12 }}
+      whileHover={reduceMotion || preview ? undefined : { y: -3 }}
+      whileTap={reduceMotion || preview ? undefined : { scale: 0.995 }}
       transition={standardTransition}
-      className="group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-white shadow-card transition duration-300 hover:border-primary-100 hover:shadow-card-hover"
+      className="group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-200 hover:border-primary-400 hover:shadow-card-hover"
     >
       {!preview && (
         <Link
           to={productPath(listing)}
-          className="absolute inset-0 z-30 rounded-card focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-300 focus-visible:ring-inset"
+          className="absolute inset-0 z-30 rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-inset"
           aria-label={`View ${listing.year} ${listing.brand} ${listing.model}`}
         >
           <span className="sr-only">View listing details</span>
         </Link>
       )}
 
-      <div className="relative overflow-hidden">
+      {/* 1. The device. */}
+      <div className="relative overflow-hidden border-b border-line bg-surface-2">
         {isImageReference(mainPhoto) ? (
           <img
             src={mainPhoto}
@@ -70,23 +87,28 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
             loading="lazy"
             decoding="async"
             width={800}
-            height={600}
-            className="aspect-[4/3] w-full object-cover transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.03]"
+            height={1000}
+            className="aspect-[4/5] w-full object-cover transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.04]"
           />
         ) : (
           <PhoneArtwork
             brand={listing.brand}
             model={listing.model}
             color={listing.color}
+            // The artwork's own "Illustration" chip sits in the same corner as the
+            // condition badge and the two collided. On a card the grade already
+            // says this is a listing, so the chip is redundant here.
+            showLabel={false}
+            className="aspect-[4/5] w-full"
           />
         )}
 
-        <div className="absolute left-3 top-3">
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
           <ConditionBadge grade={grade} />
         </div>
 
         {listing.isFeatured && (
-          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-pill bg-primary-950/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white backdrop-blur">
+          <span className="absolute bottom-0 left-0 bg-primary-950 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
             Featured
           </span>
         )}
@@ -99,30 +121,30 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
-        {/* 1. Model */}
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary-600">
+      {/* 2. Identity and price. */}
+      <div className="flex flex-1 flex-col p-4">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
           {listing.brand}
         </p>
-        <h3 className="mt-1 truncate font-display text-xl font-semibold tracking-tight text-ink">
+        <h3 className="mt-1.5 truncate font-display text-lg font-bold leading-tight tracking-tight text-ink">
           {listing.model}
         </h3>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-          <span>{listing.year}</span>
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-muted">
+          <span className="tabular-nums">{listing.year}</span>
           <span className="inline-flex items-center gap-1">
-            <HardDrive className="size-3.5" aria-hidden="true" />
+            <HardDrive className="size-3" aria-hidden="true" />
             {listing.storage}
           </span>
           {listing.ram && (
             <span className="inline-flex items-center gap-1">
-              <MemoryStick className="size-3.5" aria-hidden="true" />
+              <MemoryStick className="size-3" aria-hidden="true" />
               {listing.ram}
             </span>
           )}
         </div>
 
-        {/* 2. Price */}
-        <div className="mt-4">
+        <div className="mt-3.5">
           <PriceDisplay
             price={listing.price}
             originalPrice={listing.originalPrice}
@@ -130,23 +152,40 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
           />
         </div>
 
-        {/* 3. Grade, 4. Battery, 5. Warranty */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-canvas p-3">
-            <BatteryHealth percent={listing.batteryPercent} size="sm" />
-          </div>
-          <div className="flex flex-col justify-between rounded-2xl bg-canvas p-3">
-            <p className="text-xs font-semibold text-muted">Condition</p>
-            <p className="mt-1.5 font-display text-base font-semibold text-ink">
-              {listing.gradeLabel ?? grade}
-            </p>
-          </div>
-        </div>
+        {/* 3. The measurement strip.
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+            Two cells, not three. Grade already owns a chip on the image, and
+            repeating it here in a narrower column truncated the label to
+            nonsense on a four-across grid. Battery and coverage are the two
+            facts a card can add that the image does not already say. */}
+        <dl className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-control border border-line bg-line">
+          <div className="bg-surface px-2.5 py-2">
+            <dt className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-subtle">
+              Battery
+            </dt>
+            <dd className="mt-1 font-mono text-sm font-semibold tabular-nums text-ink">
+              {listing.batteryPercent}%
+            </dd>
+          </div>
+          <div className="bg-surface px-2.5 py-2">
+            <dt className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-subtle">
+              Cover
+            </dt>
+            <dd className="mt-1 text-[13px] font-semibold text-ink">
+              {hasWarranty
+                ? Number(listing.warrantyMonths) >= 12
+                  ? '1 year'
+                  : `${Math.round(Number(listing.warrantyMonths))} months`
+                : 'Sold as-is'}
+            </dd>
+          </div>
+        </dl>
+
+        {/* Rating and warranty live in one quiet row rather than competing chips. */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <WarrantyBadge months={listing.warrantyMonths} />
           {!hasWarranty && (
-            <span className="rounded-pill bg-canvas px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-line">
+            <span className="rounded-sm bg-surface-2 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-line">
               Sold as-is
             </span>
           )}
@@ -155,9 +194,13 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
           )}
         </div>
 
-        <div className="mt-auto border-t border-line pt-4">
+        {/* 4. Who is selling it, in words. */}
+        <div className="mt-auto border-t border-line pt-3">
           <div className="flex items-center justify-between gap-3 text-xs text-muted">
-            <span className="inline-flex min-w-0 items-center gap-1.5">
+            <span
+              className="inline-flex min-w-0 items-center gap-1.5"
+              title={listing.sellerName}
+            >
               <Store className="size-3.5 shrink-0" aria-hidden="true" />
               <span className="truncate">{listing.sellerName}</span>
             </span>
@@ -169,17 +212,15 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
                 showValue={false}
                 className="shrink-0"
               />
-            ) : (
-              <span className="shrink-0 font-semibold text-primary-700">Tested</span>
-            )}
+            ) : null}
           </div>
 
           {/* Seller legitimacy is the objection this marketplace exists to
               answer, so it is stated in words and not left to an icon's
-              accessible name. A badge costs one short line. */}
+              accessible name. */}
           {listing.seller?.verificationStatus === 'APPROVED' && (
-            <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-pill bg-accent-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-accent-800 ring-1 ring-inset ring-accent-200">
-              <BadgeCheck className="size-3 shrink-0" aria-hidden="true" />
+            <span className="mt-2 inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-accent-700">
+              <BadgeCheck className="size-3.5 shrink-0" aria-hidden="true" />
               Verified seller
             </span>
           )}

@@ -1,6 +1,13 @@
-import { BadgeCheck, Smartphone } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+/**
+ * The wordmark.
+ *
+ * The glyph is a device outline with a reFon tick cut into it — the one idea the
+ * brand actually sells, which is "inspected, so it's cleared". It is drawn with
+ * a square silhouette and a hairline rather than a soft filled tile, so the
+ * logo belongs to the same object language as the cards and buttons around it.
+ */
 export function BrandMark({
   inverse = false,
   compact = false,
@@ -12,19 +19,32 @@ export function BrandMark({
       to="/"
       onClick={onClick}
       aria-label="ReFon home"
-      className={`inline-flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${className}`}
+      className={`group inline-flex items-center gap-2.5 rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-offset-2 ${className}`}
     >
-      <span className="relative grid size-10 shrink-0 place-items-center rounded-xl bg-primary-500 text-white shadow-card">
-        <Smartphone className="size-5" strokeWidth={2.2} aria-hidden="true" />
-        <BadgeCheck
-          className="absolute -bottom-1.5 -right-1.5 size-5 rounded-full bg-accent-500 text-white ring-2 ring-white"
-          strokeWidth={2.5}
+      <span
+        className={`grid size-9 shrink-0 place-items-center rounded-control ${
+          inverse
+            ? 'bg-white text-primary-950'
+            : 'bg-primary-950 text-white'
+        }`}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="size-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="square"
           aria-hidden="true"
-        />
+        >
+          <rect x="6.5" y="2.5" width="11" height="19" rx="1.5" />
+          <path d="M10.5 18.2h3" />
+          <path d="m8.6 12.4 2.1 2.2 4.5-4.9" className="text-accent-500" />
+        </svg>
       </span>
       {!compact && (
         <span
-          className={`font-display text-2xl font-bold tracking-tight ${
+          className={`font-display text-xl font-bold tracking-[-0.03em] ${
             inverse ? 'text-white' : 'text-ink'
           }`}
         >

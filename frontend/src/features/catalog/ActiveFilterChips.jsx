@@ -7,6 +7,10 @@ import { FILTER_LABELS } from './catalog-filters.js'
  * Without these, a shopper who has applied six filters sees a grid that looks
  * unfamiliar and has no obvious way back. Each chip states the filter and its
  * value, so the state of the page is always legible.
+ *
+ * Square-cornered with a hairline and a monospace label, matching the filter
+ * rail they came from. A pill here would be the only rounded object in the
+ * results toolbar.
  */
 export function ActiveFilterChips({ chips, onRemove, onClearAll, className = '' }) {
   if (chips.length === 0) {
@@ -15,37 +19,42 @@ export function ActiveFilterChips({ chips, onRemove, onClearAll, className = '' 
 
   return (
     <div className={className}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
+      <ul className="flex flex-wrap items-center gap-2">
+        <li className="mr-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle">
           Filtering by
-        </span>
+        </li>
 
         {chips.map((chip) => (
-          <button
-            key={`${chip.key}:${chip.value}`}
-            type="button"
-            onClick={() => onRemove(chip.key, chip.value)}
-            className="group inline-flex items-center gap-1.5 rounded-pill bg-primary-50 py-1.5 pl-3 pr-2 text-xs font-bold text-primary-800 ring-1 ring-inset ring-primary-200 transition hover:bg-primary-100"
-          >
-            <span className="text-primary-600">{FILTER_LABELS[chip.key]}:</span>
-            {chip.label}
-            <span className="grid size-4 place-items-center rounded-full bg-white/70 transition group-hover:bg-white">
-              <X className="size-3" aria-hidden="true" />
-            </span>
-            <span className="sr-only">Remove this filter</span>
-          </button>
+          <li key={`${chip.key}:${chip.value}`}>
+            <button
+              type="button"
+              onClick={() => onRemove(chip.key, chip.value)}
+              className="group inline-flex items-center gap-2 rounded-control border border-line-2 bg-surface py-1.5 pl-2.5 pr-1.5 text-xs font-medium text-ink transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
+            >
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle group-hover:text-primary-300">
+                {FILTER_LABELS[chip.key]}:
+              </span>
+              <span>{chip.label}</span>
+              <span className="grid size-4 place-items-center rounded-[2px] bg-surface-2 text-muted transition group-hover:bg-white/15 group-hover:text-white">
+                <X className="size-3" aria-hidden="true" />
+              </span>
+              <span className="sr-only">Remove this filter</span>
+            </button>
+          </li>
         ))}
 
         {chips.length > 1 && (
-          <button
-            type="button"
-            onClick={onClearAll}
-            className="rounded-pill px-2.5 py-1.5 text-xs font-bold text-muted underline underline-offset-2 transition hover:text-danger"
-          >
-            Clear all
-          </button>
+          <li>
+            <button
+              type="button"
+              onClick={onClearAll}
+              className="rounded-control px-2.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted underline underline-offset-2 transition hover:text-danger"
+            >
+              Clear all
+            </button>
+          </li>
         )}
-      </div>
+      </ul>
     </div>
   )
 }
