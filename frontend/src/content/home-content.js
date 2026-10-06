@@ -4,28 +4,84 @@
  * Everything here is static copy that does not belong in the API layer.
  */
 
+/**
+ * The four promises, and where each number comes from.
+ *
+ * Every figure here is one the site already publishes somewhere else, and the
+ * comment on each is the citation. That is deliberate: a trust bar is the single
+ * easiest place on a page to print a claim the rest of the site contradicts.
+ *
+ * Two figures in the Phase 3 brief were **not** used, because they are not true of
+ * this codebase:
+ *
+ *   - "30-day returns" — every policy surface publishes a **7-day** window:
+ *     `policy-content.js`, `WarrantySection`, `SiteFooter`, and the cart drawer
+ *     all say seven days. Printing 30 here would put the homepage in conflict with
+ *     the returns page it links to.
+ *   - "40+ point test" — the inspection is **11 points**. `inspectionTotal` is 11
+ *     on every seeded listing and `InspectionPanel` says "11-point quality
+ *     inspection". A 40-point test would be a test that does not happen.
+ *
+ * The warranty is likewise not printed as a flat "12 months" promise: only 4 of
+ * the 28 approved listings carry a 12-month term (18 are 6-month, 6 are 3-month),
+ * so the strip says "on eligible phones" and the exact term is read off the
+ * listing itself.
+ */
 export const TRUST_STRIP = Object.freeze([
   {
     id: 'tested',
     label: '11-point inspection',
     detail: 'Every phone tested before listing',
-  },
-  {
-    id: 'battery',
-    label: 'Battery health published',
-    detail: 'The measured percentage, on every card',
-  },
-  {
-    id: 'graded',
-    label: 'A/B/C condition grading',
-    detail: 'Cosmetics reduced to a readable letter',
+    // `inspectionTotal` on every approved listing; "11-point quality
+    // inspection" in `InspectionPanel`.
   },
   {
     id: 'warranty',
     label: 'Warranty on eligible phones',
-    detail: 'Administered by ReFon, not the seller',
+    detail: 'Up to 12 months, handled by ReFon',
+    // `warrantyMonths` maxes at 12 across the catalog. "Up to", because 24 of 28
+    // listings carry a shorter term.
+  },
+  {
+    id: 'returns',
+    label: '7-day returns',
+    detail: 'If it differs from the listing, send it back',
+    // The published return window in `policy-content.js`, `WarrantySection`, and
+    // the shipping page.
+  },
+  {
+    id: 'delivery',
+    label: 'Free delivery over ₱15,000',
+    detail: 'Standard shipping, nationwide',
+    // `FREE_STANDARD_DELIVERY_THRESHOLD` in `backend/src/config/checkout.config.js`,
+    // published on the shipping page.
   },
 ])
+
+/**
+ * The hero carousel's headline.
+ *
+ * Structured as lines of *runs* rather than plain strings, because two things
+ * need to be expressed per word: each line is masked and revealed on its own, and
+ * exactly one word on the whole page is set in the italic serif.
+ *
+ * "you" is that word. It is the one place a serif earns its keep — it is the
+ * promise the rest of the page spends 11 sections keeping — and it is set in the
+ * serif *rather than* in green, because on this site green means "verified" and a
+ * green adjective would claim a verification the headline has not got.
+ */
+export const HERO_HEADLINE = Object.freeze([
+  Object.freeze([{ text: 'Premium phones.', accent: false }]),
+  Object.freeze([{ text: 'Smarter prices.', accent: false }]),
+  Object.freeze([
+    { text: 'Tested for ', accent: false },
+    { text: 'you', accent: true },
+    { text: '.', accent: false },
+  ]),
+])
+
+export const HERO_SUBTEXT =
+  'Every phone here has been inspected, graded, and measured before it is listed — the condition, the battery percentage, and the warranty term are on the listing itself, not in the small print.'
 
 export const WHY_REFURBISHED = Object.freeze([
   {

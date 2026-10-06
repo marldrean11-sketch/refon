@@ -16,9 +16,9 @@ import { pageVariants, usePrefersReducedMotion } from '../../lib/motion.ts'
  * re-layout on every frame of a navigation, which is the single most reliable way
  * to make a route change feel like the site flinched.
  *
- * Reduced motion gets no animation at all — not a faster one. `initial={false}`
- * and an undefined `exit` mean the wrapper renders statically and `AnimatePresence`
- * swaps its child without an intermediate frame.
+ * Reduced motion gets no animation at all — not a faster one. The wrapper passes
+ * `initial={false}` and an undefined `exit`, and `AnimatePresence` swaps its child
+ * without an intermediate frame.
  *
  * The transition is keyed on the pathname alone. A search filter that only
  * rewrites the query string is not a new page, and animating it would blank the
@@ -28,8 +28,24 @@ export function PageTransition({ children }) {
   const location = useLocation()
   const reducedMotion = usePrefersReducedMotion()
 
+  /*
+   * `initial={false}` was removed from this `AnimatePresence`.
+   *
+   * On `AnimatePresence` that prop means "disable any initial animations on
+   * children present when the component first mounts" — and it propagates, not
+   * just to the direct child. With it set, every `initial` state inside a freshly
+   * loaded route was suppressed: the homepage's headline mounted straight at its
+   * final position, so the maskReveal never ran and no screenshot or DOM snapshot
+   * showed anything other than a finished hero.
+   *
+   * Reduced motion is still handled, and still handled *here*: the wrapper passes
+   * `initial={false}` itself under reduced motion, and the home page's own
+   * components read `usePrefersReducedMotion` and render statically. Phase 3A
+   * asserts both — that the reveal animates normally, and that under
+   * `reducedMotion: 'reduce'` nothing moves at all.
+   */
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="wait">
       <motion.div
         key={location.pathname}
         data-testid="page-transition"

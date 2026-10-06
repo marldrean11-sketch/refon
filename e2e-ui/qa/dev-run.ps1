@@ -14,13 +14,14 @@
 #
 #   .\qa\dev-run.ps1                     # phase 1 verification
 #   .\qa\dev-run.ps1 -Phase 2            # phase 2 navigation + smoke
+#   .\qa\dev-run.ps1 -Phase 3            # phase 3a home + smoke
 #   .\qa\dev-run.ps1 -Phase 2 -Grep "P2-07"   # one test
 #   .\qa\dev-run.ps1 -Full               # the existing regression suite
 #   .\qa\dev-run.ps1 -NoRestart          # reuse whatever is already running
 param(
   [string]$Grep = "",
   [switch]$Full,
-  [ValidateSet(1, 2)][int]$Phase = 1,
+  [ValidateSet(1, 2, 3)][int]$Phase = 1,
   [switch]$NoRestart,
   [string]$Reporter = "list"
 )
@@ -98,19 +99,26 @@ Get-Content (Join-Path $repo "backend\.env") | ForEach-Object {
   }
 }
 
-# Which spec to run. Defaults to the phase 1 verification; `-Phase 2` switches to
-# the phase 2 navigation spec and its smoke set.
+# Which spec to run. Defaults to the phase 1 verification; `-Phase 2` and
+# `-Phase 3` switch to that phase's spec plus the shared smoke set.
+#
+# `phase2-smoke.spec.js` is deliberately reused for phase 3 rather than copied:
+# it is exactly the four things a home page redesign could break that are not the
+# home page (shell renders, shop renders, product renders, cart still accepts), and
+# a second copy would be a second thing to keep in sync.
 $pwArgs = @("playwright", "test")
 
 if ($Full) {
   # Exclude this spec: it is the phase 1 verification, not the regression suite.
   $pwArgs += @("--grep-invert", "P1 Phase 1 foundation")
+} elseif ($Phase -eq 3) {
+  $pwArgs += @("tests/phase3a-home.spec.js", "tests/phase2-smoke.spec.js")
 } elseif ($Phase -eq 2) {
   $pwArgs += @("tests/phase2-navigation.spec.js", "tests/phase2-smoke.spec.js")
 } elseif ($Phase -eq 1) {
   $pwArgs += @("tests/phase1-foundation.spec.js")
 } else {
-  throw "specify -Full, -Phase 1, or -Phase 2"
+  throw "specify -Full, -Phase 1, -Phase 2, or -Phase 3"
 }
 
 if ($Grep) {
