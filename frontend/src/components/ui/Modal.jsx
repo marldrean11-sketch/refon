@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
-import { quickTransition } from '../../lib/motion.js'
+import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -32,7 +32,7 @@ export function Modal({
 }) {
   const panelRef = useRef(null)
   const previouslyFocused = useRef(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
   const titleId = useId()
   const descriptionId = useId()
 

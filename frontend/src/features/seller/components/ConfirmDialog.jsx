@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, LoaderCircle, Trash2, X } from 'lucide-react'
-import { standardTransition } from '../../../lib/motion.js'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { standardTransition, usePrefersReducedMotion } from '../../../lib/motion.ts'
+import { AnimatePresence, motion } from 'framer-motion'
 
 export function ConfirmDialog({
   open,
@@ -14,7 +14,7 @@ export function ConfirmDialog({
   isProcessing = false,
 }) {
   const dialogRef = useRef(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   useEffect(() => {
     if (!open) {

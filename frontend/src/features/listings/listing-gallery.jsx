@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Images, Maximize2 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { isImageReference } from './image-reference.js'
 import { Modal } from '../../components/ui/Modal.jsx'
-import { standardTransition } from '../../lib/motion.js'
+import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 
 /**
  * Gallery angles used when a listing has no uploaded photos.
@@ -94,7 +94,7 @@ export function ListingGallery({ listing }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
   const pointerStartX = useRef(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   const hasPhotos = listing.photos.length > 0
   const photos = hasPhotos ? listing.photos : ILLUSTRATION_VIEWS
@@ -166,9 +166,10 @@ export function ListingGallery({ listing }) {
           view={view}
           batteryPercent={batteryPercent}
           className="h-full w-full"
-          // Thumbnails are too small for the artwork's own labels; the selected
-          // state is already communicated by the button around them.
-          showLabel={!compact}
+          // No label here. The gallery's own counter chip occupies the same
+          // corner and already distinguishes photos from illustrations; two
+          // chips in one corner overlap into an unreadable smudge.
+          showLabel={false}
           showColor={!compact}
         />
       ),
@@ -229,11 +230,18 @@ export function ListingGallery({ listing }) {
 
         <div
           aria-live="polite"
-          className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-sm bg-primary-950 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-white"
+          /* One chip, not two. `PhoneArtwork`'s own "Illustration" label sits in
+             this same corner, so on an illustration-only listing both rendered
+             on top of each other and the result read as one garbled word. The
+             counter below already says whether these are photos or illustrations,
+             so the artwork's label is switched off by the caller and this chip
+             carries the information alone. `z-20` keeps it above the artwork's
+             decorative layers. */
+          className="pointer-events-none absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 whitespace-nowrap rounded-control bg-ink/95 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-white"
         >
           <Images className="size-3" aria-hidden="true" />
           {activeIndex + 1} / {photos.length}
-          {!hasPhotos && <span className="text-primary-400">· illustration</span>}
+          {!hasPhotos && <span className="text-white/70">· illustration</span>}
         </div>
 
         {photos.length > 1 && (

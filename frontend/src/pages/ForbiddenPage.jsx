@@ -1,5 +1,6 @@
 import { ArrowLeft, ShieldX } from 'lucide-react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { usePrefersReducedMotion } from '../lib/motion.ts'
 import { Link, useLocation } from 'react-router-dom'
 import { getRoleHome } from '../features/auth/auth.routes.js'
 import { useAuth } from '../features/auth/useAuth.js'
@@ -8,7 +9,7 @@ export function ForbiddenPage() {
   const { user } = useAuth()
   const location = useLocation()
   const roleHome = location.state?.roleHome ?? getRoleHome(user.role)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   return (
     <section className="mx-auto grid min-h-[calc(100vh-4.5rem)] max-w-3xl place-items-center px-4 py-12 sm:px-6">

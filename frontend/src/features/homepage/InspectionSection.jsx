@@ -19,36 +19,35 @@ import { INSPECTION_CHECKS } from '../../lib/listing-taxonomy.js'
  */
 export function InspectionSection() {
   return (
-    <Section tone="dark" id="testing">
+    <Section tone="muted" id="testing">
       <SectionHeading
-        tone="light"
         eyebrow="Quality tested"
         title="Eleven checks run before a phone can be listed"
         description="A listing only goes live after the device passes a functional inspection, a lock and IMEI check, and a moderator review. This is the checklist, written out."
         className="max-w-3xl"
         action={
-          <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-300">
+          <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-strong">
             <Microscope className="size-4" aria-hidden="true" />
             Standard RF-INSP-11
           </span>
         }
       />
 
-      <ol className="mt-12 grid gap-x-8 gap-y-0 border-t border-primary-800 sm:grid-cols-2">
+      <ol className="mt-12 grid gap-x-8 gap-y-0 border-t border-line-2 sm:grid-cols-2">
         {INSPECTION_CHECKS.map((check, index) => (
           <li
             key={check.id}
-            className="flex items-start gap-4 border-b border-primary-800 py-4"
+            className="flex items-start gap-4 border-b border-line-2 py-4"
           >
-            <span className="w-7 shrink-0 pt-0.5 font-mono text-xs font-semibold tabular-nums text-primary-500">
+            <span className="w-7 shrink-0 pt-0.5 font-mono text-xs font-semibold tabular-nums text-subtle">
               {String(index + 1).padStart(2, '0')}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2 text-sm font-semibold text-white">
-                <CheckCircle2 className="size-4 shrink-0 text-accent-400" aria-hidden="true" />
+              <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <CheckCircle2 className="size-4 shrink-0 text-accent" aria-hidden="true" />
                 {check.label}
               </span>
-              <span className="mt-1 block text-xs leading-relaxed text-primary-400">
+              <span className="mt-1 block text-xs leading-relaxed text-muted">
                 {check.detail}
               </span>
             </span>
@@ -59,13 +58,13 @@ export function InspectionSection() {
       <ol className="mt-14 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-5">
         {INSPECTION_STAGES.map((stage) => (
           <li key={stage.step}>
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-300">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-strong">
               Step {stage.step}
             </span>
-            <p className="mt-2.5 font-display text-base font-bold tracking-tight text-white">
+            <p className="mt-2.5 font-display text-base font-bold tracking-tight text-ink">
               {stage.title}
             </p>
-            <p className="mt-1.5 text-xs leading-relaxed text-primary-400">
+            <p className="mt-1.5 text-xs leading-relaxed text-muted">
               {stage.summary}
             </p>
           </li>
@@ -73,7 +72,7 @@ export function InspectionSection() {
       </ol>
 
       <div className="mt-12">
-        <ButtonLink to={MARKETPLACE_ROUTES.qualityCheck} variant="light" size="lg">
+        <ButtonLink to={MARKETPLACE_ROUTES.qualityCheck} variant="primary" size="lg">
           How we test every phone
         </ButtonLink>
       </div>

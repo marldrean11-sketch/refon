@@ -276,7 +276,13 @@ export function PhoneArtwork({
       />
 
       {showLabel && (
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-sm bg-surface/90 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted ring-1 ring-inset ring-line-2 backdrop-blur">
+        /* `z-10` is load-bearing. The device body below is painted after this
+           chip in DOM order and reaches up past it, so without an explicit
+           stacking order the device's shoulder covers the first few characters
+           and the label reads "STRATION". Opaque ink rather than a translucent
+           surface, because the backdrop is a coloured gradient and a 90%-white
+           chip vanishes wherever that gradient is light. */
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 whitespace-nowrap rounded-control bg-ink/95 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
           <ImageIcon className="size-3" aria-hidden="true" />
           Illustration
         </span>

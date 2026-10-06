@@ -14,7 +14,8 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { usePrefersReducedMotion } from '../lib/motion.ts'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useSellerListings } from '../features/seller/useSellerListings.js'
 import { useSellerProfile } from '../features/seller/useSellerProfile.js'
@@ -178,7 +179,7 @@ export function SellerDashboardPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [updatingListingId, setUpdatingListingId] = useState(null)
   const [actionError, setActionError] = useState(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
   const location = useLocation()
   const navigate = useNavigate()
   const notice = location.state?.notice

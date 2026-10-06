@@ -15,6 +15,9 @@ import { SavedListingsProvider } from './features/favorites/SavedListingsProvide
 import { CartProvider } from './features/cart/CartProvider.jsx'
 import { ToastProvider } from './components/ui/Toast.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
+import { SmoothScroll } from './components/layout/SmoothScroll.jsx'
+import { ScrollProgress } from './components/layout/ScrollProgress.jsx'
+import { Preloader } from './components/layout/Preloader.jsx'
 
 const LoginPage = lazy(() =>
   import('./pages/LoginPage.jsx').then((module) => ({ default: module.LoginPage })),
@@ -133,7 +136,21 @@ const SellerStorefrontPage = lazy(() =>
 function App() {
   return (
     <BrowserRouter>
+      {/* `reducedMotion="user"` is the app-wide half of the reduced-motion
+          contract: Framer Motion drops transform animations for anyone who has
+          asked for it, and the shared variants in `lib/motion` drop them in
+          `useMotionSafe`. The two overlap on purpose — MotionConfig covers
+          components that forgot, `useMotionSafe` covers components that need
+          to know. */}
       <MotionConfig reducedMotion="user">
+        {/* Outside every provider and below the router: smooth scroll is a
+            property of the document, not of any one feature's data, and it has
+            to exist before the first route paints so the initial scroll reset
+            has somewhere to go. */}
+        <SmoothScroll>
+        {/* Above the app's own content, below the splash. */}
+        <Preloader />
+        <ScrollProgress />
         <AuthProvider>
         {/* Above both layouts so public listing cards and the headers share one poller. */}
         <SavedListingsProvider>
@@ -244,6 +261,7 @@ function App() {
         </CartProvider>
         </SavedListingsProvider>
         </AuthProvider>
+        </SmoothScroll>
       </MotionConfig>
     </BrowserRouter>
   )

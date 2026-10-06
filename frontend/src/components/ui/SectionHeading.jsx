@@ -6,8 +6,10 @@
  * of a section compete with the heading above it; the description is now always
  * quieter than the title it supports.
  *
- * `tone="dark"` means "dark text on a light surface", which is confusing enough
- * that it is spelled out here rather than left to the caller to reason about.
+ * `tone` no longer accepts `light`. It used to mean "white text for a dark
+ * surface", which paired with the `dark` section tone that the redesign removed;
+ * a heading that has to invert is a heading that has lost its place in the
+ * hierarchy. `accent` is available for the one case that still earns emphasis.
  */
 export function SectionHeading({
   eyebrow,
@@ -22,9 +24,9 @@ export function SectionHeading({
 }) {
   const isCentered = align === 'center'
 
-  const titleColor = tone === 'light' ? 'text-white' : 'text-ink'
-  const descriptionColor = tone === 'light' ? 'text-primary-300' : 'text-muted'
-  const eyebrowColor = tone === 'light' ? 'text-accent-300' : 'text-subtle'
+  const titleColor = tone === 'accent' ? 'text-accent-strong' : 'text-ink'
+  const descriptionColor = 'text-muted'
+  const eyebrowColor = tone === 'accent' ? 'text-accent-strong' : 'text-subtle'
 
   return (
     <div

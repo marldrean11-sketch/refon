@@ -1,10 +1,10 @@
 import { BadgeCheck, HardDrive, MemoryStick, Store } from 'lucide-react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { isImageReference } from './image-reference.js'
 import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { FavoriteButton } from '../favorites/FavoriteButton.jsx'
-import { standardTransition } from '../../lib/motion.js'
+import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import { BatteryHealth } from '../../components/ui/BatteryHealth.jsx'
 import { ConditionBadge } from '../../components/ui/ConditionBadge.jsx'
 import { PriceDisplay } from '../../components/ui/PriceDisplay.jsx'
@@ -50,7 +50,7 @@ export function gradeFor(listing) {
  * listing carries a reference price above the selling price.
  */
 export function ListingCard({ listing, preview = false, hideSaveButton = false }) {
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
   const mainPhoto = listing.mainPhoto ?? listing.photos?.[0]
   const grade = gradeFor(listing)
   const listingRating = Number(listing.ratingAverage ?? 0)

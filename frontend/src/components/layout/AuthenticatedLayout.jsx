@@ -28,11 +28,15 @@ export function AuthenticatedLayout() {
       <EmailVerificationBanner />
 
       <main id="main-content" tabIndex={-1} className="flex-1 pb-8 focus:outline-none lg:pb-0">
-        <Suspense fallback={<LoadingScreen label="Loading this ReFon experience…" />}>
-          <PageTransition>
+        {/* `PageTransition` outside `Suspense`, for the same reason as in
+            `MarketplaceLayout`: the boundary must be inside the transition, or a
+            lazy page's suspension tears down the transition wrapper instead of
+            just its contents. */}
+        <PageTransition>
+          <Suspense fallback={<LoadingScreen label="Loading this ReFon experience…" />}>
             <Outlet />
-          </PageTransition>
-        </Suspense>
+          </Suspense>
+        </PageTransition>
       </main>
 
       <SiteFooter />

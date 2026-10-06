@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown, LogOut } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
 import { AUTH_ROUTES } from '../../lib/routes.js'
 import { useOptionalSellerInquiries } from '../inquiries/useSellerInquiries.js'
 import { useSavedListings } from '../favorites/useSavedListings.js'
-import { quickTransition } from '../../lib/motion.js'
+import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import {
   ACCOUNT_NAV,
   SELLER_INQUIRIES_LINK,
@@ -63,7 +63,7 @@ export function UserMenu() {
   const triggerRef = useRef(null)
   const navigate = useNavigate()
   const location = useLocation()
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   // A route change closes the menu, so a tap-through never leaves it hanging open.
   useEffect(() => {

@@ -1,27 +1,103 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html {
-    @apply bg-canvas text-ink antialiased;
-    scroll-behavior: smooth;
-    scroll-padding-top: 6rem;
-    -webkit-text-size-adjust: 100%;
+  /**
+   * The design tokens, as custom properties.
+   *
+   * These mirror `tailwind.config.js` exactly. Tailwind holds the raw hex
+   * because it cannot derive an alpha channel from a custom property, and
+   * everything hand-written in CSS reads these instead — so the base styles
+   * below never hard-code a colour.
+   */
+  :root {
+    /* Surfaces */
+    --rf-bg: #f6f5f1;
+    --rf-panel: #eceae4;
+    --rf-card: #ffffff;
+    --rf-well: #e3e1da;
+
+    /* Text */
+    --rf-text: #111111;
+    --rf-muted: #6b6b66;
+    --rf-subtle: #94938c;
+
+    /* Lines */
+    --rf-border: #e6e4dd;
+    --rf-border-strong: #d2cfc6;
+
+    /* Signal */
+    --rf-accent: #10b981;
+    --rf-accent-hover: #0ea371;
+    --rf-accent-strong: #0b8a5e;
+    --rf-accent-tint: #d1fae5;
+
+    /* Dark and status */
+    --rf-dark: #0b0f0e;
+    --rf-red: #ef4444;
+    --rf-grade-b: #f59e0b;
+    --rf-grade-c: #f97316;
+
+    /* Shape */
+    --rf-radius-card: 20px;
+    --rf-radius-panel: 28px;
+    --rf-radius-pill: 999px;
+    --rf-shadow-soft: 0 10px 40px rgb(0 0 0 / 0.06);
+    --rf-shadow-hover: 0 20px 60px rgb(0 0 0 / 0.1);
+
+    /* Type */
+    --rf-font-sans: 'Manrope Variable', Manrope, ui-sans-serif, system-ui, -apple-system,
+      'Segoe UI', sans-serif;
+    --rf-font-accent: 'Instrument Serif', ui-serif, Georgia, serif;
+
+    /* Motion. Mirrors src/lib/motion.ts. */
+    --rf-ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+    --rf-ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
+    --rf-duration-micro: 200ms;
+    --rf-duration-standard: 500ms;
+    --rf-duration-hero: 900ms;
   }
 
+  html {
+    @apply bg-page text-ink antialiased;
+    scroll-padding-top: 6rem;
+    -webkit-text-size-adjust: 100%;
+    /* Lenis owns the scroll position. A CSS `scroll-behavior: smooth` would
+       fight it and turn every jump into a second, uncoordinated animation. */
+    scroll-behavior: auto;
+  }
+
+  /**
+   * The base rhythm.
+   *
+   * 17px on a 1.6 line height, on the paper surface, in near-black. Every other
+   * size in the product is either `rem`-relative to this or a named step in
+   * `tailwind.config.js`, which is what keeps a page from drifting into a
+   * different scale per section.
+   *
+   * The body sets `text-ink`, not `text-muted`. This used to inherit the muted
+   * grey, which meant every unclassed string in the product — and anything a
+   * future contributor writes without a colour — was born secondary. Body copy
+   * is the default, and de-emphasising it is now something a component has to
+   * ask for with `text-muted` on purpose.
+   */
   body {
-    @apply m-0 min-h-screen min-w-[320px] overflow-x-clip bg-canvas font-body text-base leading-body text-muted;
+    @apply m-0 min-h-screen min-w-[320px] overflow-x-clip bg-page font-body text-base leading-body text-ink;
+    font-size: 17px;
+    line-height: 1.6;
+    /* Sentence case is the default, so a heading written in a case the
+       designer meant stays in that case. Uppercase is now something a component
+       chooses deliberately, not something the document inherits. */
+    text-transform: none;
+    font-synthesis-weight: none;
   }
 
   /* One heading rule for the whole site.
 
-     Pages used to add their own tracking on top of this, which is why headings
-     drifted apart in weight and spacing. Weight and case are set once here and
-     the named `text-display` / `text-headline` / `text-title` sizes carry their
-     own tracking for the larger steps. */
+     Weight and case are set once here and the named `text-display` /
+     `text-headline` / `text-title` sizes carry their own tracking for the
+     larger steps. */
   h1,
   h2,
   h3,
@@ -55,23 +131,23 @@
   }
 
   :where(a, button, input, textarea, select, [role='button'], summary):focus-visible {
-    outline: 2px solid #090d0e;
+    outline: 2px solid var(--rf-accent);
     outline-offset: 2px;
   }
 
-  /* Native controls are reset to the same square language as everything else.
-     Left unstyled they are the only rounded, blue-accented objects on the page
-     and they break the system more than any colour choice does. */
+  /* Native controls are reset to the same language as everything else. Left
+     unstyled they are the only system-coloured objects on the page. */
   input[type='search']::-webkit-search-cancel-button {
     appearance: none;
   }
 
   input[type='range'] {
-    accent-color: #10b76b;
+    accent-color: var(--rf-accent);
   }
 
   ::selection {
-    @apply bg-flare-200 text-primary-950;
+    background-color: var(--rf-accent-tint);
+    color: var(--rf-text);
   }
 
   ::-webkit-scrollbar {
@@ -87,11 +163,11 @@
     border: 3px solid transparent;
     border-radius: 999px;
     background-clip: content-box;
-    background-color: #c9c9bf;
+    background-color: var(--rf-border-strong);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: #868d94;
+    background-color: var(--rf-subtle);
   }
 }
 
@@ -103,12 +179,12 @@
   /**
    * The eyebrow label.
    *
-   * A monospace, wide-tracked, uppercase micro-label. It is the connective
-   * tissue between sections on every page, and defining it once is what stops
-   * each page inventing its own flavour of small grey text.
+   * A wide-tracked uppercase micro-label. It is the connective tissue between
+   * sections on every page, and defining it once is what stops each page
+   * inventing its own flavour of small grey text.
    */
   .eyebrow {
-    @apply font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-muted;
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-muted;
   }
 
   /** Section rhythm. Pages compose sections; they do not invent their own top margin. */
@@ -118,10 +194,22 @@
 
   /** A hairline that reads as an engraved rule rather than a border. */
   .rule-strong {
-    @apply border-t-2 border-primary-950;
+    @apply border-t-2 border-dark;
   }
 }
 
+/**
+ * Reduced motion.
+ *
+ * Framer Motion is already told to respect the preference through
+ * `<MotionConfig reducedMotion="user">`, and the shared variants drop their
+ * transform channels in `useMotionSafe`. This block is the last line of defence
+ * for the CSS half of the product: any transition or keyframe animation left in
+ * a component collapses to a single instant state instead of moving.
+ *
+ * Note what is *not* here: `display: none`, or a blanket `transition: none`. The
+ * goal is that nothing moves, not that nothing changes colour on hover.
+ */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -132,7 +220,9 @@
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }

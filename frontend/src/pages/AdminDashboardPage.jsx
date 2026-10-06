@@ -14,7 +14,8 @@ import {
   UsersRound,
   X,
 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { usePrefersReducedMotion } from '../lib/motion.ts'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
 import { PhoneArtwork } from '../features/listings/PhoneArtwork.jsx'
 import { isImageReference } from '../features/listings/image-reference.js'
@@ -155,7 +156,7 @@ function ReviewActions({
 
 function ReportCard({ report, note, onNoteChange, onAction, isProcessing, isOpen }) {
   const { listing, reporter } = report
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   return (
     <motion.article
@@ -329,7 +330,7 @@ export function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reviewingId, setReviewingId] = useState(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   const refresh = useCallback(
     async ({ silent = false, status = reportStatus } = {}) => {

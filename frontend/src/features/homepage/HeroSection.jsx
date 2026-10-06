@@ -35,16 +35,17 @@ export function HeroSection({ featured }) {
   const reduceMotion = useReducedMotion()
 
   return (
-    <section className="relative overflow-hidden bg-primary-950 text-white">
+    <section className="relative overflow-hidden border-b border-line bg-page">
       {/* A measured grid, not a decorative gradient. The hairlines are the point:
-          they make the dark panel read as a technical surface rather than as a
-          lit background. */}
+          they make the panel read as a technical surface rather than as a lit
+          background, and on paper they are drawn in ink at a very low opacity so
+          they are felt rather than seen. */}
       <div
-        className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:72px_72px]"
+        className="absolute inset-0 opacity-[0.04] [background-image:linear-gradient(rgba(17,17,17,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(17,17,17,0.9)_1px,transparent_1px)] [background-size:72px_72px]"
         aria-hidden="true"
       />
       <div
-        className="absolute -left-40 top-1/3 size-[32rem] rounded-full bg-accent-600/10 blur-[100px]"
+        className="absolute -left-40 top-1/3 size-[32rem] rounded-full bg-accent/10 blur-[100px]"
         aria-hidden="true"
       />
 
@@ -55,17 +56,17 @@ export function HeroSection({ featured }) {
             <motion.p
               initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-400"
+              className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-muted"
             >
-              <span className="inline-flex items-center gap-2 text-accent-300">
-                <span className="size-1.5 rounded-full bg-accent-400" aria-hidden="true" />
+              <span className="inline-flex items-center gap-2 text-accent-strong">
+                <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
                 Live inventory
               </span>
-              <span aria-hidden="true" className="text-primary-700">
+              <span aria-hidden="true" className="text-subtle">
                 /
               </span>
               <span>Refurbished smartphones</span>
-              <span aria-hidden="true" className="text-primary-700">
+              <span aria-hidden="true" className="text-subtle">
                 /
               </span>
               <span>Philippines</span>
@@ -75,18 +76,22 @@ export function HeroSection({ featured }) {
               initial={reduceMotion ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.06 }}
-              className="mt-6 text-[2.75rem] font-bold leading-[0.95] tracking-[-0.05em] text-white sm:text-6xl lg:text-[4.5rem]"
+              className="mt-6 text-[2.75rem] font-bold leading-[0.95] tracking-[-0.05em] text-ink sm:text-6xl lg:text-[4.5rem]"
             >
               Premium Phones.
-              <span className="mt-1 block text-primary-400">Smarter Prices.</span>
-              <span className="mt-1 block text-white">Tested for You.</span>
+              {/* The one place an accent word is allowed, and it is set in the
+                  serif face rather than given a colour: on a page where green
+                  means "verified", a green adjective here would claim a
+                  verification it has not got. */}
+              <span className="mt-1 block font-accent text-muted">Smarter Prices.</span>
+              <span className="mt-1 block text-ink">Tested for You.</span>
             </motion.h1>
 
             <motion.p
               initial={reduceMotion ? false : { opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.12 }}
-              className="mt-7 max-w-xl text-base leading-body text-primary-200 sm:text-lg"
+              className="mt-7 max-w-xl text-base leading-body text-muted sm:text-lg"
             >
               Shop quality-tested refurbished smartphones with transparent condition
               grades, published battery health, warranty coverage, and verified
@@ -111,7 +116,7 @@ export function HeroSection({ featured }) {
             >
               <Link
                 to={MARKETPLACE_ROUTES.shop}
-                className="group inline-flex h-12 items-center justify-center gap-2 rounded-control bg-white px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-950 transition duration-150 hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-950"
+                className="group inline-flex h-12 items-center justify-center gap-2 rounded-control bg-ink px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition duration-150 hover:bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-page"
               >
                 Shop Refurbished Phones
                 <ArrowRight
@@ -121,7 +126,7 @@ export function HeroSection({ featured }) {
               </Link>
               <Link
                 to={MARKETPLACE_ROUTES.howItWorks}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-control border border-primary-700 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-100 transition duration-150 hover:border-primary-500 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-950"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-control border border-line-2 bg-card px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-ink transition duration-150 hover:border-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-page"
               >
                 <ShieldCheck className="size-4" aria-hidden="true" />
                 How It Works
@@ -133,16 +138,16 @@ export function HeroSection({ featured }) {
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="mt-11 grid max-w-xl grid-cols-3 gap-px overflow-hidden rounded-card border border-primary-800 bg-primary-800"
+              className="mt-11 grid max-w-xl grid-cols-3 gap-px overflow-hidden rounded-card border border-line bg-line"
             >
               {HERO_STATS.map((stat) => (
-                <div key={stat.label} className="bg-primary-950 px-4 py-4">
+                <div key={stat.label} className="bg-card px-4 py-4">
                   <dt className="sr-only">{stat.label}</dt>
                   <dd>
-                    <span className="block font-display text-3xl font-bold tabular-nums leading-none tracking-tight text-white">
+                    <span className="block font-display text-3xl font-bold tabular-nums leading-none tracking-tight text-ink">
                       {stat.value}
                     </span>
-                    <span className="mt-2 block font-mono text-[10px] font-semibold uppercase leading-relaxed tracking-[0.1em] text-primary-400">
+                    <span className="mt-2 block font-mono text-[10px] font-semibold uppercase leading-relaxed tracking-[0.1em] text-muted">
                       {stat.label}
                     </span>
                   </dd>
@@ -187,7 +192,7 @@ function HeroSearch() {
       </label>
       <div className="relative min-w-0 flex-1">
         <Search
-          className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-primary-400"
+          className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-subtle"
           aria-hidden="true"
         />
         <input
@@ -195,12 +200,12 @@ function HeroSearch() {
           name="search"
           type="search"
           placeholder="Search iPhone 13, Galaxy S23, under ₱20,000…"
-          className="h-14 w-full rounded-control border border-primary-700 bg-white/[0.06] pl-12 pr-4 text-base text-white placeholder:text-primary-500 transition duration-150 hover:border-primary-500 focus:border-white focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-white/30"
+          className="h-14 w-full rounded-control border border-line-2 bg-card pl-12 pr-4 text-base text-ink placeholder:text-subtle transition duration-150 hover:border-subtle focus:border-accent focus:bg-surface focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </div>
       <button
         type="submit"
-        className="inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-control bg-accent-500 px-6 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition duration-150 hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-primary-950"
+        className="inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-control bg-accent px-6 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition duration-150 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
       >
         Search
       </button>
@@ -230,9 +235,9 @@ function HeroDevice({ featured, reduceMotion }) {
       transition={{ delay: 0.22, duration: 0.4 }}
       className="w-full min-w-0"
     >
-      <div className="overflow-hidden rounded-card-lg border border-primary-800 bg-white/[0.03]">
-        <div className="flex items-center justify-between gap-3 border-b border-primary-800 px-4 py-3">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-primary-400">
+      <div className="overflow-hidden rounded-card-lg border border-line bg-card shadow-card">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
             Featured today
           </p>
           <ConditionBadge grade={grade} />
@@ -244,14 +249,14 @@ function HeroDevice({ featured, reduceMotion }) {
             model={featured?.model ?? 'Refurbished'}
             color={featured?.color ?? 'Midnight'}
             view="front"
-            className="aspect-[4/3] w-full rounded-control"
+            className="aspect-[4/3] w-full rounded-card"
           />
 
           <div className="mt-4 min-w-0">
-            <p className="truncate font-display text-xl font-bold tracking-tight text-white">
+            <p className="truncate font-display text-xl font-bold tracking-tight text-ink">
               {hasListing ? `${featured.brand} ${featured.model}` : 'Refurbished phone'}
             </p>
-            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-primary-400">
+            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-muted">
               {hasListing
                 ? [featured.year, featured.storage].filter(Boolean).join(' · ')
                 : 'Loading verified listings'}
@@ -264,12 +269,12 @@ function HeroDevice({ featured, reduceMotion }) {
               originalPrice={featured?.originalPrice}
               size="md"
               showSavings={false}
-              className="[&_p]:text-white [&_p]:decoration-primary-600"
+              className="[&_p]:text-ink [&_p]:decoration-line-2"
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-control border border-primary-800 bg-primary-800">
-            <div className="bg-primary-950 px-3 py-3">
+          <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-control border border-line bg-line">
+            <div className="bg-card px-3 py-3">
               <BatteryHealth
                 percent={featured?.batteryPercent ?? 0}
                 size="sm"
@@ -277,11 +282,11 @@ function HeroDevice({ featured, reduceMotion }) {
                 showLabel={false}
               />
             </div>
-            <div className="bg-primary-950 px-3 py-3">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-400">
+            <div className="bg-card px-3 py-3">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted">
                 Inspection
               </p>
-              <p className="mt-1.5 font-display text-sm font-bold text-white">
+              <p className="mt-1.5 font-display text-sm font-bold text-ink">
                 11 checks passed
               </p>
             </div>
@@ -290,7 +295,7 @@ function HeroDevice({ featured, reduceMotion }) {
       </div>
 
       {hasListing && (
-        <p className="mt-3 font-mono text-[11px] leading-relaxed text-primary-500">
+        <p className="mt-3 font-mono text-[11px] leading-relaxed text-subtle">
           Real listing from the approved catalog. Every price, grade, and battery
           figure on ReFon is published before purchase.
         </p>

@@ -10,7 +10,7 @@ import {
   ShieldAlert,
   ShoppingBag,
 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { AUTH_ROUTES } from '../auth/auth.routes.js'
@@ -20,7 +20,7 @@ import {
   markNotificationReadRequest,
 } from './notification-api.js'
 import { subscribeToMarketplaceChanges } from '../../lib/marketplace-sync.js'
-import { quickTransition } from '../../lib/motion.js'
+import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import { formatRelativeTime } from '../../lib/format.js'
 
 const notificationPresentation = {
@@ -112,7 +112,7 @@ export function NotificationBell() {
   const [error, setError] = useState('')
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
   const notificationId = useId()
   const panelId = `notifications-panel-${notificationId}`
 

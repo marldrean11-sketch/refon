@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { LogIn, Menu, Search, ShoppingBag, UserPlus, X } from 'lucide-react'
 import { BrandMark } from '../../components/ui/BrandMark.jsx'
 import { AnnouncementBar } from '../../components/layout/AnnouncementBar.jsx'
@@ -11,7 +11,7 @@ import { useSavedListings } from '../favorites/useSavedListings.js'
 import { useCartSummary } from '../cart/useCartSummary.js'
 import { useOptionalSellerInquiries } from '../inquiries/useSellerInquiries.js'
 import { AUTH_ROUTES } from '../../lib/routes.js'
-import { quickTransition } from '../../lib/motion.js'
+import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import { Container } from './Container.jsx'
 import { CountBadge } from './CountBadge.jsx'
 import { UserMenu } from './UserMenu.jsx'
@@ -145,7 +145,7 @@ export function SiteHeader() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const drawerButtonRef = useRef(null)
   const location = useLocation()
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   const pathname = location.pathname
   const savedCount = savedIds?.size ?? 0
@@ -339,11 +339,17 @@ export function SiteHeader() {
           {isDrawerOpen && (
             <motion.div
               id={MOBILE_NAV_ID}
-              initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+              initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
               transition={quickTransition}
-              className="overflow-hidden border-t border-line bg-surface lg:hidden"
+              /* Opacity and a small `y` offset, not a height animation. `height: 0`
+                 to `height: auto` re-runs layout on every frame of the drawer,
+                 which is what makes an opening menu shove the page down beneath
+                 it; a transform slides the same content in while moving nothing
+                 else. The `isDrawerOpen &&` above still unmounts the drawer when
+                 it is closed, so it contributes no height when absent. */
+              className="border-t border-line bg-surface lg:hidden"
             >
               <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain">
                 {/* `pb-32` clears the mobile tab bar, which is fixed to the bottom

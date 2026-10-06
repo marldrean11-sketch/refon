@@ -1,12 +1,38 @@
 import { Link } from 'react-router-dom'
 
 /**
- * The wordmark.
+ * The glyph, on its own.
  *
- * The glyph is a device outline with a reFon tick cut into it — the one idea the
- * brand actually sells, which is "inspected, so it's cleared". It is drawn with
- * a square silhouette and a hairline rather than a soft filled tile, so the
- * logo belongs to the same object language as the cards and buttons around it.
+ * A device outline with a reFon tick cut into it — the one idea the brand
+ * actually sells, which is "inspected, so it's cleared". It is drawn with a
+ * square silhouette and a hairline rather than a soft filled tile, so the logo
+ * belongs to the same object language as the cards and buttons around it.
+ *
+ * It is exported separately from `BrandMark` because `BrandMark` is a `Link` —
+ * a navigation control — and the splash screen needs the same mark without
+ * something underneath it that a visitor could click. Two copies of the path
+ * data would be two things to keep in step; one copy with two callers cannot.
+ */
+export function LogoGlyph({ className = 'size-5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="square"
+      aria-hidden="true"
+    >
+      <rect x="6.5" y="2.5" width="11" height="19" rx="1.5" />
+      <path d="M10.5 18.2h3" />
+      <path d="m8.6 12.4 2.1 2.2 4.5-4.9" className="text-accent-500" />
+    </svg>
+  )
+}
+
+/**
+ * The wordmark: the glyph inside its tile, beside the name.
  */
 export function BrandMark({
   inverse = false,
@@ -28,19 +54,7 @@ export function BrandMark({
             : 'bg-primary-950 text-white'
         }`}
       >
-        <svg
-          viewBox="0 0 24 24"
-          className="size-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.9"
-          strokeLinecap="square"
-          aria-hidden="true"
-        >
-          <rect x="6.5" y="2.5" width="11" height="19" rx="1.5" />
-          <path d="M10.5 18.2h3" />
-          <path d="m8.6 12.4 2.1 2.2 4.5-4.9" className="text-accent-500" />
-        </svg>
+        <LogoGlyph />
       </span>
       {!compact && (
         <span

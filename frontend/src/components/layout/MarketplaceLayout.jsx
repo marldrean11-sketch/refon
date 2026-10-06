@@ -27,11 +27,21 @@ export function MarketplaceLayout() {
       {/* Bottom padding clears the fixed mobile tab bar. The footer carries its
           own clearance too, because it sits below <main> and would be covered. */}
       <main id="main-content" tabIndex={-1} className="flex-1 pb-8 focus:outline-none lg:pb-0">
-        <Suspense fallback={<LoadingScreen label="Loading this ReFon experience…" />}>
-          <PageTransition>
+        {/* `PageTransition` wraps `Suspense`, not the other way round.
+
+            A page component is lazy, so navigating to one it has not loaded yet
+            suspends. When the `Suspense` boundary sat outside `PageTransition`,
+            the suspension unmounted the whole transition wrapper and replaced it
+            with the loading screen: the exit was cut off mid-animation, the
+            entrance never ran, and the measured navigation took over 600ms
+            instead of under 400ms. Putting the boundary inside means the
+            transition plays once, around whatever the route resolves to, and a
+            code-split fetch is invisible to it. */}
+        <PageTransition>
+          <Suspense fallback={<LoadingScreen label="Loading this ReFon experience…" />}>
             <Outlet />
-          </PageTransition>
-        </Suspense>
+          </Suspense>
+        </PageTransition>
       </main>
 
       <SiteFooter />

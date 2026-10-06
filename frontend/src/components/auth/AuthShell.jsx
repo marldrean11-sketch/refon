@@ -1,5 +1,6 @@
 import { BadgeCheck, ClipboardCheck, ScanSearch } from 'lucide-react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { usePrefersReducedMotion } from '../../lib/motion.ts'
 import { BrandMark } from '../ui/BrandMark.jsx'
 
 /**
@@ -33,7 +34,7 @@ const standard = [
 ]
 
 export function AuthShell({ children }) {
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   return (
     <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(30rem,1.05fr)]">
