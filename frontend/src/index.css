@@ -15,6 +15,12 @@
     @apply m-0 min-h-screen min-w-[320px] overflow-x-clip bg-canvas font-body text-base leading-body text-muted;
   }
 
+  /* One heading rule for the whole site.
+
+     Individual pages used to add their own `tracking-[-0.04em]` on top of this,
+     which is why headings drifted apart in weight and spacing. Tracking is set once
+     here, and the named `text-display` / `text-headline` / `text-title` sizes carry
+     their own tracking for the larger steps. */
   h1,
   h2,
   h3,

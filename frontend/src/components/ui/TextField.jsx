@@ -31,12 +31,12 @@ export function TextField({
           id={id}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
-          className={`h-14 w-full rounded-2xl border bg-white py-3.5 text-[15px] text-ink shadow-sm transition duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 ${
+          className={`h-14 w-full rounded-control border bg-white py-3.5 text-[15px] text-ink shadow-sm transition duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 ${
             Icon ? 'pl-12' : 'pl-4'
           } ${endAdornment ? 'pr-14' : 'pr-4'} ${
             error
               ? 'border-danger focus:border-danger focus:ring-red-100'
-              : 'border-line hover:border-slate-300'
+              : 'border-line-2 hover:border-slate-400'
           }`}
           {...inputProps}
         />

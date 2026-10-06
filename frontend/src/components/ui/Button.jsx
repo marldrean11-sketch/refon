@@ -2,20 +2,32 @@ import { Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 rounded-2xl font-bold transition duration-200 disabled:cursor-not-allowed disabled:opacity-55'
+  'inline-flex items-center justify-center gap-2 rounded-control font-bold transition duration-200 disabled:cursor-not-allowed disabled:opacity-55'
 
+/**
+ * One set of button shapes for the whole site.
+ *
+ * The 8px `rounded-control` radius is what stops a dense marketplace interface
+ * reading as soft and rounded-off. The hover lift is 1px rather than 2px for the
+ * same reason: a half-pixel of travel is a change in emphasis, two pixels is a bounce.
+ *
+ * The global `prefers-reduced-motion` rule in `index.css` collapses `transition-duration`,
+ * so the lift still applies but arrives instantly rather than as movement. That is
+ * intentional and is why the value lives here in a variant rather than in a
+ * per-page utility.
+ */
 const variantClasses = {
   primary:
-    'bg-primary-500 text-white shadow-card hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0',
+    'bg-primary-500 text-white shadow-card hover:-translate-y-px hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0',
   accent:
-    'bg-accent-600 text-white shadow-card hover:-translate-y-0.5 hover:bg-accent-700 hover:shadow-card-hover active:translate-y-0',
+    'bg-accent-600 text-white shadow-card hover:-translate-y-px hover:bg-accent-700 hover:shadow-card-hover active:translate-y-0',
   secondary:
-    'border border-line bg-white text-primary-700 shadow-sm hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50 hover:shadow-card',
+    'border border-line bg-white text-primary-700 shadow-sm hover:-translate-y-px hover:border-primary-200 hover:bg-primary-50 hover:shadow-card',
   outline: 'border border-primary-200 bg-transparent text-primary-700 hover:bg-primary-50',
   ghost: 'bg-transparent text-muted hover:bg-primary-50 hover:text-primary-700',
   danger:
-    'border border-red-200 bg-white text-danger hover:-translate-y-0.5 hover:bg-red-50 hover:shadow-card',
-  dark: 'bg-primary-950 text-white shadow-card hover:-translate-y-0.5 hover:bg-primary-900',
+    'border border-red-200 bg-white text-danger hover:-translate-y-px hover:bg-red-50 hover:shadow-card',
+  dark: 'bg-primary-950 text-white shadow-card hover:-translate-y-px hover:bg-primary-900',
 }
 
 const sizeClasses = {

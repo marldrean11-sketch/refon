@@ -41,8 +41,8 @@ export function SelectField({
           onChange={onChange}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
-          className={`h-12 w-full appearance-none rounded-2xl border bg-white py-3 pl-4 pr-11 text-[15px] font-semibold text-ink shadow-sm transition duration-200 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 ${
-            error ? 'border-danger focus:border-danger focus:ring-red-100' : 'border-line hover:border-slate-300'
+          className={`h-12 w-full appearance-none rounded-control border bg-white py-3 pl-4 pr-11 text-[15px] font-semibold text-ink shadow-sm transition duration-200 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 ${
+            error ? 'border-danger focus:border-danger focus:ring-red-100' : 'border-line-2 hover:border-slate-400'
           } ${selectClassName}`}
           {...selectProps}
         >

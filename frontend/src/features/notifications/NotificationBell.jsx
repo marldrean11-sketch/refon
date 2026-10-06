@@ -21,6 +21,7 @@ import {
 } from './notification-api.js'
 import { subscribeToMarketplaceChanges } from '../../lib/marketplace-sync.js'
 import { quickTransition } from '../../lib/motion.js'
+import { formatRelativeTime } from '../../lib/format.js'
 
 const notificationPresentation = {
   NEW_INQUIRY: {
@@ -59,34 +60,6 @@ const notificationPresentation = {
     icon: BadgeCheck,
     iconClass: 'bg-primary-50 text-primary-700',
   },
-}
-
-function formatRelativeTimestamp(value) {
-  const elapsed = Math.max(0, Date.now() - new Date(value).getTime())
-  const minutes = Math.floor(elapsed / 60_000)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (minutes < 1) {
-    return 'Just now'
-  }
-
-  if (hours < 1) {
-    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`
-  }
-
-  if (days < 1) {
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
-  }
-
-  if (days < 7) {
-    return `${days} ${days === 1 ? 'day' : 'days'} ago`
-  }
-
-  return new Intl.DateTimeFormat('en-PH', {
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(value))
 }
 
 function getNotificationTarget(notification) {
@@ -373,7 +346,7 @@ export function NotificationBell() {
                           </span>
                           <span className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-muted">
                             <Clock3 className="size-3.5" aria-hidden="true" />
-                            {formatRelativeTimestamp(notification.createdAt)}
+                            {formatRelativeTime(notification.createdAt)}
                             {!notification.isRead && (
                               <span className="ml-1 size-1.5 rounded-full bg-accent-500" aria-label="Unread" />
                             )}

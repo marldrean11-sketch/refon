@@ -22,8 +22,8 @@ export function ProductCardSkeleton() {
         <Skeleton className="mt-3 h-5 w-3/4" />
         <Skeleton className="mt-2 h-3 w-1/3" />
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <Skeleton className="h-16" rounded="rounded-2xl" />
-          <Skeleton className="h-16" rounded="rounded-2xl" />
+          <Skeleton className="h-16" rounded="rounded-control" />
+          <Skeleton className="h-16" rounded="rounded-control" />
         </div>
         <div className="mt-auto flex items-center justify-between border-t border-line pt-4">
           <Skeleton className="h-4 w-20" />
@@ -49,40 +49,27 @@ export function ProductGridSkeleton({ count = 6 }) {
   )
 }
 
-export function DetailPageSkeleton() {
+/**
+ * A neutral loading panel.
+ *
+ * Dashboard surfaces — the seller and admin queues, the account page — are built
+ * from bordered white panels, and a skeleton matching that shape stops the layout
+ * jumping when real content lands. `rows` lets a caller hint at how much is coming
+ * without hard-coding a skeleton per page.
+ */
+export function PanelSkeleton({ rows = 3, className = '', label = 'Loading' }) {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8" aria-busy="true">
-      <span className="sr-only">Loading phone details…</span>
-      <Skeleton className="h-4 w-56" />
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-        <div>
-          <Skeleton className="aspect-[16/10] w-full" rounded="rounded-card-lg" />
-          <div className="mt-4 grid grid-cols-4 gap-3">
-            {Array.from({ length: 4 }, (_, index) => (
-              <Skeleton key={index} className="aspect-square w-full" rounded="rounded-2xl" />
-            ))}
-          </div>
-        </div>
-        <div>
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="mt-3 h-9 w-4/5" />
-          <Skeleton className="mt-4 h-5 w-1/2" />
-          <Skeleton className="mt-8 h-11 w-48" />
-          <Skeleton className="mt-8 h-28 w-full" rounded="rounded-card" />
-          <Skeleton className="mt-4 h-14 w-full" rounded="rounded-card" />
-        </div>
+    <div
+      className={`rounded-card border border-line bg-white p-5 shadow-card ${className}`}
+      aria-busy="true"
+    >
+      <span className="sr-only">{label}…</span>
+      <Skeleton className="h-4 w-32" />
+      <div className="mt-5 space-y-3">
+        {Array.from({ length: rows }, (_, index) => (
+          <Skeleton key={index} className="h-12 w-full" rounded="rounded-control" />
+        ))}
       </div>
-    </div>
-  )
-}
-
-export function LinesSkeleton({ count = 4, className = '' }) {
-  return (
-    <div className={`space-y-3 ${className}`} aria-busy="true">
-      <span className="sr-only">Loading…</span>
-      {Array.from({ length: count }, (_, index) => (
-        <Skeleton key={index} className="h-4 w-full" />
-      ))}
     </div>
   )
 }
