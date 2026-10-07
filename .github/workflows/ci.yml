@@ -68,6 +68,17 @@ jobs:
       - name: Marketplace tests
         run: npm run test:marketplace
 
+      # These share one database with the suites above, so each runs as its own
+      # sequential step rather than in parallel with anything else.
+      - name: Catalog tests
+        run: npm run test:catalog
+
+      - name: Cart tests
+        run: npm run test:cart
+
+      - name: Checkout tests
+        run: npm run test:checkout
+
       - name: Storage tests
         run: npm run test:storage
 
@@ -115,6 +126,13 @@ jobs:
       - name: Install Chromium and its system dependencies
         run: npx --prefix e2e-ui playwright install --with-deps chromium
 
+      # Required because `npm ci` does not generate the client here: the schema lives
+      # at backend/prisma/schema.prisma, not ./prisma, so @prisma/client's postinstall
+      # finds nothing and leaves behind the stub that throws on construction. Without
+      # this step the seed below fails before a single test runs.
+      - name: Generate Prisma client
+        run: npx prisma generate --schema backend/prisma/schema.prisma
+
       - name: Apply migrations
         run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
 
@@ -136,10 +154,11 @@ jobs:
       - name: Run the UI suite
         run: npm run test:ui
 
+      # Runs from the repository root: the script resolves `./tests/support-db.js`
+      # relative to its own location, so it must be invoked as e2e-ui/cleanup-… .
       - name: Remove UI test data
         if: always()
         run: node e2e-ui/cleanup-ui-test-data.mjs
-        working-directory: backend
 
       - name: Upload the Playwright report
         if: failure()
