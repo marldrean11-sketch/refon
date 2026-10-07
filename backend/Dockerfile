@@ -29,7 +29,6 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/backend/node_modules ./backend/node_modules
 COPY package.json package-lock.json ./
 COPY backend ./backend
 
