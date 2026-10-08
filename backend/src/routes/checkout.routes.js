@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { getOptions, getQuote } from '../controllers/checkout.controller.js'
-import { optionalAuthenticate } from '../middlewares/auth.middleware.js'
+import { authenticate, requireBuyer } from '../middlewares/auth.middleware.js'
 import { checkoutLimiter } from '../middlewares/rate-limit.middleware.js'
 import {
   validateCheckoutOptionsQuery,
@@ -9,15 +9,28 @@ import {
 
 const router = Router()
 
-// `optionalAuthenticate`, matching the cart: a guest must be able to see delivery
-// fees and pricing for their own cart before deciding to sign in.
-router.get('/options', optionalAuthenticate, validateCheckoutOptionsQuery, getOptions)
+/**
+ * Checkout is a buyer action end to end.
+ *
+ * `authenticate` before `requireBuyer`: 401 for a visitor, 403 for a signed-in
+ * seller or admin. Gating `/options` as well as `/quote` is deliberate - both read
+ * or price the buyer's own cart, and the only frontend consumer of `/options` is
+ * the checkout page, which is itself buyer-only.
+ */
+router.get(
+  '/options',
+  authenticate,
+  requireBuyer,
+  validateCheckoutOptionsQuery,
+  getOptions,
+)
 
 // Prices a checkout and refuses one that cannot proceed. Creates nothing.
 router.post(
   '/quote',
   checkoutLimiter,
-  optionalAuthenticate,
+  authenticate,
+  requireBuyer,
   validateCheckoutQuote,
   getQuote,
 )

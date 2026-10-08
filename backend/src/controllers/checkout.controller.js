@@ -3,49 +3,25 @@ import {
   quoteCheckout,
 } from '../services/checkout.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
-import {
-  hashGuestCartToken,
-  readGuestCartToken,
-} from '../utils/cart-token.js'
 import { ApiError } from '../utils/api-error.js'
 
 /**
  * Checkout endpoints.
  *
- * Like the cart, the owner is resolved from the session or the guest cookie and
- * never from the request body, so a client cannot price somebody else's cart.
+ * The cart owner is the authenticated buyer, taken from the session and never from
+ * the request body, so a client cannot price somebody else's cart.
  */
-
-/**
- * Cart identity for a checkout request.
- *
- * Mirrors the cart controller's resolution. A signed-in non-admin owns an account
- * cart; otherwise the guest cookie identifies the cart.
- */
-function checkoutOwnerFor(req) {
-  if (req.user && req.user.role !== 'ADMIN') {
-    return { userId: req.user.id, guestTokenHash: null }
-  }
-
-  const guestToken = readGuestCartToken(req)
-
-  return {
-    userId: null,
-    guestTokenHash: guestToken ? hashGuestCartToken(guestToken) : null,
-  }
-}
 
 /**
  * Delivery methods, payment methods, and zones for the buyer's region.
  *
- * Public on purpose: the buyer needs to see fees before signing in, which is the
- * same reason the catalog and product pages are public.
+ * The fee a buyer will pay depends on their own cart subtotal, because standard
+ * delivery is free above a threshold, so this reads the buyer's cart rather than
+ * serving a static catalogue.
  */
 export const getOptions = asyncHandler(async (req, res) => {
-  const owner = checkoutOwnerFor(req)
-
   const options = await getCheckoutOptions({
-    ...owner,
+    userId: req.user.id,
     zoneId: req.validatedQuery?.zoneId,
   })
 
@@ -60,12 +36,11 @@ export const getOptions = asyncHandler(async (req, res) => {
  * rebuilt when that lands.
  */
 export const getQuote = asyncHandler(async (req, res) => {
-  const owner = checkoutOwnerFor(req)
   const { deliveryMethodId, paymentMethodId, details } = req.validatedBody
 
   try {
     const result = await quoteCheckout({
-      ...owner,
+      userId: req.user.id,
       deliveryMethodId,
       paymentMethodId,
       details,

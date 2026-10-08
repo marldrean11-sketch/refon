@@ -1,6 +1,5 @@
-import { prisma } from '../config/prisma.js'
+﻿import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
-import { hashGuestCartToken } from '../utils/cart-token.js'
 import { listingInclude } from './listing.service.js'
 import { presentListing } from '../utils/listing-presenter.js'
 import {
@@ -15,10 +14,10 @@ import {
 /**
  * Carts.
  *
- * A cart belongs either to a signed-in buyer or to a guest cookie identity, never
- * both, and the ownership is always derived server-side: from the verified session
- * for an account cart, or from the hash of an httpOnly cookie for a guest cart.
- * No request field can name a cart, a user, or a price.
+ * A cart belongs to exactly one signed-in buyer. There is no guest cart and no
+ * merge step, because buying is a buyer action: a visitor is sent to sign in before
+ * a cart exists at all. Ownership is derived server-side from the verified session,
+ * so no request field can name a cart, a user, or a price.
  *
  * ReFon listings are single physical devices, so the cart's job is to hold one of
  * them for a short window rather than to count stock. Every write therefore goes
@@ -52,7 +51,7 @@ const RETRYABLE_CODES = new Set(['P2034', 'P2028'])
  * contended listing can legitimately produce.
  *
  * `P2034` is Prisma's write-conflict/transient-transaction error and `P2028` is a
- * transaction timeout — both mean "someone else got there first", which for a
+ * transaction timeout â€” both mean "someone else got there first", which for a
  * reservation race is an outcome to retry, not a fault.
  */
 async function runTransaction(work) {
@@ -77,26 +76,23 @@ async function runTransaction(work) {
 }
 
 /**
- * Resolves the cart a request operates on, creating an empty one if needed.
+ * Resolves the buyer's cart, creating an empty one if needed.
  *
- * `guestToken` is only consulted when there is no session, so a signed-in buyer
- * always lands on their account cart and can never be steered into a guest cart
- * by holding a cookie.
+ * The owner is always the authenticated buyer's id, supplied by the route's
+ * `authenticate` middleware. There is no cookie to consult and no body field to
+ * trust, so a client cannot be steered into another cart.
  */
-async function resolveCart(transaction, { userId, guestTokenHash, create = true }) {
-  const owned = userId ? { userId } : guestTokenHash ? { guestTokenHash } : null
-
-  if (!owned) {
-    return null
-  }
-
-  const existing = await transaction.cart.findUnique({ where: owned, select: { id: true } })
+async function resolveCart(transaction, { userId, create = true }) {
+  const existing = await transaction.cart.findUnique({
+    where: { userId },
+    select: { id: true },
+  })
 
   if (existing || !create) {
     return existing ?? null
   }
 
-  return transaction.cart.create({ data: owned, select: { id: true } })
+  return transaction.cart.create({ data: { userId }, select: { id: true } })
 }
 
 /**
@@ -243,7 +239,10 @@ function presentCart(cart, { now }) {
 
   return {
     id: cart.id,
-    owner: cart.userId ? 'ACCOUNT' : 'GUEST',
+    // Every cart now belongs to an account, so this is a constant rather than a
+    // discriminator. Retained so the response shape the frontend already reads is
+    // unchanged.
+    owner: 'ACCOUNT',
     currency: 'PHP',
     itemCount: items.length,
     purchasableCount: purchased.length,
@@ -257,19 +256,9 @@ function presentCart(cart, { now }) {
 }
 
 /** Reads a cart, lazily releasing holds on any of its lines that have lapsed. */
-export async function getCart({ userId, guestTokenHash }) {
-  const owner = userId ? { userId } : guestTokenHash ? { guestTokenHash } : null
-
-  if (!owner) {
-    const now = await currentDatabaseTime()
-    return presentCart(
-      { id: null, userId: null, items: [] },
-      { now },
-    )
-  }
-
+export async function getCart({ userId }) {
   const cart = await prisma.cart.findUnique({
-    where: owner,
+    where: { userId },
     include: cartInclude,
   })
 
@@ -307,13 +296,9 @@ export async function getCart({ userId, guestTokenHash }) {
  * failing, so a repeated tap is harmless. The returned `created` flag lets a client
  * tell the two apart without guessing.
  */
-export async function addToCart({ userId, guestTokenHash, listingId }) {
+export async function addToCart({ userId, listingId }) {
   return runTransaction(async (transaction) => {
-    const cart = await resolveCart(transaction, { userId, guestTokenHash })
-
-    if (!cart) {
-      throw new ApiError(400, 'No cart is associated with this request.', 'CART_UNAVAILABLE')
-    }
+    const cart = await resolveCart(transaction, { userId })
 
     const existingItem = await transaction.cartItem.findUnique({
       where: { cartId_listingId: { cartId: cart.id, listingId } },
@@ -377,9 +362,9 @@ export async function addToCart({ userId, guestTokenHash, listingId }) {
  * stale cart cannot turn into an error. Ownership is enforced by scoping the
  * delete to the resolved cart rather than by any client-supplied cart id.
  */
-export async function removeCartItem({ userId, guestTokenHash, listingId }) {
+export async function removeCartItem({ userId, listingId }) {
   return runTransaction(async (transaction) => {
-    const cart = await resolveCart(transaction, { userId, guestTokenHash, create: false })
+    const cart = await resolveCart(transaction, { userId, create: false })
 
     if (!cart) {
       const now = await databaseNow(transaction)
@@ -414,9 +399,9 @@ export async function removeCartItem({ userId, guestTokenHash, listingId }) {
 }
 
 /** Empties a cart and releases every hold it holds. */
-export async function clearCart({ userId, guestTokenHash }) {
+export async function clearCart({ userId }) {
   return runTransaction(async (transaction) => {
-    const cart = await resolveCart(transaction, { userId, guestTokenHash, create: false })
+    const cart = await resolveCart(transaction, { userId, create: false })
 
     if (!cart) {
       const now = await databaseNow(transaction)
@@ -439,165 +424,6 @@ export async function clearCart({ userId, guestTokenHash }) {
       { id: cart.id, userId: cart.userId, items: [] },
       { now },
     )
-  })
-}
-
-/**
- * Merges a guest cart into the buyer's account cart.
- *
- * Called on sign-in and registration. The rules:
- *
- *  - A listing present in both carts stays one line. The account's existing line
- *    and its hold win, so a buyer cannot end up holding the same device twice or
- *    losing a hold they already had.
- *  - An item whose listing is no longer available is still carried over and marked
- *    unavailable. Dropping it would lose a line the buyer can see in their cart
- *    without explanation.
- *  - A guest hold is re-taken against the account's cart item where possible, and
- *    abandoned where another buyer already holds the listing.
- *
- * The whole thing is one transaction: a partially merged cart, where some items
- * moved and others did not, is worse than no merge at all.
- */
-export async function mergeGuestCartIntoAccount({ userId, guestToken }) {
-  if (!userId || !guestToken) {
-    return null
-  }
-
-  const guestTokenHash = hashGuestCartToken(guestToken)
-
-  return runTransaction(async (transaction) => {
-    // Lock the guest cart first so two concurrent sign-ins cannot both consume it.
-    const locked = await transaction.$queryRaw`
-      SELECT id FROM carts WHERE guest_token_hash = ${guestTokenHash}::text FOR UPDATE
-    `
-
-    if (locked.length === 0) {
-      return null
-    }
-
-    const guestCart = await transaction.cart.findUnique({
-      where: { guestTokenHash },
-      include: cartInclude,
-    })
-
-    if (!guestCart) {
-      return null
-    }
-
-    const accountCart = await resolveCart(transaction, { userId })
-    const now = await databaseNow(transaction)
-
-    const existingAccountItems = new Map(
-      (
-        await transaction.cartItem.findMany({
-          where: { cartId: accountCart.id },
-          select: { id: true, listingId: true },
-        })
-      ).map((item) => [item.listingId, item]),
-    )
-
-    const moved = []
-    const deduplicated = []
-    const unavailable = []
-    let holdsLost = 0
-
-    for (const guestItem of guestCart.items) {
-      const { listingId } = guestItem
-      const existing = existingAccountItems.get(listingId)
-
-      if (existing) {
-        // One line per listing. The account's line survives, and the buyer's own
-        // guest hold is transferred onto it rather than dropped — otherwise the
-        // merged cart would show a line it is not holding, and another buyer could
-        // take the phone.
-        await lockListing(transaction, listingId)
-        await releaseReservationForCartItem(transaction, guestItem.id, now)
-
-        try {
-          await acquireReservation(transaction, {
-            listingId,
-            cartItemId: existing.id,
-            now,
-          })
-          deduplicated.push(listingId)
-        } catch (error) {
-          // Somebody else holds it now. The single line stays, marked unavailable,
-          // and nothing is lost.
-          unavailable.push(listingId)
-
-          if (error instanceof ApiError && error.code === 'LISTING_RESERVED') {
-            holdsLost += 1
-          }
-        }
-
-        continue
-      }
-
-      await lockListing(transaction, listingId)
-      await releaseExpiredReservations(transaction, listingId, now)
-
-      const listing = await transaction.listing.findUnique({
-        where: { id: listingId },
-        select: { id: true, status: true, price: true, quantity: true, sellerId: true },
-      })
-
-      const isListable =
-        listing && listing.status === 'APPROVED' && listing.quantity >= 1
-
-      // The guest hold is released before the account hold is taken. Skipping this
-      // would make the buyer's *own* guest reservation look like a competing
-      // buyer, and the item would be carried over marked unavailable even though
-      // nobody else wanted the phone.
-      await releaseReservationForCartItem(transaction, guestItem.id, now)
-
-      const created = await transaction.cartItem.create({
-        data: {
-          cartId: accountCart.id,
-          listingId,
-          // The snapshot is refreshed from the live price on merge rather than
-          // carried over, because a guest snapshot may be arbitrarily old and a
-          // stale snapshot would surface as a false price change.
-          priceSnapshot: listing?.price ?? guestItem.priceSnapshot,
-          quantity: 1,
-        },
-      })
-
-      if (!isListable) {
-        // Carried over so the buyer can see why it cannot be bought, rather than
-        // disappearing without explanation.
-        unavailable.push(listingId)
-        continue
-      }
-
-      try {
-        await acquireReservation(transaction, {
-          listingId,
-          cartItemId: created.id,
-          now,
-        })
-        moved.push(listingId)
-      } catch (error) {
-        // Another buyer holds it now. The line stays in the cart marked
-        // unavailable; no valid line is lost.
-        unavailable.push(listingId)
-
-        if (error instanceof ApiError && error.code === 'LISTING_RESERVED') {
-          holdsLost += 1
-        }
-      }
-    }
-
-    // The guest cart is consumed so its cookie cannot be replayed to re-claim these
-    // items against the account later.
-    await transaction.cart.delete({ where: { id: guestCart.id } })
-
-    return {
-      moved: moved.length,
-      deduplicated: deduplicated.length,
-      unavailable: unavailable.length,
-      holdsLost,
-    }
   })
 }
 

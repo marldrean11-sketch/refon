@@ -241,19 +241,8 @@ export function resolveZoneId(region) {
  * code the cart page can act on, so an expired reservation cannot quietly become
  * an order.
  */
-async function loadCheckoutableCart({ userId, guestTokenHash }) {
-  const owner = userId ? { userId } : guestTokenHash ? { guestTokenHash } : null
-
-  // A caller with no session and no guest cookie has no cart at all, which is the
-  // same situation as a caller whose cart is empty. Both are reported identically:
-  // distinguishing them would tell a client that its guess about a cart's ownership
-  // was wrong, and would leave the interface with two different failures to handle
-  // for one thing that is actually one thing.
-  if (!owner) {
-    throw new ApiError(409, 'Your cart is empty.', 'CART_EMPTY')
-  }
-
-  const cart = await prisma.cart.findUnique({ where: owner, include: cartInclude })
+async function loadCheckoutableCart({ userId }) {
+  const cart = await prisma.cart.findUnique({ where: { userId }, include: cartInclude })
 
   if (!cart || cart.items.length === 0) {
     throw new ApiError(409, 'Your cart is empty.', 'CART_EMPTY')
@@ -374,27 +363,23 @@ function presentReviewItems(cart) {
  * render its options before there is anything in the cart, so the subtotal falls
  * back to zero and the free-delivery badge simply does not appear.
  */
-export async function getCheckoutOptions({ userId, guestTokenHash, zoneId = DEFAULT_ZONE_ID } = {}) {
+export async function getCheckoutOptions({ userId, zoneId = DEFAULT_ZONE_ID } = {}) {
   const requestedZone = DELIVERY_ZONES.some((zone) => zone.id === zoneId)
     ? zoneId
     : DEFAULT_ZONE_ID
 
-  const owner = userId ? { userId } : guestTokenHash ? { guestTokenHash } : null
+  // The free-delivery threshold is measured against this buyer's own cart, so a
+  // buyer near the threshold is offered free delivery and one far below it is not.
+  const cart = await prisma.cart.findUnique({
+    where: { userId },
+    select: { items: { select: { quantity: true, listing: { select: { price: true } } } } },
+  })
 
-  let subtotal = 0
-
-  if (owner) {
-    const cart = await prisma.cart.findUnique({
-      where: owner,
-      select: { items: { select: { quantity: true, listing: { select: { price: true } } } } },
-    })
-
-    subtotal =
-      cart?.items.reduce(
-        (total, item) => total + Number(item.listing.price) * item.quantity,
-        0,
-      ) ?? 0
-  }
+  const subtotal =
+    cart?.items.reduce(
+      (total, item) => total + Number(item.listing.price) * item.quantity,
+      0,
+    ) ?? 0
 
   return presentCheckoutOptions({ zoneId: requestedZone, subtotal })
 }
@@ -407,12 +392,12 @@ export async function getCheckoutOptions({ userId, guestTokenHash, zoneId = DEFA
  * first four into an order row; until then this is the last point where money is
  * decided.
  */
-export async function quoteCheckout({ userId, guestTokenHash, deliveryMethodId, paymentMethodId, details }) {
+export async function quoteCheckout({ userId, deliveryMethodId, paymentMethodId, details }) {
   const contact = validateCheckoutDetails(details)
 
   const zoneId = resolveZoneId(contact.region)
 
-  const { cart, now } = await loadCheckoutableCart({ userId, guestTokenHash })
+  const { cart, now } = await loadCheckoutableCart({ userId })
 
   const paymentMethod = findPaymentMethod(paymentMethodId)
 
@@ -432,7 +417,7 @@ export async function quoteCheckout({ userId, guestTokenHash, deliveryMethodId, 
 
   return {
     quote: {
-      reference: buildQuoteReference({ userId, guestTokenHash, now }),
+      reference: buildQuoteReference({ userId, now }),
       currency: totals.currency,
       subtotal: totals.subtotal,
       deliveryFee: totals.deliveryFee,
@@ -469,8 +454,8 @@ export async function quoteCheckout({ userId, guestTokenHash, deliveryMethodId, 
  * confirmation screen and the buyer can refer to the same thing, and it deliberately
  * encodes no personal or cart information.
  */
-function buildQuoteReference({ userId, guestTokenHash, now }) {
-  const seed = `${userId ?? guestTokenHash ?? 'anonymous'}:${now.toISOString()}`
+function buildQuoteReference({ userId, now }) {
+  const seed = `${userId}:${now.toISOString()}`
 
 
   let hash = 0
