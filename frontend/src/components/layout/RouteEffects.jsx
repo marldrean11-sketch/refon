@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { scrollToElement, scrollToTop } from '../../lib/scroll.js'
 
 const ROUTE_META = {
   '/': {
@@ -364,14 +365,20 @@ export function RouteEffects() {
 
     applyRouteMeta(pathname)
 
+    // One deferred pass, because the outgoing page is still in the DOM when
+    // this effect runs and its height is what the scroll position is measured
+    // against. Both branches go through `lib/scroll` so they hand off to Lenis
+    // when it is installed and fall back to native scrolling when it is not —
+    // calling `window.scrollTo` directly here would fight the smoother and
+    // leave the page stranded mid-scroll.
     const timer = window.setTimeout(() => {
       if (location.hash) {
         const target = document.getElementById(location.hash.slice(1))
         if (target) {
-          target.scrollIntoView({ block: 'start' })
+          scrollToElement(target)
         }
       } else {
-        window.scrollTo(0, 0)
+        scrollToTop()
       }
 
       if (hasNavigated && !location.hash) {

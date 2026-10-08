@@ -277,20 +277,20 @@ enum AuthTokenType {
 }
 
 /// A ReFon cart. Exactly one owner field is set, enforced by a check constraint.
+/// A cart belongs to exactly one signed-in buyer.
+///
+/// Buying is a buyer action, so there is no guest cart and nothing to merge: a
+/// visitor is sent to sign in before a cart exists. `user_id` is therefore NOT NULL
+/// and unique, and the endpoint layer additionally requires the BUYER role.
 model Cart {
-  id     String  @id @default(uuid()) @db.Uuid
-  userId String? @unique @map("user_id") @db.Uuid
-  /// SHA-256 of the guest cookie token. Only the hash is stored, so a database
-  /// leak cannot hand out live guest carts the way a stored secret would.
-  guestTokenHash String? @unique @map("guest_token_hash") @db.Char(64)
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   items CartItem[]
 
-  @@index([userId])
-  @@index([guestTokenHash])
   @@map("carts")
 }
 

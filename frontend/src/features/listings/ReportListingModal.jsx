@@ -8,10 +8,10 @@ import {
   ShieldAlert,
   X,
 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { reportListingRequest } from './listing-api.js'
 import { notifyMarketplaceChange } from '../../lib/marketplace-sync.js'
-import { standardTransition } from '../../lib/motion.js'
+import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 
 const MAX_DETAILS = 1000
 
@@ -37,7 +37,7 @@ export function ReportListingModal({ listing, onClose, open = true }) {
   const [status, setStatus] = useState('idle')
   const dialogRef = useRef(null)
   const statusRef = useRef(status)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   useEffect(() => {
     statusRef.current = status

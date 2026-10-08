@@ -1,14 +1,13 @@
 import { useId } from 'react'
-import { Battery, Check, Cpu, HardDrive, RotateCcw, ShieldCheck, Star } from 'lucide-react'
-import { Badge } from '../../components/ui/Badge.jsx'
+import { Battery, Cpu, HardDrive, RotateCcw, ShieldCheck, Star, Tag } from 'lucide-react'
 import { CONDITION_GRADE_ORDER } from '../../lib/listing-taxonomy.js'
 
 const GRADE_LABELS = { A: 'Excellent', B: 'Very Good', C: 'Good' }
 
 const BATTERY_BANDS = [
-  { value: '90', label: '90% and above', note: 'Near-new cell' },
-  { value: '80', label: '80% – 89%', note: 'Healthy for daily use' },
-  { value: '70', label: '70% – 79%', note: 'Serviceable, budget for a swap' },
+  { value: '90', label: '90% and above', note: 'near-new cell' },
+  { value: '80', label: '80% – 89%', note: 'healthy for daily use' },
+  { value: '70', label: '70% – 79%', note: 'budget for a swap' },
 ]
 
 const PRICE_BANDS = [
@@ -19,23 +18,36 @@ const PRICE_BANDS = [
   { value: '40000', label: 'Under ₱40,000' },
 ]
 
-/** Row with a heading, optional note, and children. */
-function FilterGroup({ icon: Icon, title, note, children, count }) {
+const ICONS = {
+  Brand: Cpu,
+  'Condition grade': ShieldCheck,
+  'Battery health': Battery,
+  Price: Tag,
+  Storage: HardDrive,
+  RAM: Cpu,
+  Warranty: ShieldCheck,
+  'Seller rating': Star,
+}
+
+/** One filter set: a labelled group of rows, separated by a hairline. */
+function FilterGroup({ title, note, children, count }) {
+  const Icon = ICONS[title]
+
   return (
-    <fieldset className="border-t border-line pt-6 first:border-t-0 first:pt-0">
+    <fieldset className="border-t border-line pt-5 first:border-t-0 first:pt-0">
       <legend className="flex w-full items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-2 font-display text-sm font-semibold text-ink">
-          {Icon && <Icon className="size-4 text-primary-600" aria-hidden="true" />}
+        <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-ink">
+          {Icon && <Icon className="size-3.5 text-subtle" aria-hidden="true" />}
           {title}
         </span>
         {count > 0 && (
-          <Badge tone="primary" size="sm">
+          <span className="rounded-[3px] bg-primary-950 px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums text-white">
             {count}
-          </Badge>
+          </span>
         )}
       </legend>
       {note && <p className="mt-1.5 text-xs leading-relaxed text-muted">{note}</p>}
-      <div className="mt-3.5">{children}</div>
+      <div className="mt-3">{children}</div>
     </fieldset>
   )
 }
@@ -45,37 +57,62 @@ function FilterGroup({ icon: Icon, title, note, children, count }) {
  *
  * The label is the click target and the input is a sibling, so a screen reader
  * announces one control and keyboard users get the native control. The input is
- * visually replaced by the ring indicator below rather than hidden, keeping it
+ * visually replaced by the indicator below rather than hidden, keeping it
  * focusable.
+ *
+ * The selected row inverts to Obsidian with white text instead of gaining a
+ * coloured background. On a filter rail where every option is a peer, an
+ * inverted row is legible from across a laptop screen and does not add a
+ * saturated colour to a page whose only colours mean something.
  */
-function OptionRow({ type, name, checked, onChange, label, meta }) {
+function OptionRow({ type, name, checked, onChange, label, meta, columns }) {
   const id = useId()
 
   return (
-    <div
-      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-canvas ${
-        checked ? 'bg-primary-50' : ''
-      }`}
-    >
+    <div className="min-w-0">
       <input
         id={id}
         type={type}
         name={name}
         checked={checked}
         onChange={onChange}
-        className="size-4 shrink-0 rounded border-line text-primary-500 focus:ring-primary-500"
-        style={{ width: 16, height: 16 }}
+        className="peer sr-only"
       />
       <label
         htmlFor={id}
-        className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2"
+        className={`flex min-h-10 cursor-pointer items-center justify-between gap-2 rounded-control px-2.5 py-2 text-sm transition peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary-950 ${
+          checked
+            ? 'bg-primary-950 text-white'
+            : 'text-ink hover:bg-surface-2'
+        }`}
       >
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold text-ink">{label}</span>
-          {meta && <span className="mt-0.5 block text-xs text-muted">{meta}</span>}
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span
+            className={`grid size-4 shrink-0 place-items-center border ${
+              type === 'radio' ? 'rounded-full' : 'rounded-[2px]'
+            } ${
+              checked ? 'border-white bg-white' : 'border-line-2 bg-surface'
+            }`}
+            aria-hidden="true"
+          >
+            {checked ? (
+              <span
+                className={`block bg-primary-950 ${
+                  type === 'radio' ? 'size-1.5 rounded-full' : 'size-1.5 rounded-[1px]'
+                }`}
+              />
+            ) : null}
+          </span>
+          <span className="min-w-0 truncate">{label}</span>
         </span>
-        {checked && type === 'checkbox' && (
-          <Check className="size-4 shrink-0 text-primary-600" aria-hidden="true" />
+        {meta && (
+          <span
+            className={`shrink-0 font-mono text-[11px] tabular-nums ${
+              checked ? 'text-primary-300' : 'text-subtle'
+            }`}
+          >
+            {meta}
+          </span>
         )}
       </label>
     </div>
@@ -83,7 +120,7 @@ function OptionRow({ type, name, checked, onChange, label, meta }) {
 }
 
 /**
- * Catalog filter sidebar.
+ * Catalog filter rail.
  *
  * Option lists come from `GET /listings/facets`, which returns both the
  * configured options and live counts. That means a control is only ever rendered
@@ -100,8 +137,6 @@ export function CatalogFilters({
   activeCount,
   className = '',
 }) {
-  const brandId = useId()
-
   const brands = facets?.brands ?? []
   const warranties = options?.warranties ?? []
 
@@ -123,84 +158,85 @@ export function CatalogFilters({
   )
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-5 ${className}`}>
       {activeCount > 0 && (
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-sm font-bold text-muted transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-control border border-line-2 bg-surface px-4 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
         >
-          <RotateCcw className="size-4" aria-hidden="true" />
+          <RotateCcw className="size-3.5" aria-hidden="true" />
           Clear all {activeCount} filter{activeCount === 1 ? '' : 's'}
         </button>
       )}
 
-      <FilterGroup icon={Cpu} title="Brand" count={filters.brand ? 1 : 0}>
+      <FilterGroup title="Brand" count={filters.brand ? 1 : 0}>
         <div className="space-y-0.5">
           {brands.map((brand) => (
-            <OptionRow type="radio" name="brand"
+            <OptionRow
+              type="radio"
+              name="brand"
               key={brand.value}
               checked={filters.brand === brand.value}
               onChange={() =>
                 onPatch({ brand: filters.brand === brand.value ? '' : brand.value })
               }
               label={brand.value}
-              meta={`${brand.count} listed`}
+              meta={String(brand.count)}
             />
           ))}
         </div>
       </FilterGroup>
 
       <FilterGroup
-        icon={ShieldCheck}
         title="Condition grade"
         note="How the cosmetics were graded on inspection."
         count={filters.conditionGrade ? 1 : 0}
       >
-        <div className="space-y-0.5" id={brandId}>
+        <div className="space-y-0.5">
           {CONDITION_GRADE_ORDER.map((grade) => (
-            <OptionRow type="radio" name="grade"
+            <OptionRow
+              type="radio"
+              name="grade"
               key={grade}
               checked={filters.conditionGrade === grade}
               onChange={() =>
                 onPatch({ conditionGrade: filters.conditionGrade === grade ? '' : grade })
               }
-              label={`Grade ${grade} — ${GRADE_LABELS[grade]}`}
-              meta={`${countFor(facets?.grades ?? [], grade)} listed`}
+              label={`${grade} — ${GRADE_LABELS[grade]}`}
+              meta={String(countFor(facets?.grades ?? [], grade))}
             />
           ))}
         </div>
       </FilterGroup>
 
       <FilterGroup
-        icon={Battery}
         title="Battery health"
-        note="Measured capacity versus a new cell."
+        note="Measured capacity versus a new cell. 90% is near-new; below 80% is priced for a possible swap."
         count={filters.minBattery ? 1 : 0}
       >
         <div className="space-y-0.5">
           {BATTERY_BANDS.map((band) => (
-            <OptionRow type="radio" name="battery"
+            <OptionRow
+              type="radio"
+              name="battery"
               key={band.label}
               checked={filters.minBattery === band.value}
               onChange={() =>
                 onPatch({ minBattery: filters.minBattery === band.value ? '' : band.value })
               }
-              label={band.label}
-              meta={band.note}
+              label={`${band.label} · ${band.note}`}
             />
           ))}
         </div>
       </FilterGroup>
 
-      <FilterGroup
-        icon={Cpu}
-        title="Price"
-        count={filters.maxPrice ? 1 : 0}
-      >
+      <FilterGroup title="Price" count={filters.maxPrice ? 1 : 0}>
         <div className="space-y-0.5">
           {PRICE_BANDS.map((band) => (
-            <OptionRow type="radio" name="price"
+            <OptionRow
+              type="radio"
+              name="price"
               key={band.label}
               checked={filters.maxPrice === band.value}
               onChange={() =>
@@ -212,66 +248,65 @@ export function CatalogFilters({
         </div>
       </FilterGroup>
 
-      <FilterGroup
-        icon={HardDrive}
-        title="Storage"
-        count={filters.storage.length}
-      >
-        <div className="grid grid-cols-2 gap-1">
+      <FilterGroup title="Storage" count={filters.storage.length}>
+        <div className="grid grid-cols-2 gap-0.5">
           {storages.map((storage) => (
-            <OptionRow type="checkbox"
+            <OptionRow
+              type="checkbox"
               key={storage}
               checked={filters.storage.includes(storage)}
               onChange={() => onToggle('storage', storage)}
               label={storage}
-              meta={`${countFor(facets?.storages ?? [], storage)}`}
+              meta={String(countFor(facets?.storages ?? [], storage))}
             />
           ))}
         </div>
       </FilterGroup>
 
-      <FilterGroup icon={Cpu} title="RAM" count={filters.ram.length}>
-        <div className="grid grid-cols-2 gap-1">
+      <FilterGroup title="RAM" count={filters.ram.length}>
+        <div className="grid grid-cols-2 gap-0.5">
           {rams.map((ram) => (
-            <OptionRow type="checkbox"
+            <OptionRow
+              type="checkbox"
               key={ram}
               checked={filters.ram.includes(ram)}
               onChange={() => onToggle('ram', ram)}
               label={ram}
-              meta={`${countFor(facets?.rams ?? [], ram)}`}
+              meta={String(countFor(facets?.rams ?? [], ram))}
             />
           ))}
         </div>
       </FilterGroup>
 
       <FilterGroup
-        icon={ShieldCheck}
         title="Warranty"
         note="Coverage is administered by ReFon."
         count={filters.warrantyMonths.length}
       >
         <div className="space-y-0.5">
           {warranties.map((warranty) => (
-            <OptionRow type="checkbox"
+            <OptionRow
+              type="checkbox"
               key={warranty.months}
               checked={filters.warrantyMonths.includes(String(warranty.months))}
               onChange={() => onToggle('warrantyMonths', String(warranty.months))}
               label={warranty.label}
-              meta={`${countFor(facets?.warranties ?? [], warranty.months)} listed`}
+              meta={String(countFor(facets?.warranties ?? [], warranty.months))}
             />
           ))}
         </div>
       </FilterGroup>
 
       <FilterGroup
-        icon={Star}
         title="Seller rating"
         note="From seeded demo reviews in this prototype."
         count={filters.minSellerRating ? 1 : 0}
       >
         <div className="space-y-0.5">
           {['4.5', '4', '3.5'].map((rating) => (
-            <OptionRow type="radio" name="sellerRating"
+            <OptionRow
+              type="radio"
+              name="sellerRating"
               key={rating}
               checked={filters.minSellerRating === rating}
               onChange={() =>

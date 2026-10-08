@@ -1,5 +1,6 @@
 import { CheckCircle2, Search, ShieldCheck, Store } from 'lucide-react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { usePrefersReducedMotion } from '../lib/motion.ts'
 import { useAuth } from '../features/auth/useAuth.js'
 
 const pageContent = {
@@ -30,7 +31,7 @@ export function ComingSoonPage() {
   const { user } = useAuth()
   const content = pageContent[user.role] ?? pageContent.BUYER
   const Icon = content.icon
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   return (
     <section className="mx-auto flex min-h-[calc(100vh-4.5rem)] max-w-7xl items-center px-4 py-12 sm:px-6 lg:px-8 lg:py-20">

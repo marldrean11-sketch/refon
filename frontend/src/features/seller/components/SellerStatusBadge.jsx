@@ -6,26 +6,34 @@ import {
   ShoppingBag,
 } from 'lucide-react'
 
+/**
+ * The listing status chip.
+ *
+ * Square-cornered, monospace, and hairline-ruled so it belongs to the same
+ * instrument panel as the grade and warranty chips on a product card. The colour
+ * is a secondary signal only: every state names itself in words, so the chip is
+ * still readable in greyscale and to a colour-blind buyer.
+ */
 const statusConfig = {
   PENDING: {
-    label: 'Pending Review',
+    label: 'Pending review',
     icon: Clock3,
-    className: 'border-amber-200 bg-amber-50 text-amber-800',
+    className: 'bg-flare-50 text-flare-800 ring-flare-300',
   },
   APPROVED: {
     label: 'Approved',
     icon: BadgeCheck,
-    className: 'border-accent-200 bg-accent-50 text-accent-800',
+    className: 'bg-accent-50 text-accent-800 ring-accent-300',
   },
   REJECTED: {
     label: 'Rejected',
     icon: PackageX,
-    className: 'border-red-200 bg-red-50 text-red-700',
+    className: 'bg-red-50 text-danger ring-red-300',
   },
   SOLD: {
     label: 'Sold',
     icon: ShoppingBag,
-    className: 'border-primary-200 bg-primary-50 text-primary-700',
+    className: 'bg-primary-950 text-white ring-primary-950',
   },
 }
 
@@ -33,13 +41,13 @@ export function SellerStatusBadge({ status }) {
   const config = statusConfig[status] ?? {
     label: status,
     icon: CheckCircle2,
-    className: 'border-line bg-canvas text-muted',
+    className: 'bg-surface-2 text-muted ring-line-2',
   }
   const Icon = config.icon
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-bold ${config.className}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] ring-1 ring-inset ${config.className}`}
     >
       <Icon className="size-3.5" aria-hidden="true" />
       {config.label}

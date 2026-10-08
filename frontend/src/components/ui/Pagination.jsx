@@ -17,9 +17,9 @@ export function Pagination({ page, totalPages, onPageChange, className = '' }) {
   const pages = pageWindow(current, safeTotal)
 
   const buttonClasses =
-    'inline-flex size-10 items-center justify-center rounded-xl text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40'
-  const activeClasses = 'bg-primary-500 text-white shadow-card'
-  const idleClasses = 'border border-line bg-white text-muted hover:border-primary-200 hover:text-primary-700'
+    'inline-flex size-10 items-center justify-center rounded-control font-mono text-[13px] font-semibold tabular-nums transition disabled:cursor-not-allowed disabled:opacity-40'
+  const activeClasses = 'bg-primary-950 text-white'
+  const idleClasses = 'border border-line-2 bg-surface text-muted hover:border-primary-950 hover:text-ink'
 
   return (
     <nav className={`flex flex-wrap items-center justify-center gap-2 ${className}`} aria-label="Pagination">
@@ -45,7 +45,7 @@ export function Pagination({ page, totalPages, onPageChange, className = '' }) {
 
       {pages.map((entry, index) =>
         entry === 'gap' ? (
-          <span key={`gap-${index}`} className="px-1 text-sm text-muted" aria-hidden="true">
+          <span key={`gap-${index}`} className="px-1 font-mono text-sm text-subtle" aria-hidden="true">
             …
           </span>
         ) : (

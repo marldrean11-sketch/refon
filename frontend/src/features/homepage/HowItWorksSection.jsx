@@ -10,6 +10,12 @@ import { BUYER_STEPS } from '../../content/policy-content.js'
  * Six short buyer steps. Deliberately plain: the buyer journey is the thing a
  * first-time refurbished-phone shopper needs to feel safe about, and detail
  * here would obscure it.
+ *
+ * Laid out as a single horizontal run of six numbered columns on wide screens and
+ * a vertical run on narrow ones, which is what makes it read as one process
+ * rather than as six independent features. The connecting hairline between the
+ * numbers is the only decoration; it does the work that a stack of cards was
+ * previously doing badly.
  */
 export function HowItWorksSection() {
   return (
@@ -27,27 +33,22 @@ export function HowItWorksSection() {
         </ButtonLink>
       </div>
 
-      <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ol className="mt-12 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-6">
         {BUYER_STEPS.map((step) => (
-          <li
-            key={step.step}
-            className="relative overflow-hidden rounded-card-lg border border-line bg-white p-6 shadow-card"
-          >
-            <span
-              className="absolute -right-2 -top-4 font-display text-6xl font-bold text-primary-50"
-              aria-hidden="true"
-            >
-              {step.step}
-            </span>
-            <span className="relative text-xs font-bold uppercase tracking-[0.14em] text-primary-600">
-              Step {step.step}
-            </span>
-            <h3 className="relative mt-2 font-display text-lg font-semibold text-ink">
+          <li key={step.step} className="relative border-t border-line pt-5">
+            <div className="flex items-baseline gap-3">
+              <span className="font-display text-2xl font-bold tabular-nums leading-none tracking-tight text-ink">
+                {String(step.step).padStart(2, '0')}
+              </span>
+              <span
+                className="h-px flex-1 self-center bg-line-2"
+                aria-hidden="true"
+              />
+            </div>
+            <h3 className="mt-4 font-display text-base font-bold leading-snug tracking-tight text-ink">
               {step.title}
             </h3>
-            <p className="relative mt-2 text-sm leading-body text-muted">
-              {step.description}
-            </p>
+            <p className="mt-2 text-sm leading-body text-muted">{step.description}</p>
           </li>
         ))}
       </ol>

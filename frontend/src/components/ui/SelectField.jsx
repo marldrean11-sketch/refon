@@ -2,8 +2,12 @@ import { useId } from 'react'
 import { ChevronDown } from 'lucide-react'
 
 /**
- * Labeled `<select>` matching the `TextField` visual language, so filter
- * dropdowns and form selects do not look like two different products.
+ * Labelled `<select>`.
+ *
+ * The native control is restyled rather than replaced: it keeps keyboard
+ * behaviour, the platform picker on touch, and correct form semantics, which a
+ * custom listbox would all have to re-implement badly. `appearance-none` plus a
+ * drawn chevron is what keeps it looking like the rest of the product.
  */
 export function SelectField({
   label,
@@ -29,7 +33,9 @@ export function SelectField({
       {label && (
         <label
           htmlFor={id}
-          className={`mb-2 block text-sm font-semibold text-ink ${srOnlyLabel ? 'sr-only' : ''}`}
+          className={`mb-2 block font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-ink ${
+            srOnlyLabel ? 'sr-only' : ''
+          }`}
         >
           {label}
         </label>
@@ -41,8 +47,10 @@ export function SelectField({
           onChange={onChange}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
-          className={`h-12 w-full appearance-none rounded-2xl border bg-white py-3 pl-4 pr-11 text-[15px] font-semibold text-ink shadow-sm transition duration-200 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 ${
-            error ? 'border-danger focus:border-danger focus:ring-red-100' : 'border-line hover:border-slate-300'
+          className={`w-full appearance-none rounded-control border bg-surface pl-3.5 pr-10 font-medium text-ink transition duration-150 focus:outline-none focus:ring-2 focus:ring-primary-950/15 ${
+            error
+              ? 'h-11 border-danger focus:border-danger focus:ring-red-100'
+              : 'h-12 border-line-2 text-[15px] font-semibold hover:border-primary-400 focus:border-primary-950'
           } ${selectClassName}`}
           {...selectProps}
         >
@@ -53,7 +61,7 @@ export function SelectField({
           ))}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted"
+          className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-subtle"
           aria-hidden="true"
         />
       </div>

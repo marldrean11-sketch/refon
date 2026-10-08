@@ -1,11 +1,5 @@
 import { useState } from 'react'
-import {
-  AlertCircle,
-  ArrowRight,
-  LoaderCircle,
-  Mail,
-  Sparkles,
-} from 'lucide-react'
+import { AlertCircle, ArrowRight, LoaderCircle } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
 import { PasswordField } from '../components/auth/PasswordField.jsx'
@@ -16,6 +10,8 @@ import {
   getSafeDestination,
   validateLoginForm,
 } from '../features/auth/auth.validation.js'
+import { canUseBuyerDestinations } from '../features/design/navigation-config.js'
+import { clearIntent } from '../features/cart/pending-intent.js'
 
 const initialForm = {
   email: '',
@@ -63,8 +59,23 @@ export function LoginPage() {
         email: form.email.trim(),
         password: form.password,
       })
-      const fallback = getRoleHome(user.role)
-      const destination = getSafeDestination(location.state?.from, fallback)
+
+      // Where they were going, if it is safe to send them there.
+      //
+      // The destination is honoured for every role, not just a buyer. A seller who
+      // clicked a heart on a product page and signed in should land back on that
+      // product, not on their dashboard. The routes a role genuinely cannot use —
+      // `/cart`, `/checkout` — are dealt with by `RequireBuyer` on arrival, which
+      // sends a non-buyer to their own workspace, so there is no need to second-guess
+      // the role here.
+      const destination = getSafeDestination(location.state?.from, getRoleHome(user.role))
+
+      // A pending intent only means something for a buyer. A seller or admin who signs
+      // in gets it dropped, so it cannot fire later under a different account.
+      if (!canUseBuyerDestinations(user)) {
+        clearIntent()
+      }
+
       navigate(destination, { replace: true })
     } catch (error) {
       const fieldErrors = error.errors ?? {}
@@ -80,30 +91,45 @@ export function LoginPage() {
 
   const visibleError = formError || initializationError
 
+  /**
+   * The registration link carries the destination across in the query string rather
+   * than in router state.
+   *
+   * Someone sent here by clicking Cart or a heart may well not have an account, and a
+   * state-based `from` would be lost the moment they switched from sign-in to sign-up.
+   * A query parameter survives that, and survives the reload that registration can
+   * cause, which is what lets the deferred add-to-cart finish on the register path
+   * too. `getSafeDestination` re-validates it at the far end.
+   */
+  const registerHref = location.state?.from
+    ? `${AUTH_ROUTES.register}?next=${encodeURIComponent(location.state.from)}`
+    : AUTH_ROUTES.register
+
   return (
     <AuthShell>
-      <section className="rounded-card-xl border border-line bg-white/95 p-5 shadow-card backdrop-blur sm:p-9 lg:p-10">
-        <div className="mb-8">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-primary-700">
-            <Sparkles className="size-3.5" aria-hidden="true" />
+      <section className="rounded-card-lg border border-line bg-surface p-5 sm:p-8">
+        <div className="mb-7">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700">
             Welcome back
-          </span>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+          </p>
+          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink">
             Sign in to ReFon
           </h1>
-          <p className="mt-3 leading-body text-muted">
+          <p className="mt-2.5 leading-body text-muted">
             Access your buyer or seller workspace securely.
           </p>
         </div>
 
         {visibleError && (
           <div
-            className="mb-6 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            className="mb-6 rounded-control border border-danger bg-red-50 p-4 text-sm text-danger"
             role="alert"
             aria-live="assertive"
           >
-            <AlertCircle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden="true" />
-            <p className="leading-relaxed">{visibleError}</p>
+            <p className="flex gap-2.5 leading-relaxed">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              {visibleError}
+            </p>
           </div>
         )}
 
@@ -116,7 +142,6 @@ export function LoginPage() {
             inputMode="email"
             autoComplete="email"
             placeholder="you@example.com"
-            icon={Mail}
             value={form.email}
             onChange={updateField}
             error={fieldErrors.email}
@@ -140,7 +165,7 @@ export function LoginPage() {
           <div className="-mt-1 text-right">
             <Link
               to={AUTH_ROUTES.forgotPassword}
-              className="text-sm font-semibold text-muted underline transition hover:text-primary-700"
+              className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted underline underline-offset-4 transition hover:text-primary-950"
             >
               Forgot your password?
             </Link>
@@ -149,18 +174,18 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="group inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-primary-950 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition duration-150 hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>
-                <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                 Signing in securely…
               </>
             ) : (
               <>
                 Sign in
                 <ArrowRight
-                  className="size-4 transition duration-200 group-hover:translate-x-0.5"
+                  className="size-4 transition duration-150 group-hover:translate-x-0.5 motion-reduce:transform-none"
                   aria-hidden="true"
                 />
               </>
@@ -171,8 +196,8 @@ export function LoginPage() {
         <p className="mt-7 border-t border-line pt-6 text-center text-sm text-muted">
           New to ReFon?{' '}
           <Link
-            to={AUTH_ROUTES.register}
-            className="font-bold text-primary-700 transition hover:text-primary-500 hover:underline"
+            to={registerHref}
+            className="font-bold text-primary-800 transition hover:text-primary-950 hover:underline"
           >
             Create an account
           </Link>

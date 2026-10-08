@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { BadgeCheck, Clock3, ShoppingBag, Store, TrendingDown } from 'lucide-react'
+import { BadgeCheck, Clock3, Store } from 'lucide-react'
 import { Section, SectionHeading } from '../../components/ui/Section.jsx'
 import { Link } from 'react-router-dom'
 import { formatNumber, formatPeso } from '../../lib/format.js'
@@ -12,6 +12,11 @@ import { sellerPath } from '../../lib/routes.js'
  * who leaves the platform disappears from this section on their own. Counts
  * reflect real listed inventory, and the storefront link points at the public
  * seller page rather than a dead end.
+ *
+ * Presented as a registry: a table of accounts with a monogram, their status,
+ * and three figures. A marketplace's credibility lives in who is allowed to sell,
+ * so this reads as a register of approved accounts rather than as four friendly
+ * cards.
  */
 export function VerifiedSellersSection({ listings, isLoading }) {
   const sellers = useMemo(() => {
@@ -55,13 +60,13 @@ export function VerifiedSellersSection({ listings, isLoading }) {
       />
 
       {isEmpty ? (
-        <p className="mt-10 rounded-card-lg border border-line bg-canvas p-8 text-center text-sm font-semibold text-muted">
+        <p className="mt-10 rounded-card border border-dashed border-line-2 bg-canvas p-8 text-center text-sm font-semibold text-muted">
           No approved sellers have published listings yet.
         </p>
       ) : (
-        <ul className="mt-10 grid gap-5 sm:grid-cols-2">
+        <ul className="mt-10 grid gap-px overflow-hidden rounded-card-lg border border-line bg-line lg:grid-cols-2">
           {sellers.map((seller) => (
-            <li key={seller.id}>
+            <li key={seller.id} className="bg-surface">
               <SellerCard seller={seller} />
             </li>
           ))}
@@ -73,56 +78,61 @@ export function VerifiedSellersSection({ listings, isLoading }) {
 
 function SellerCard({ seller }) {
   return (
-    <article className="flex h-full flex-col rounded-card-lg border border-line bg-white p-6 shadow-card">
+    <article className="flex h-full flex-col p-6">
       <div className="flex items-start gap-4">
-        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-500 font-display text-base font-bold text-white">
+        <span className="grid size-12 shrink-0 place-items-center rounded-control bg-primary-950 font-display text-base font-bold text-white">
           {seller.name.charAt(0).toUpperCase()}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold text-ink">
+          <h3 className="flex flex-wrap items-center gap-2 font-display text-lg font-bold tracking-tight text-ink">
             {seller.name}
-            <BadgeCheck className="size-4.5 shrink-0 text-accent-600" style={{ width: 18, height: 18 }} aria-label="Verified seller" />
+            <BadgeCheck className="size-4 shrink-0 text-accent-600" aria-label="Verified seller" />
           </h3>
-          <p className="mt-1 text-sm text-muted">
-            Verified seller since {seller.memberSince}
+          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.1em] text-subtle">
+            Verified since {seller.memberSince}
           </p>
         </div>
       </div>
 
-      <dl className="mt-5 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-canvas p-3">
-          <dt className="flex items-center gap-1.5 text-xs font-semibold text-muted">
-            <ShoppingBag className="size-4" aria-hidden="true" />
-            Listed now
+      <dl className="mt-5 grid grid-cols-3 gap-px overflow-hidden rounded-control border border-line bg-line">
+        <div className="bg-surface-2 px-3 py-2.5">
+          <dt className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-subtle">
+            Listed
           </dt>
-          <dd className="mt-1.5 font-display text-base font-semibold text-ink">
-            {formatNumber(seller.listingCount)} {seller.listingCount === 1 ? 'phone' : 'phones'}
+          <dd className="mt-1 font-display text-lg font-bold tabular-nums leading-none text-ink">
+            {formatNumber(seller.listingCount)}
           </dd>
         </div>
-        <div className="rounded-2xl bg-canvas p-3">
-          <dt className="flex items-center gap-1.5 text-xs font-semibold text-muted">
-            <TrendingDown className="size-4" aria-hidden="true" />
+        <div className="bg-surface-2 px-3 py-2.5">
+          <dt className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-subtle">
             From
           </dt>
-          <dd className="mt-1.5 font-display text-base font-semibold text-ink">
+          <dd className="mt-1 font-display text-lg font-bold tabular-nums leading-none text-ink">
             {formatPeso(seller.minPrice)}
+          </dd>
+        </div>
+        <div className="bg-surface-2 px-3 py-2.5">
+          <dt className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-subtle">
+            Replies
+          </dt>
+          <dd className="mt-1 truncate text-[13px] font-semibold text-ink">
+            {seller.responseTime}
           </dd>
         </div>
       </dl>
 
-      <p className="mt-4 flex items-center gap-2 text-xs text-muted">
-        <Clock3 className="size-4 shrink-0" aria-hidden="true" />
-        {seller.responseTime}
-      </p>
-
       <div className="mt-auto pt-5">
         <Link
           to={sellerPath(seller.id)}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-bold text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
+          className="inline-flex items-center gap-2 rounded-control border border-line-2 bg-surface px-4 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
         >
-          <Store className="size-4" aria-hidden="true" />
+          <Store className="size-3.5" aria-hidden="true" />
           View storefront
         </Link>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+          <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
+          {seller.responseTime}
+        </p>
       </div>
     </article>
   )

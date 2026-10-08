@@ -476,11 +476,24 @@ try {
   assert.equal(savedListing.status, 'APPROVED')
   assert.equal(typeof savedListing.savedAt, 'string')
 
+  // The wishlist is a purchasing surface, so it is buyer-only. A seller is refused
+  // rather than handed an empty list: they have no wishlist, and answering 200 with
+  // nothing in it would imply they do. The visitor and refused-write cases above
+  // cover the 401 and the 403; what is checked here is that the refusal leaves no
+  // row behind.
   const sellerFavorites = await request('/api/favorites/mine', {
     cookie: otherSeller.cookie,
   })
-  assert.equal(sellerFavorites.response.status, 200)
-  assert.equal(sellerFavorites.payload.ids.includes(listingId), false)
+  assert.equal(sellerFavorites.response.status, 403)
+  assert.equal(sellerFavorites.payload.ids, undefined, 'and no ids are disclosed')
+
+  assert.equal(
+    await prisma.favorite.count({
+      where: { userId: otherSeller.user.id, listingId },
+    }),
+    0,
+    'and a refused save writes no row',
+  )
 
   // --- Seller inquiry inbox ---
   const inboxBeforeRead = await request('/api/inquiries/mine', {

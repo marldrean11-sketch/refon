@@ -44,6 +44,8 @@ import {
   ReturnPolicyBadge,
   WarrantyBadge,
 } from '../components/ui/WarrantyBadge.jsx'
+import { Breadcrumb } from '../components/ui/Breadcrumb.jsx'
+import { Container } from '../features/design/Container.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { productPath } from '../lib/routes.js'
 import { explainBatteryHealth } from '../lib/listing-taxonomy.js'
@@ -66,33 +68,33 @@ function ListingUnavailableState({ error, onRetry }) {
       aria-live="polite"
       aria-labelledby="listing-unavailable-title"
     >
-      <div className="w-full rounded-card-xl border border-line bg-white px-6 py-12 shadow-card sm:px-12">
-        <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-primary-50 text-primary-600">
-          <SearchX className="size-8" aria-hidden="true" />
+      <div className="w-full rounded-card-lg border border-line-2 bg-surface px-6 py-12">
+        <span className="mx-auto grid size-14 place-items-center rounded-control bg-surface-2 text-primary-800">
+          <SearchX className="size-6" aria-hidden="true" />
         </span>
-        <p className="mt-7 text-xs font-bold uppercase tracking-[0.16em] text-primary-600">
+        <p className="mt-6 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-subtle">
           {isMissing ? 'Listing not found or removed' : 'Listing temporarily unavailable'}
         </p>
         <h1
           id="listing-unavailable-title"
-          className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
+          className="mt-2 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl"
         >
           {title}
         </h1>
-        <p className="mx-auto mt-4 max-w-md leading-body text-muted">{description}</p>
-        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+        <p className="mx-auto mt-3 max-w-md leading-body text-muted">{description}</p>
+        <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
           {!isMissing && (
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 text-sm font-bold text-primary-700 shadow-sm transition duration-200 hover:border-primary-200 hover:bg-primary-50"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-control border border-line-2 bg-surface px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:bg-surface-2"
             >
               Try again
             </button>
           )}
           <Link
             to={AUTH_ROUTES.buyer}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-primary-950 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-primary-800"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back to browse
@@ -104,47 +106,58 @@ function ListingUnavailableState({ error, onRetry }) {
 }
 
 /**
+ * The purchase panel.
+ *
  * The four facts that decide whether a buyer continues, in the order they ask
  * them: which phone, what condition, how the battery holds up, and what happens
  * if something goes wrong. Everything else on the page supports those four.
+ *
+ * Divided into four labelled cells rather than four rounded boxes, because they
+ * are four readings from one device and the shared hairlines are what say so.
  */
 function KeyFacts({ listing }) {
   const hasWarranty = Number(listing.warrantyMonths ?? 0) > 0
 
   return (
-    <dl className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <div className="rounded-2xl bg-canvas p-4">
-        <dt className="text-xs font-semibold text-muted">Condition grade</dt>
-        <dd className="mt-1.5">
+    <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line">
+      <div className="bg-surface px-4 py-3.5">
+        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-subtle">
+          Condition grade
+        </dt>
+        <dd className="mt-2">
           <ConditionBadge grade={listing.grade} size="lg" />
         </dd>
-        <p className="mt-1.5 text-xs text-muted">{listing.gradeLabel}</p>
+        <p className="mt-2 text-xs text-muted">{listing.gradeLabel}</p>
       </div>
 
-      <div className="rounded-2xl bg-canvas p-4">
-        <dt className="mb-2 text-xs font-semibold text-muted">Battery health</dt>
-        <BatteryHealth
-          percent={listing.batteryPercent}
-          size="md"
-          showLabel={false}
-        />
+      <div className="bg-surface px-4 py-3.5">
+        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-subtle">
+          Battery health
+        </dt>
+        <dd className="mt-2.5">
+          <BatteryHealth percent={listing.batteryPercent} size="sm" showLabel={false} />
+        </dd>
       </div>
 
-      <div className="rounded-2xl bg-canvas p-4">
-        <dt className="text-xs font-semibold text-muted">Warranty</dt>
-        <dd className="mt-1.5">
+      <div className="bg-surface px-4 py-3.5">
+        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-subtle">
+          Warranty
+        </dt>
+        <dd className="mt-2">
           <WarrantyBadge months={listing.warrantyMonths} />
         </dd>
         {!hasWarranty && (
-          <p className="mt-1.5 text-xs font-semibold text-muted">
+          <p className="mt-2 text-xs font-semibold text-muted">
             Sold as-is — no warranty on this unit
           </p>
         )}
       </div>
 
-      <div className="rounded-2xl bg-canvas p-4">
-        <dt className="text-xs font-semibold text-muted">Seller</dt>
-        <dd className="mt-1.5 flex items-center gap-1.5">
+      <div className="bg-surface px-4 py-3.5">
+        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-subtle">
+          Seller
+        </dt>
+        <dd className="mt-2 flex items-center gap-1.5">
           {listing.seller?.verificationStatus === 'APPROVED' ? (
             <>
               <BadgeCheck className="size-4 shrink-0 text-accent-600" aria-hidden="true" />
@@ -152,13 +165,13 @@ function KeyFacts({ listing }) {
             </>
           ) : (
             <>
-              <Clock3 className="size-4 shrink-0 text-warning" aria-hidden="true" />
+              <Clock3 className="size-4 shrink-0 text-flare-600" aria-hidden="true" />
               <span className="text-sm font-bold text-ink">Verification pending</span>
             </>
           )}
         </dd>
         {Number(listing.seller?.ratingCount ?? 0) > 0 && (
-          <div className="mt-1.5">
+          <div className="mt-2">
             <RatingStars
               value={listing.seller.ratingAverage}
               count={listing.seller.ratingCount}
@@ -234,29 +247,22 @@ export function ListingDetailPage() {
       {/* `lib/bottom-action-bar.js` makes the mobile tab bar yield on this route, so
           this sticky bar owns the bottom edge rather than overlapping it. */}
       <div className="bg-canvas pb-8">
-        <section className="border-b border-line bg-white">
-          <div className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-            <nav
-              className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted"
-              aria-label="Breadcrumb"
-            >
-              <Link to={AUTH_ROUTES.home} className="transition hover:text-primary-700">
-                Home
-              </Link>
-              <span aria-hidden="true">/</span>
-              <Link to={AUTH_ROUTES.shop} className="transition hover:text-primary-700">
-                Shop Phones
-              </Link>
-              <span aria-hidden="true">/</span>
-              <span aria-current="page" className="break-words text-ink">
-                {listing.brand} {listing.model}
-              </span>
-            </nav>
+        {/* ── The product band. Gallery on the left at 7/12, purchase panel at
+            5/12, and both stick so the gallery never scrolls away from the
+            price. The ratio is deliberately wider than before: the device is the
+            subject, and the old near-even split gave the image the same weight
+            as the form. */}
+        <section className="border-b border-line bg-surface">
+          <Container className="py-6 sm:py-8 lg:py-10">
+            <Breadcrumb
+              items={[
+                { label: 'Home', to: AUTH_ROUTES.home },
+                { label: 'Shop Phones', to: AUTH_ROUTES.shop },
+                { label: `${listing.brand} ${listing.model}` },
+              ]}
+            />
 
-            <div className="mt-8 grid items-start gap-9 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)] lg:gap-12">
-              {/* Both columns stick on desktop. Without this the gallery scrolls
-                  away while the purchase panel stays put, leaving the left half
-                  of the viewport empty through the whole trust section. */}
+            <div className="mt-7 grid items-start gap-8 lg:grid-cols-[minmax(0,1.18fr)_minmax(21rem,0.82fr)] lg:gap-12">
               <div className="lg:sticky lg:top-24">
                 <ListingGallery listing={listing} />
               </div>
@@ -264,45 +270,50 @@ export function ListingDetailPage() {
               <div className="lg:sticky lg:top-24">
                 <div className="flex flex-wrap items-center gap-2">
                   {isVerifiedSeller && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm">
-                      <BadgeCheck className="size-4" aria-hidden="true" />
-                      Verified Seller
+                    <span className="inline-flex items-center gap-1.5 rounded-sm bg-accent-600 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-white">
+                      <BadgeCheck className="size-3.5" aria-hidden="true" />
+                      Verified seller
                     </span>
                   )}
                   <ConditionBadge grade={listing.grade} size="lg" />
                   {summary?.average != null && (
                     <RatingStars value={summary.average} count={summary.count} size="sm" />
                   )}
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-200 bg-accent-50 px-3 py-1.5 text-xs font-bold text-accent-800">
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-line-2 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted">
                     <ShieldCheck className="size-3.5" aria-hidden="true" />
                     Moderated
                   </span>
                 </div>
 
-                <p className="mt-6 text-xs font-bold uppercase tracking-[0.16em] text-primary-600">
+                <p className="mt-6 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-subtle">
                   {listing.brand}
                 </p>
-                <h1 className="mt-2 break-words text-4xl font-semibold tracking-[-0.04em] text-ink sm:text-5xl">
+                <h1 className="mt-2 break-words font-display text-[2.25rem] font-bold leading-[1.02] tracking-[-0.035em] text-ink sm:text-5xl">
                   {listing.model}
                 </h1>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium text-muted">
-                  <span className="inline-flex items-center gap-2">
-                    <CalendarDays className="size-4" aria-hidden="true" />
+                <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[12px] text-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="size-3.5" aria-hidden="true" />
                     {listing.year}
                   </span>
-                  <span className="inline-flex items-center gap-2">
-                    <HardDrive className="size-4" aria-hidden="true" />
+                  <span className="inline-flex items-center gap-1.5">
+                    <HardDrive className="size-3.5" aria-hidden="true" />
                     {listing.storage}
                   </span>
                   {listing.ram && (
-                    <span className="inline-flex items-center gap-2">
-                      <MemoryStick className="size-4" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1.5">
+                      <MemoryStick className="size-3.5" aria-hidden="true" />
                       {listing.ram} RAM
                     </span>
                   )}
                 </div>
 
+                {/* The class list on this block is load-bearing: the product
+                    specs scope their price assertions to `div.border-y.border-line.py-6`
+                    so a neighbour's discount in the related rail cannot satisfy
+                    them. Renaming the classes silently widens what the assertions
+                    read. */}
                 <div className="mt-7 border-y border-line py-6">
                   <div className="flex items-start justify-between gap-4">
                     <PriceDisplay
@@ -321,7 +332,7 @@ export function ListingDetailPage() {
                   {/* A saving is only ever stated when a reference price is
                       genuinely higher than the selling price. */}
                   {listing.savings ? (
-                    <p className="mt-3 text-sm font-semibold text-accent-700">
+                    <p className="mt-3 text-sm font-semibold text-flare-700">
                       You save {formatPeso(listing.savings)} against the original{' '}
                       {formatPeso(listing.originalPrice)} price.
                     </p>
@@ -334,7 +345,7 @@ export function ListingDetailPage() {
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     <WarrantyBadge months={listing.warrantyMonths} size="lg" linkToPolicy />
                     {!hasWarranty && (
-                      <span className="inline-flex items-center gap-1.5 rounded-pill bg-canvas px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-line">
+                      <span className="inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2.5 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted ring-1 ring-inset ring-line-2">
                         Sold as-is · no warranty
                       </span>
                     )}
@@ -343,11 +354,11 @@ export function ListingDetailPage() {
 
                   {isSold && (
                     <div
-                      className="mt-4 flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900"
+                      className="mt-4 flex gap-3 rounded-control border border-flare-300 bg-flare-50 p-4 text-flare-900"
                       role="status"
                     >
                       <ShoppingBag
-                        className="mt-0.5 size-5 shrink-0 text-amber-700"
+                        className="mt-0.5 size-5 shrink-0 text-flare-700"
                         aria-hidden="true"
                       />
                       <div>
@@ -370,8 +381,8 @@ export function ListingDetailPage() {
                     the seller about it. Both work end to end. */}
                 <div className="mt-6 hidden lg:block">
                   {isSold ? (
-                    <div className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-line bg-canvas px-6 text-sm font-bold text-muted">
-                      <ShoppingBag className="size-5" aria-hidden="true" />
+                    <div className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-control border border-line-2 bg-surface-2 px-6 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">
+                      <ShoppingBag className="size-4" aria-hidden="true" />
                       No longer accepting inquiries
                     </div>
                   ) : (
@@ -380,7 +391,7 @@ export function ListingDetailPage() {
                       <button
                         type="button"
                         onClick={() => setIsInquiryOpen(true)}
-                        className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-primary-200 bg-white px-5 text-sm font-bold text-primary-700 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                        className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-control border border-line-2 bg-surface px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
                       >
                         <MessageCircle className="size-4" aria-hidden="true" />
                         Inquire about this phone
@@ -400,9 +411,9 @@ export function ListingDetailPage() {
                   required
                 </p>
 
-                <div className="mt-6 flex gap-3 rounded-2xl border border-line bg-canvas p-4">
+                <div className="mt-6 flex gap-3 rounded-card border border-line bg-surface-2 p-4">
                   <ShieldCheck
-                    className="mt-0.5 size-5 shrink-0 text-primary-600"
+                    className="mt-0.5 size-5 shrink-0 text-accent-600"
                     aria-hidden="true"
                   />
                   <div>
@@ -415,85 +426,89 @@ export function ListingDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Container>
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_23rem]">
-            <div className="space-y-5">
-              <GradeExplainer grade={listing.grade} conditionNotes={listing.conditionNotes} />
-              <InspectionPanel listing={listing} />
-              <SpecificationsGrid listing={listing} />
-            </div>
-
-            <div className="space-y-5">
-              <div className="rounded-card border border-line bg-white p-6 shadow-card">
-                <h2 className="font-display text-lg font-semibold text-ink">Battery health</h2>
-                <BatteryHealth percent={listing.batteryPercent} size="lg" className="mt-4" />
-                <p className="mt-3 text-xs leading-relaxed text-muted">
-                  {explainBatteryHealth(listing.batteryPercent)} The figure is measured
-                  during inspection and published before purchase.
-                </p>
-                <Link
-                  to="/quality-check"
-                  className="mt-3 inline-flex text-xs font-bold text-primary-700 underline underline-offset-2 hover:text-primary-500"
-                >
-                  How we measure battery health
-                </Link>
+        {/* ── Evidence. The inspection record and the seller's record sit beside
+            the reading material, because both answer the same question: can I
+            trust this? */}
+        <section className="border-b border-line">
+          <Container className="py-12 sm:py-14 lg:py-16">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+              <div className="space-y-5">
+                <GradeExplainer grade={listing.grade} conditionNotes={listing.conditionNotes} />
+                <InspectionPanel listing={listing} />
+                <SpecificationsGrid listing={listing} />
               </div>
 
-              <SellerTrustCard
-                listing={listing}
-                actionSlot={
-                  canReport ? (
-                    <button
-                      type="button"
-                      onClick={handleReportClick}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-                    >
-                      <Flag className="size-3.5" aria-hidden="true" />
-                      Report this listing
-                    </button>
-                  ) : null
-                }
+              <div className="space-y-5">
+                <div className="rounded-card border border-line bg-surface p-6">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+                    Battery health
+                  </p>
+                  <BatteryHealth percent={listing.batteryPercent} size="lg" className="mt-4" />
+                  <p className="mt-3 text-xs leading-relaxed text-muted">
+                    {explainBatteryHealth(listing.batteryPercent)} The figure is measured
+                    during inspection and published before purchase.
+                  </p>
+                  <Link
+                    to="/quality-check"
+                    className="mt-3 inline-flex font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-800 underline underline-offset-2 hover:text-primary-950"
+                  >
+                    How we measure battery health
+                  </Link>
+                </div>
+
+                <SellerTrustCard
+                  listing={listing}
+                  actionSlot={
+                    canReport ? (
+                      <button
+                        type="button"
+                        onClick={handleReportClick}
+                        className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted transition hover:text-danger"
+                      >
+                        <Flag className="size-3.5" aria-hidden="true" />
+                        Report this listing
+                      </button>
+                    ) : null
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <TrustSummary listing={listing} />
+            </div>
+
+            <div className="mt-5">
+              <ProductReviews
+                reviews={reviews}
+                summary={summary}
+                isLoading={reviewsLoading}
+                error={reviewsError}
               />
             </div>
-          </div>
-
-          <div className="mt-5">
-            <TrustSummary listing={listing} />
-          </div>
-
-          <div className="mt-5">
-            <ProductReviews
-              reviews={reviews}
-              summary={summary}
-              isLoading={reviewsLoading}
-              error={reviewsError}
-            />
-          </div>
+          </Container>
         </section>
 
-        <section
-          className="border-t border-line bg-white py-12 sm:py-16 lg:py-20"
-          aria-busy={relatedLoading}
-        >
-          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        <section className="bg-surface" aria-busy={relatedLoading}>
+          <Container className="py-12 sm:py-14 lg:py-16">
             <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent-700">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700">
                   Keep exploring
                 </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
+                <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
                   Similar phones
                 </h2>
-                <p className="mt-3 max-w-2xl leading-body text-muted">
+                <p className="mt-2.5 max-w-2xl leading-body text-muted">
                   Other devices from this seller and comparable phones at a similar price.
                 </p>
               </div>
               <Link
                 to={AUTH_ROUTES.shop}
-                className="inline-flex items-center gap-2 text-sm font-bold text-primary-700 transition hover:text-primary-500"
+                className="inline-flex items-center gap-2 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-800 transition hover:text-primary-950"
               >
                 View all phones
               </Link>
@@ -505,25 +520,25 @@ export function ListingDetailPage() {
               </div>
             ) : relatedError ? (
               <div
-                className="mt-8 rounded-card border border-amber-200 bg-amber-50 px-6 py-8 text-center"
+                className="mt-8 rounded-card border border-flare-300 bg-flare-50 px-6 py-8 text-center"
                 role="status"
               >
-                <p className="text-lg font-semibold text-amber-950">
+                <p className="font-display text-lg font-bold text-flare-950">
                   More phones are taking a moment to load.
                 </p>
-                <p className="mt-2 text-sm text-amber-900">
+                <p className="mt-2 text-sm text-flare-900">
                   The listing you are viewing is unaffected.
                 </p>
               </div>
             ) : relatedListings.length > 0 ? (
-              <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3">
                 {relatedListings.map((relatedListing) => (
                   <ListingCard key={relatedListing.id} listing={relatedListing} />
                 ))}
               </div>
             ) : (
-              <div className="mt-8 rounded-card border border-dashed border-primary-200 bg-white px-6 py-12 text-center">
-                <p className="text-lg font-semibold text-ink">
+              <div className="mt-8 rounded-card border border-dashed border-line-2 bg-surface px-6 py-12 text-center">
+                <p className="font-display text-lg font-bold text-ink">
                   This is the only phone we have right now.
                 </p>
                 <p className="mt-2 text-sm text-muted">
@@ -531,31 +546,31 @@ export function ListingDetailPage() {
                 </p>
                 <Link
                   to={AUTH_ROUTES.shop}
-                  className="mt-5 inline-flex h-11 items-center rounded-2xl bg-primary-500 px-5 text-sm font-bold text-white transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                  className="mt-5 inline-flex h-11 items-center rounded-control bg-primary-950 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-primary-800"
                 >
                   Shop all phones
                 </Link>
               </div>
             )}
-          </div>
+          </Container>
         </section>
       </div>
 
       {/* Mobile action bar. The price stays visible while the buyer scrolls the
           inspection and specifications, which is the point of a sticky CTA. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_-18px_rgb(15_31_51/0.35)] backdrop-blur-xl lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_24px_-18px_rgb(17_22_26/0.4)] lg:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-subtle">
               Asking price
             </p>
-            <p className="truncate font-display text-xl font-bold text-ink">
+            <p className="truncate font-display text-xl font-bold tabular-nums text-ink">
               {formatPeso(listing.price)}
             </p>
           </div>
 
           {isSold ? (
-            <div className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-canvas px-5 text-sm font-bold text-muted">
+            <div className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-control border border-line-2 bg-surface-2 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-muted">
               <ShoppingBag className="size-4" aria-hidden="true" />
               Sold
             </div>
@@ -573,7 +588,7 @@ export function ListingDetailPage() {
               type="button"
               onClick={() => setIsInquiryOpen(true)}
               aria-label="Inquire about this phone"
-              className="grid size-12 shrink-0 place-items-center rounded-xl border border-line bg-white text-muted shadow-sm transition duration-200 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+              className="grid size-12 shrink-0 place-items-center rounded-control border border-line-2 bg-surface text-muted transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
             >
               <MessageCircle className="size-5" aria-hidden="true" />
             </button>

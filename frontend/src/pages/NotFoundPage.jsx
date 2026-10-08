@@ -1,12 +1,12 @@
 import { ArrowLeft, SearchX } from 'lucide-react'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { BrandMark } from '../components/ui/BrandMark.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
-import { standardTransition } from '../lib/motion.js'
+import { standardTransition, usePrefersReducedMotion } from '../lib/motion.ts'
 
 export function NotFoundPage() {
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   return (
     <main

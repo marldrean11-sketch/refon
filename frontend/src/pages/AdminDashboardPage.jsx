@@ -4,25 +4,24 @@ import {
   BadgeCheck,
   Check,
   CheckCircle2,
-  Clock3,
-  FileWarning,
   Flag,
   ListChecks,
   MessageSquareText,
-  PackageCheck,
   ShieldAlert,
   ShieldCheck,
-  ShoppingBag,
   Store,
   UserCheck,
   UsersRound,
   X,
 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { usePrefersReducedMotion } from '../lib/motion.ts'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
 import { PhoneArtwork } from '../features/listings/PhoneArtwork.jsx'
 import { isImageReference } from '../features/listings/image-reference.js'
 import { Skeleton } from '../components/ui/Skeleton.jsx'
+import { Container } from '../features/design/Container.jsx'
+import { MetricStrip, Panel } from '../features/design/Surfaces.jsx'
 import {
   approveListingRequest,
   approveSellerRequest,
@@ -56,16 +55,25 @@ const queueTabs = [
     id: 'SELLERS',
     label: 'Pending Sellers',
     icon: Store,
+    kicker: 'Verification queue',
+    heading: 'Pending seller applications',
+    help: 'Review business and contact details before the seller can list anything.',
   },
   {
     id: 'LISTINGS',
     label: 'Pending Listings',
     icon: ListChecks,
+    kicker: 'Listing moderation',
+    heading: 'Pending listings',
+    help: 'Confirm the condition detail is specific enough for a buyer to act on.',
   },
   {
     id: 'REPORTS',
     label: 'Reports',
     icon: ShieldAlert,
+    kicker: 'Safety queue',
+    heading: 'Buyer reports',
+    help: 'Act on reports against live listings, with a note explaining the outcome.',
   },
 ]
 
@@ -83,7 +91,15 @@ const reportStatusFilters = [
   { value: 'DISMISSED', label: 'Dismissed' },
 ]
 
+/**
+ * Approve / reject with an optional note.
+ *
+ * `aria-label`s are the wiring the keyboard spec relies on: "Reject <name>" and
+ * "Approve <name>" distinguish two buttons that would otherwise share the same
+ * accessible name inside a page full of cards.
+ */
 function ReviewActions({
+  subject,
   onApprove,
   onReject,
   feedbackId,
@@ -93,11 +109,14 @@ function ReviewActions({
   showFeedback = true,
 }) {
   return (
-    <div className="mt-5 border-t border-line pt-5">
+    <div className="border-t border-line px-5 py-4 sm:px-6">
       {showFeedback && (
         <>
-          <label htmlFor={feedbackId} className="text-xs font-bold uppercase tracking-[0.1em] text-muted">
-            Moderator feedback <span className="font-medium normal-case tracking-normal">(optional)</span>
+          <label
+            htmlFor={feedbackId}
+            className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle"
+          >
+            Moderator feedback <span className="font-normal normal-case tracking-normal text-subtle">(optional)</span>
           </label>
           <textarea
             id={feedbackId}
@@ -105,27 +124,29 @@ function ReviewActions({
             value={feedback}
             onChange={(event) => onFeedbackChange(event.target.value)}
             placeholder="Explain what the seller should change before resubmitting…"
-            className="mt-2 w-full resize-none rounded-2xl border border-line bg-white p-3.5 text-sm leading-relaxed text-ink shadow-sm transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+            className="mt-2 w-full resize-none rounded-control border border-line-2 bg-surface p-3 text-sm leading-relaxed text-ink transition duration-150 placeholder:text-subtle hover:border-line-2 focus:border-primary-950 focus:outline-none focus:ring-2 focus:ring-primary-950/15"
           />
         </>
       )}
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
         <button
           type="button"
+          aria-label={`Reject ${subject}`}
           onClick={onReject}
           disabled={isProcessing}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 transition duration-200 hover:border-red-300 hover:bg-red-100 disabled:opacity-50"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-control border border-red-300 bg-surface px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-danger transition hover:bg-red-50 disabled:opacity-50"
         >
-          <X className="size-4" aria-hidden="true" />
+          <X className="size-3.5" aria-hidden="true" />
           Reject
         </button>
         <button
           type="button"
+          aria-label={`Approve ${subject}`}
           onClick={onApprove}
           disabled={isProcessing}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent-700 px-4 text-sm font-bold text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-accent-800 disabled:opacity-50"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-control bg-primary-950 px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-primary-800 disabled:opacity-50"
         >
-          <Check className="size-4" aria-hidden="true" />
+          <Check className="size-3.5" aria-hidden="true" />
           Approve
         </button>
       </div>
@@ -133,27 +154,20 @@ function ReviewActions({
   )
 }
 
-function ReportCard({
-  report,
-  note,
-  onNoteChange,
-  onAction,
-  isProcessing,
-  isOpen,
-}) {
+function ReportCard({ report, note, onNoteChange, onAction, isProcessing, isOpen }) {
   const { listing, reporter } = report
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   return (
     <motion.article
       layout
-      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
-      className="overflow-hidden rounded-card border border-line bg-white shadow-card"
+      className="flex flex-col overflow-hidden rounded-card border border-line bg-surface"
     >
-      <div className="flex gap-4 p-5 sm:p-6">
-        <div className="size-16 shrink-0 overflow-hidden rounded-2xl border border-line">
+      <div className="flex gap-4 p-5">
+        <div className="size-16 shrink-0 overflow-hidden rounded-control border border-line">
           {isImageReference(listing.mainPhoto) ? (
             <img
               src={listing.mainPhoto}
@@ -167,6 +181,7 @@ function ReportCard({
               brand={listing.brand}
               model={listing.model}
               view="front"
+              showLabel={false}
               className="size-full"
             />
           )}
@@ -175,50 +190,54 @@ function ReportCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary-600">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
                 {listing.brand}
               </p>
               <a
                 href={`/listings/${listing.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-0.5 block break-words font-display text-lg font-semibold text-ink transition hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                className="mt-1 block break-words font-display text-lg font-bold tracking-tight text-ink transition hover:text-primary-800"
               >
                 {listing.model}
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
-              <p className="mt-1 text-xs font-semibold text-muted">
+              <p className="mt-1 font-mono text-[11px] tabular-nums text-muted">
                 {currencyFormatter.format(listing.price)} · {listing.sellerName}
               </p>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-700">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-red-50 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-danger ring-1 ring-inset ring-red-300">
               <Flag className="size-3.5" aria-hidden="true" />
               {reasonLabels[report.reason] ?? report.reason}
             </span>
           </div>
 
           {report.details && (
-            <p className="mt-3 whitespace-pre-line rounded-2xl bg-canvas p-3 text-sm leading-relaxed text-ink">
+            <p className="mt-3 whitespace-pre-line rounded-control border border-line bg-surface-2 p-3 text-sm leading-relaxed text-ink">
               {report.details}
             </p>
           )}
 
           <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
             <div>
-              <dt className="font-semibold text-muted">Reported by</dt>
+              <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                Reported by
+              </dt>
               <dd className="mt-0.5 break-words font-medium text-ink">
                 {reporter?.name} · {reporter?.email}
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-muted">Reported</dt>
+              <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                Reported
+              </dt>
               <dd className="mt-0.5 font-medium text-ink">
                 {dateFormatter.format(new Date(report.createdAt))}
               </dd>
             </div>
           </dl>
 
-          <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-canvas px-2.5 py-1 text-[11px] font-bold text-muted">
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-line">
             <ShieldAlert className="size-3.5" aria-hidden="true" />
             {report.openReportsForListing} open on this listing
           </p>
@@ -226,13 +245,13 @@ function ReportCard({
       </div>
 
       {isOpen ? (
-        <div className="border-t border-line px-5 py-5 sm:px-6">
+        <div className="border-t border-line bg-surface-2 px-5 py-4 sm:px-6">
           <label
             htmlFor={`report-note-${report.id}`}
-            className="text-xs font-bold uppercase tracking-[0.1em] text-muted"
+            className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle"
           >
             Moderator note{' '}
-            <span className="font-medium normal-case tracking-normal">
+            <span className="font-normal normal-case tracking-normal text-danger">
               (required to take down)
             </span>
           </label>
@@ -242,45 +261,48 @@ function ReportCard({
             value={note}
             onChange={(event) => onNoteChange(event.target.value)}
             placeholder="Explain what the seller must fix, or why this listing stays up…"
-            className="mt-2 w-full resize-none rounded-2xl border border-line bg-white p-3.5 text-sm leading-relaxed text-ink shadow-sm transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+            className="mt-2 w-full resize-none rounded-control border border-line-2 bg-surface p-3 text-sm leading-relaxed text-ink transition duration-150 placeholder:text-subtle hover:border-line-2 focus:border-primary-950 focus:outline-none focus:ring-2 focus:ring-primary-950/15"
           />
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
             <button
               type="button"
+              aria-label={`Take down ${listing.brand} ${listing.model}`}
               onClick={() => onAction('TAKE_DOWN')}
               disabled={isProcessing}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-danger px-4 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-control bg-danger px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-red-700 disabled:opacity-50"
             >
-              <ShieldAlert className="size-4" aria-hidden="true" />
+              <ShieldAlert className="size-3.5" aria-hidden="true" />
               Take down
             </button>
             <button
               type="button"
+              aria-label={`Resolve ${listing.brand} ${listing.model}`}
               onClick={() => onAction('RESOLVE')}
               disabled={isProcessing}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-control border border-line-2 bg-surface px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:bg-primary-950 hover:text-white disabled:opacity-50"
             >
-              <Check className="size-4" aria-hidden="true" />
+              <Check className="size-3.5" aria-hidden="true" />
               Resolve
             </button>
             <button
               type="button"
+              aria-label={`Dismiss ${listing.brand} ${listing.model}`}
               onClick={() => onAction('DISMISS')}
               disabled={isProcessing}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-line bg-white px-4 text-sm font-bold text-muted transition hover:bg-canvas disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-control border border-line-2 bg-surface px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted transition hover:bg-surface-3 disabled:opacity-50"
             >
-              <X className="size-4" aria-hidden="true" />
+              <X className="size-3.5" aria-hidden="true" />
               Dismiss
             </button>
           </div>
         </div>
       ) : (
-        <div className="border-t border-line px-5 py-4 text-xs text-muted sm:px-6">
-          <p className="font-bold uppercase tracking-[0.1em]">
+        <div className="border-t border-line bg-surface-2 px-5 py-3.5 text-xs text-muted sm:px-6">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle">
             {report.status === 'RESOLVED' ? 'Resolved' : 'Dismissed'}
           </p>
           {report.resolutionNote && (
-            <p className="mt-1 leading-relaxed text-ink">{report.resolutionNote}</p>
+            <p className="mt-1.5 leading-relaxed text-ink">{report.resolutionNote}</p>
           )}
         </div>
       )}
@@ -308,7 +330,7 @@ export function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [reviewingId, setReviewingId] = useState(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   const refresh = useCallback(
     async ({ silent = false, status = reportStatus } = {}) => {
@@ -359,44 +381,38 @@ export function AdminDashboardPage() {
     }
   }, [refresh])
 
+  /**
+   * Platform totals and the three queues.
+   *
+   * Order is deliberate: the three numbers that can require action today sit in
+   * the middle, between the two totals that are context and the last number that
+   * is context too. The old six-card grid put "Total sellers" first, which is
+   * the least useful figure on the page for the person whose job is clearing
+   * queues.
+   */
   const stats = useMemo(
     () => [
       {
-        label: 'Total sellers',
-        value: overview.totalSellers,
-        icon: UsersRound,
-        iconClass: 'bg-primary-50 text-primary-700',
-      },
-      {
-        label: 'Pending applications',
+        label: 'Pending sellers',
         value: overview.pendingSellers,
-        icon: Clock3,
-        iconClass: 'bg-amber-50 text-amber-700',
-      },
-      {
-        label: 'Total listings',
-        value: overview.totalListings,
-        icon: ListChecks,
-        iconClass: 'bg-primary-50 text-primary-700',
+        hint: 'Awaiting verification review',
+        tone: overview.pendingSellers > 0 ? 'flare' : undefined,
       },
       {
         label: 'Pending listings',
         value: overview.pendingListings,
-        icon: FileWarning,
-        iconClass: 'bg-amber-50 text-amber-700',
-      },
-      {
-        label: 'Total sold',
-        value: overview.totalSold,
-        icon: ShoppingBag,
-        iconClass: 'bg-accent-50 text-accent-700',
+        hint: 'Awaiting moderation',
+        tone: overview.pendingListings > 0 ? 'flare' : undefined,
       },
       {
         label: 'Open reports',
         value: overview.openReports,
-        icon: ShieldAlert,
-        iconClass: 'bg-red-50 text-red-700',
+        hint: 'Buyer reports unresolved',
+        tone: overview.openReports > 0 ? 'danger' : undefined,
       },
+      { label: 'Sellers', value: overview.totalSellers, hint: 'All accounts' },
+      { label: 'Listings', value: overview.totalListings, hint: 'All records' },
+      { label: 'Sold', value: overview.totalSold, hint: 'Completed trades' },
     ],
     [overview],
   )
@@ -520,27 +536,29 @@ export function AdminDashboardPage() {
     }
   }
 
+  const activeTab = queueTabs.find((tab) => tab.id === activeQueue)
+
   return (
     <div className="min-h-[calc(100vh-4.5rem)] bg-canvas">
       <AnimatePresence>
         {notice && (
           <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: -12 }}
+            initial={reduceMotion ? false : { opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
             role="status"
-             aria-live="polite"
-             className="border-b border-accent-200 bg-accent-50"
+            aria-live="polite"
+            className="border-b border-accent-300 bg-accent-50"
           >
-            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 text-sm font-semibold text-accent-900 sm:px-6 lg:px-8">
-              <span className="inline-flex min-w-0 items-center gap-3">
-                <CheckCircle2 className="size-5 text-accent-700" aria-hidden="true" />
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+              <span className="inline-flex min-w-0 items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-900">
+                <CheckCircle2 className="size-4 shrink-0 text-accent-700" aria-hidden="true" />
                 <span className="min-w-0 break-words">{notice}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setNotice('')}
-                className="grid size-8 place-items-center rounded-lg text-accent-800 transition hover:bg-accent-100"
+                className="grid size-8 shrink-0 place-items-center rounded-control text-accent-800 transition hover:bg-accent-100"
                 aria-label="Dismiss confirmation"
               >
                 <X className="size-4" aria-hidden="true" />
@@ -550,448 +568,446 @@ export function AdminDashboardPage() {
         )}
       </AnimatePresence>
 
-      <section className="border-b border-line bg-white">
-        <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6 sm:py-12 lg:px-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-primary-700">
-                <ShieldCheck className="size-4" aria-hidden="true" />
+      <div className="border-b border-line bg-surface">
+        <Container className="py-8 sm:py-10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700">
                 Moderator workspace
-              </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-ink sm:text-5xl">
+              </p>
+              <h1 className="mt-3 font-display text-[2.25rem] font-bold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[2.75rem]">
                 Admin Dashboard
               </h1>
-              <p className="mt-3 max-w-2xl text-base leading-body text-muted">
+              <p className="mt-2.5 max-w-2xl leading-body text-muted">
                 Review seller applications and listing submissions before they become
                 visible to buyers.
               </p>
             </div>
-            <div className="inline-flex self-start items-center gap-2 rounded-full border border-primary-100 bg-primary-50 px-3 py-2 text-xs font-bold text-primary-700 lg:self-auto">
-              <PackageCheck className="size-4" aria-hidden="true" />
+            <span className="inline-flex shrink-0 items-center gap-2 border-l-2 border-primary-950 pl-3 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
+              <UsersRound className="size-3.5" aria-hidden="true" />
               PostgreSQL moderation queue
-            </div>
+            </span>
           </div>
-        </div>
-      </section>
+        </Container>
+      </div>
 
-      <section
-        className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-12"
-        aria-busy={isLoading}
-      >
+      <Container className="py-8 sm:py-10">
         {error && (
-          <div className="mb-6 flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
-            <AlertCircle className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden="true" />
-            <p>{error.message}</p>
+          <div
+            className="mb-5 rounded-control border border-danger bg-red-50 p-4 text-sm text-danger"
+            role="alert"
+          >
+            <p className="flex gap-2.5">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              {error.message}
+            </p>
           </div>
         )}
 
         {isLoading ? (
-          <div
-            className="rounded-card border border-line bg-white p-6 shadow-card sm:p-8"
-            role="status"
-            aria-live="polite"
-            aria-label="Loading moderation queues"
-          >
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-              {Array.from({ length: 6 }, (_, index) => (
-                <div key={index} className="rounded-card border border-line p-5">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="mt-3 h-10 w-16" />
-                </div>
-              ))}
-            </div>
-            <Skeleton className="mt-8 h-12 w-full rounded-2xl" />
-            <div className="mt-5 grid gap-5 xl:grid-cols-2">
-              {Array.from({ length: 2 }, (_, index) => (
-                <div key={index} className="rounded-card border border-line p-6">
-                  <Skeleton className="size-12 rounded-2xl" />
-                  <Skeleton className="mt-5 h-5 w-2/5" />
-                  <Skeleton className="mt-3 h-4 w-full" />
-                  <Skeleton className="mt-2 h-4 w-4/5" />
-                </div>
-              ))}
-            </div>
+          <div role="status" aria-live="polite" aria-label="Loading moderation queues">
+            <Panel className="p-5">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <div key={index}>
+                    <Skeleton className="h-2.5 w-20" />
+                    <Skeleton className="mt-3 h-8 w-10" />
+                  </div>
+                ))}
+              </div>
+            </Panel>
+            <Panel className="mt-6 p-5">
+              <Skeleton className="h-11 w-full" />
+              <div className="mt-5 grid gap-5 xl:grid-cols-2">
+                {Array.from({ length: 2 }, (_, index) => (
+                  <div key={index} className="border border-line p-5">
+                    <Skeleton className="size-11 rounded-control" />
+                    <Skeleton className="mt-5 h-4 w-2/5" />
+                    <Skeleton className="mt-3 h-3 w-full" />
+                  </div>
+                ))}
+              </div>
+            </Panel>
             <span className="sr-only">Loading moderation queues from PostgreSQL…</span>
           </div>
         ) : (
-        <>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-          {stats.map(({ label, value, icon: Icon, iconClass }) => (
-            <motion.div
-              key={label}
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-card border border-line bg-white p-5 shadow-card"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-muted">{label}</p>
-                  <p className="mt-2 font-display text-4xl font-bold tracking-tight text-ink">
-                    {value}
-                  </p>
-                </div>
-                <span className={`grid size-11 place-items-center rounded-2xl ${iconClass}`}>
-                  <Icon className="size-5" aria-hidden="true" />
-                </span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+          <>
+            <MetricStrip metrics={stats} />
 
-        <div className="mt-10 overflow-hidden rounded-card-xl border border-line bg-white shadow-card">
-          <div className="border-b border-line px-4 pt-4 sm:px-6 sm:pt-5">
-            <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Moderation queues">
-              {queueTabs.map(({ id, label, icon: Icon }) => {
-                const count = queueCounts[id] ?? 0
-                const isActive = activeQueue === id
+            {/* ── The queues. */}
+            <Panel className="mt-6">
+              <div className="border-b border-line px-4 pt-3 sm:px-5 sm:pt-4">
+                <div
+                  className="flex gap-1 overflow-x-auto"
+                  role="tablist"
+                  aria-label="Moderation queues"
+                >
+                  {queueTabs.map(({ id, label, icon: Icon }) => {
+                    const count = queueCounts[id] ?? 0
+                    const isActive = activeQueue === id
 
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    id={`admin-tab-${id.toLowerCase()}`}
-                     aria-selected={isActive}
-                     aria-controls={`admin-panel-${id.toLowerCase()}`}
-                     tabIndex={isActive ? 0 : -1}
-                    onClick={() => setActiveQueue(id)}
-                     onKeyDown={(event) => handleQueueKeyDown(event, id)}
-                    className={`relative inline-flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-bold transition duration-200 ${
-                      isActive
-                        ? 'text-primary-700'
-                        : 'text-muted hover:text-primary-600'
-                    }`}
-                  >
-                    <Icon className="size-4" aria-hidden="true" />
-                    {label}
-                    <span
-                      className={`grid min-w-6 place-items-center rounded-full px-1.5 py-0.5 text-[11px] ${
-                        isActive ? 'bg-primary-100 text-primary-800' : 'bg-canvas text-muted'
-                      }`}
-                    >
-                      {count}
-                    </span>
-                    {isActive && (
-                      <motion.span
-                        layoutId="admin-active-queue"
-                        className="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary-500"
-                      />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div
-            id={`admin-panel-${activeQueue.toLowerCase()}`}
-            role="tabpanel"
-            aria-labelledby={`admin-tab-${activeQueue.toLowerCase()}`}
-            tabIndex={0}
-            className="bg-canvas/50 p-5 sm:p-6 lg:p-8"
-          >
-            {activeQueue === 'SELLERS' && (
-              <section aria-labelledby="pending-sellers-heading">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent-700">
-                      Verification queue
-                    </p>
-                    <h2 id="pending-sellers-heading" className="mt-2 text-2xl font-semibold text-ink">
-                      Pending seller applications
-                    </h2>
-                  </div>
-                  <p className="text-sm text-muted">Review business and contact details.</p>
-                </div>
-
-                {pendingApplications.length > 0 ? (
-                  <div className="mt-6 grid gap-5 xl:grid-cols-2">
-                    <AnimatePresence mode="popLayout">
-                      {pendingApplications.map((application) => {
-                        const feedbackKey = `seller:${application.id}`
-                        const initials = application.businessName
-                          .split(' ')
-                          .slice(0, 2)
-                          .map((part) => part[0])
-                          .join('')
-                          .toUpperCase()
-
-                        return (
-                          <motion.article
-                            layout
-                            key={application.id}
-                            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
-                            className="rounded-card border border-line bg-white p-5 shadow-card sm:p-6"
-                          >
-                            <div className="flex items-start gap-4">
-                              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-500 font-display text-sm font-bold text-white">
-                                {initials}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div>
-                                    <h3 className="font-display text-xl font-semibold text-ink">
-                                      {application.businessName}
-                                    </h3>
-                                    <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted">
-                                      <Store className="size-4" aria-hidden="true" />
-                                      Seller application
-                                    </p>
-                                  </div>
-                                  <SellerStatusBadge status="PENDING" />
-                                </div>
-                                <dl className="mt-5 grid gap-3 rounded-2xl bg-canvas p-4 text-sm sm:grid-cols-2">
-                                  <div>
-                                    <dt className="text-xs font-semibold text-muted">Contact info</dt>
-                                    <dd className="mt-1 break-words font-medium text-ink">
-                                      {application.contactInfo}
-                                    </dd>
-                                  </div>
-                                  <div>
-                                    <dt className="text-xs font-semibold text-muted">Date applied</dt>
-                                    <dd className="mt-1 font-medium text-ink">
-                                      {dateFormatter.format(new Date(application.appliedAt))}
-                                    </dd>
-                                  </div>
-                                </dl>
-                              </div>
-                            </div>
-                            <ReviewActions
-                              feedbackId={feedbackKey}
-                              feedback={feedback[feedbackKey] ?? ''}
-                              onFeedbackChange={(value) => updateFeedback(feedbackKey, value)}
-                               onReject={() => handleApplicationReview(application, 'REJECTED')}
-                              onApprove={() => handleApplicationReview(application, 'APPROVED')}
-                              isProcessing={reviewingId === application.id}
-                            />
-                          </motion.article>
-                        )
-                      })}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <AdminEmptyState
-                    icon={UserCheck}
-                    title="No pending seller applications"
-                    description="New seller verification requests will appear in this queue."
-                  />
-                )}
-              </section>
-            )}
-
-            {activeQueue === 'LISTINGS' && (
-              <section aria-labelledby="pending-listings-heading">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent-700">
-                      Listing moderation
-                    </p>
-                    <h2 id="pending-listings-heading" className="mt-2 text-2xl font-semibold text-ink">
-                      Pending listings
-                    </h2>
-                  </div>
-                  <p className="text-sm text-muted">
-                    Connected directly to the PostgreSQL listing inventory.
-                  </p>
-                </div>
-
-                {pendingListings.length > 0 ? (
-                  <div className="mt-6 grid gap-5 xl:grid-cols-2">                    <AnimatePresence mode="popLayout">
-                      {pendingListings.map((listing) => {
-                        const feedbackKey = `listing:${listing.id}`
-                        const reviewPhotos = listing.photos?.length
-                          ? listing.photos
-                          : [null]
-
-                        return (
-                          <motion.article
-                            layout
-                            key={listing.id}
-                            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
-                            className="overflow-hidden rounded-card border border-line bg-white shadow-card"
-                          >
-                            <div className="relative">
-                              <div className={`grid aspect-[16/8] gap-1 bg-canvas p-1 ${reviewPhotos.length === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
-                                {reviewPhotos.map((photo, index) =>
-                                  isImageReference(photo) ? (
-                                    <div key={`${photo}-${index}`} className="relative min-w-0 overflow-hidden rounded-xl bg-white">
-                                      <img
-                                        src={photo}
-                                        alt={`${listing.brand} ${listing.model} ${index === 0 ? 'main' : 'gallery'} photo`}
-                                        loading="lazy"
-                                        decoding="async"
-                                        className="h-full w-full object-cover"
-                                      />
-                                      {index === 0 && (
-                                        <span className="absolute bottom-2 left-2 rounded-full bg-primary-600/90 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white">
-                                          Main
-                                        </span>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <PhoneArtwork
-                                      key={`placeholder-${index}`}
-                                      brand={listing.brand}
-                                      model={listing.model}
-                                      color={listing.color}
-                                      view="front"
-                                      className="h-full w-full"
-                                    />
-                                  ),
-                                )}
-                              </div>
-                              {reviewPhotos.length > 3 && (
-                                <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2.5 py-1 text-[10px] font-bold text-white">
-                                  {reviewPhotos.length} photos
-                                </span>
-                              )}
-                              <div className="absolute right-4 top-4">
-                                <SellerStatusBadge status={listing.status} />
-                              </div>
-                            </div>
-                            <div className="p-5 sm:p-6">
-                              <div className="flex flex-wrap items-start justify-between gap-4">
-                                <div>
-                                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-primary-600">
-                                    {listing.brand}
-                                  </p>
-                                  <h3 className="mt-1 break-words font-display text-xl font-semibold text-ink">
-                                    {listing.model}
-                                  </h3>
-                                  <p className="mt-1 text-sm text-muted">
-                                    {listing.year} · {listing.storage} · {listing.batteryPercent}% battery
-                                  </p>
-                                </div>
-                                <p className="shrink-0 font-display text-xl font-bold text-ink">
-                                  {currencyFormatter.format(listing.price)}
-                                </p>
-                              </div>
-
-                              <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-canvas p-4 text-sm">
-                                <div>
-                                  <p className="text-xs font-semibold text-muted">Seller</p>
-                                  <p className="mt-1 font-semibold text-ink">{listing.sellerName}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs font-semibold text-muted">Condition</p>
-                                  <p className="mt-1 font-semibold text-ink">{listing.condition}</p>
-                                </div>
-                                <div className="col-span-2 border-t border-line pt-3">
-                                  <p className="text-xs font-semibold text-muted">Cosmetic notes</p>
-                                  <p className="mt-1 leading-relaxed text-ink">{listing.conditionNotes}</p>
-                                </div>
-                              </div>
-
-                              <p className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-muted">
-                                <MessageSquareText className="size-4" aria-hidden="true" />
-                                {reviewPhotos.length} photos attached
-                              </p>
-
-                              <ReviewActions
-                                feedbackId={feedbackKey}
-                                feedback={feedback[feedbackKey] ?? ''}
-                                onFeedbackChange={(value) => updateFeedback(feedbackKey, value)}
-                                onReject={() => handleListingReview(listing, 'REJECTED')}
-                                onApprove={() => handleListingReview(listing, 'APPROVED')}
-                                isProcessing={reviewingId === listing.id}
-                              />
-                            </div>
-                          </motion.article>
-                        )
-                      })}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <AdminEmptyState
-                    icon={BadgeCheck}
-                    title="No pending listings"
-                    description="New seller submissions will appear here automatically from PostgreSQL."
-                  />
-                )}
-              </section>
-            )}
-
-            {activeQueue === 'REPORTS' && (
-              <section aria-labelledby="reports-heading">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">
-                      Safety queue
-                    </p>
-                    <h2 id="reports-heading" className="mt-2 text-2xl font-semibold text-ink">
-                      Buyer reports
-                    </h2>
-                  </div>
-                  <div
-                    className="inline-flex self-start rounded-2xl border border-line bg-white p-1 shadow-sm sm:self-auto"
-                    role="group"
-                    aria-label="Filter reports by status"
-                  >
-                    {reportStatusFilters.map((filter) => (
+                    return (
                       <button
-                        key={filter.value}
+                        key={id}
                         type="button"
-                        onClick={() => handleReportStatusChange(filter.value)}
-                        aria-pressed={reportStatus === filter.value}
-                        className={`rounded-xl px-4 py-2 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
-                          reportStatus === filter.value
-                            ? 'bg-primary-500 text-white shadow-sm'
-                            : 'text-muted hover:bg-primary-50 hover:text-primary-700'
+                        role="tab"
+                        id={`admin-tab-${id.toLowerCase()}`}
+                        aria-selected={isActive}
+                        aria-controls={`admin-panel-${id.toLowerCase()}`}
+                        tabIndex={isActive ? 0 : -1}
+                        onClick={() => setActiveQueue(id)}
+                        onKeyDown={(event) => handleQueueKeyDown(event, id)}
+                        className={`relative inline-flex shrink-0 items-center gap-2 px-3 py-3 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] transition duration-150 ${
+                          isActive ? 'text-ink' : 'text-subtle hover:text-ink'
                         }`}
                       >
-                        {filter.label}
+                        <Icon className="size-4" aria-hidden="true" />
+                        {label}
+                        <span
+                          className={`grid min-w-5 place-items-center rounded-[3px] px-1 py-0.5 text-[10px] tabular-nums ${
+                            isActive
+                              ? 'bg-primary-950 text-white'
+                              : 'bg-surface-2 text-subtle'
+                          }`}
+                        >
+                          {count}
+                        </span>
+                        {isActive && (
+                          <motion.span
+                            layoutId="admin-active-queue"
+                            className="absolute inset-x-3 bottom-0 h-0.5 bg-primary-950"
+                          />
+                        )}
                       </button>
-                    ))}
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div
+                id={`admin-panel-${activeQueue.toLowerCase()}`}
+                role="tabpanel"
+                aria-labelledby={`admin-tab-${activeQueue.toLowerCase()}`}
+                tabIndex={0}
+                className="p-5 sm:p-6"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+                      {activeTab.kicker}
+                    </p>
+                    <h2 className="mt-1.5 font-display text-xl font-bold tracking-tight text-ink">
+                      {activeTab.heading}
+                    </h2>
                   </div>
+                  <p className="max-w-md text-sm leading-body text-muted">{activeTab.help}</p>
                 </div>
 
-                {reports.length > 0 ? (
-                  <div className="mt-6 grid gap-5 xl:grid-cols-2">
-                    <AnimatePresence mode="popLayout">
-                      {reports.map((report) => (
-                        <ReportCard
-                          key={report.id}
-                          report={report}
-                          note={feedback[`report:${report.id}`] ?? ''}
-                          onNoteChange={(value) =>
-                            updateFeedback(`report:${report.id}`, value)
-                          }
-                          onAction={(action) => handleReportAction(report, action)}
-                          isProcessing={resolvingReportId === report.id}
-                          isOpen={report.status === 'OPEN'}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <AdminEmptyState
-                    icon={ShieldCheck}
-                    title={`No ${reportStatus.toLowerCase()} reports`}
-                    description="Buyer reports on live listings will appear here for review."
-                  />
+                {activeQueue === 'SELLERS' && (
+                  <section aria-labelledby="pending-sellers-heading" className="contents">
+                    <h2 id="pending-sellers-heading" className="sr-only">
+                      Pending seller applications
+                    </h2>
+                    {pendingApplications.length > 0 ? (
+                      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                        <AnimatePresence mode="popLayout">
+                          {pendingApplications.map((application) => {
+                            const feedbackKey = `seller:${application.id}`
+                            const initials = application.businessName
+                              .split(' ')
+                              .slice(0, 2)
+                              .map((part) => part[0])
+                              .join('')
+                              .toUpperCase()
+
+                            return (
+                              <motion.article
+                                layout
+                                key={application.id}
+                                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
+                                className="flex flex-col overflow-hidden rounded-card border border-line bg-surface"
+                              >
+                                <div className="flex items-start gap-4 p-5">
+                                  <span className="grid size-11 shrink-0 place-items-center rounded-control bg-primary-950 font-mono text-xs font-bold text-white">
+                                    {initials}
+                                  </span>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                      <h3 className="font-display text-lg font-bold tracking-tight text-ink">
+                                        {application.businessName}
+                                      </h3>
+                                      <SellerStatusBadge status="PENDING" />
+                                    </div>
+                                    <dl className="mt-4 grid gap-3 border-t border-line pt-3 text-sm sm:grid-cols-2">
+                                      <div>
+                                        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                                          Contact info
+                                        </dt>
+                                        <dd className="mt-1 break-words font-medium text-ink">
+                                          {application.contactInfo}
+                                        </dd>
+                                      </div>
+                                      <div>
+                                        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                                          Date applied
+                                        </dt>
+                                        <dd className="mt-1 font-medium text-ink">
+                                          {dateFormatter.format(new Date(application.appliedAt))}
+                                        </dd>
+                                      </div>
+                                    </dl>
+                                  </div>
+                                </div>
+                                <div className="mt-auto">
+                                  <ReviewActions
+                                    subject={application.businessName}
+                                    feedbackId={feedbackKey}
+                                    feedback={feedback[feedbackKey] ?? ''}
+                                    onFeedbackChange={(value) => updateFeedback(feedbackKey, value)}
+                                    onReject={() => handleApplicationReview(application, 'REJECTED')}
+                                    onApprove={() => handleApplicationReview(application, 'APPROVED')}
+                                    isProcessing={reviewingId === application.id}
+                                  />
+                                </div>
+                              </motion.article>
+                            )
+                          })}
+                        </AnimatePresence>
+                      </div>
+                    ) : (
+                      <AdminEmptyState
+                        icon={UserCheck}
+                        title="No pending seller applications"
+                        description="New seller verification requests will appear in this queue."
+                      />
+                    )}
+                  </section>
                 )}
-              </section>
-            )}
-          </div>
-        </div>
-        </>
+
+                {activeQueue === 'LISTINGS' && (
+                  <section aria-labelledby="pending-listings-heading" className="contents">
+                    <h2 id="pending-listings-heading" className="sr-only">
+                      Pending listings
+                    </h2>
+                    {pendingListings.length > 0 ? (
+                      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                        <AnimatePresence mode="popLayout">
+                          {pendingListings.map((listing) => {
+                            const feedbackKey = `listing:${listing.id}`
+                            const reviewPhotos = listing.photos?.length
+                              ? listing.photos
+                              : [null]
+
+                            return (
+                              <motion.article
+                                layout
+                                key={listing.id}
+                                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }}
+                                className="flex flex-col overflow-hidden rounded-card border border-line bg-surface"
+                              >
+                                <div className="relative border-b border-line">
+                                  <div
+                                    className={`grid aspect-[16/8] gap-px bg-line ${
+                                      reviewPhotos.length === 1 ? 'grid-cols-1' : 'grid-cols-3'
+                                    }`}
+                                  >
+                                    {reviewPhotos.map((photo, index) =>
+                                      isImageReference(photo) ? (
+                                        <div
+                                          key={`${photo}-${index}`}
+                                          className="relative min-w-0 overflow-hidden bg-surface"
+                                        >
+                                          <img
+                                            src={photo}
+                                            alt={`${listing.brand} ${listing.model} ${index === 0 ? 'main' : 'gallery'} photo`}
+                                            loading="lazy"
+                                            decoding="async"
+                                            className="h-full w-full object-cover"
+                                          />
+                                          {index === 0 && (
+                                            <span className="absolute bottom-2 left-2 rounded-[2px] bg-primary-950 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-white">
+                                              Main
+                                            </span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <PhoneArtwork
+                                          key={`placeholder-${index}`}
+                                          brand={listing.brand}
+                                          model={listing.model}
+                                          color={listing.color}
+                                          view="front"
+                                          showLabel={false}
+                                          className="h-full w-full"
+                                        />
+                                      ),
+                                    )}
+                                  </div>
+                                  {reviewPhotos.length > 3 && (
+                                    <span className="absolute bottom-2 right-2 rounded-[2px] bg-primary-950 px-2 py-1 font-mono text-[10px] font-semibold text-white">
+                                      {reviewPhotos.length} photos
+                                    </span>
+                                  )}
+                                  <div className="absolute right-3 top-3">
+                                    <SellerStatusBadge status={listing.status} />
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-1 flex-col p-5">
+                                  <div className="flex flex-wrap items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+                                        {listing.brand}
+                                      </p>
+                                      <h3 className="mt-1 break-words font-display text-lg font-bold tracking-tight text-ink">
+                                        {listing.model}
+                                      </h3>
+                                      <p className="mt-1 font-mono text-[11px] text-muted">
+                                        {listing.year} · {listing.storage} · {listing.batteryPercent}% battery
+                                      </p>
+                                    </div>
+                                    <p className="shrink-0 font-display text-xl font-bold tabular-nums text-ink">
+                                      {currencyFormatter.format(listing.price)}
+                                    </p>
+                                  </div>
+
+                                  <dl className="mt-4 border-t border-line pt-3 text-sm">
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div>
+                                        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                                          Seller
+                                        </dt>
+                                        <dd className="mt-1 font-semibold text-ink">
+                                          {listing.sellerName}
+                                        </dd>
+                                      </div>
+                                      <div>
+                                        <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                                          Condition
+                                        </dt>
+                                        <dd className="mt-1 font-semibold text-ink">
+                                          {listing.condition}
+                                        </dd>
+                                      </div>
+                                    </div>
+                                    <div className="mt-3 border-t border-line pt-3">
+                                      <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                                        Cosmetic notes
+                                      </dt>
+                                      <dd className="mt-1 leading-relaxed text-ink">
+                                        {listing.conditionNotes}
+                                      </dd>
+                                    </div>
+                                  </dl>
+
+                                  <p className="mt-3 inline-flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                                    <MessageSquareText className="size-3.5" aria-hidden="true" />
+                                    {reviewPhotos.length} photos attached
+                                  </p>
+                                </div>
+
+                                <div className="mt-auto">
+                                  <ReviewActions
+                                    subject={`${listing.brand} ${listing.model}`}
+                                    feedbackId={feedbackKey}
+                                    feedback={feedback[feedbackKey] ?? ''}
+                                    onFeedbackChange={(value) => updateFeedback(feedbackKey, value)}
+                                    onReject={() => handleListingReview(listing, 'REJECTED')}
+                                    onApprove={() => handleListingReview(listing, 'APPROVED')}
+                                    isProcessing={reviewingId === listing.id}
+                                  />
+                                </div>
+                              </motion.article>
+                            )
+                          })}
+                        </AnimatePresence>
+                      </div>
+                    ) : (
+                      <AdminEmptyState
+                        icon={BadgeCheck}
+                        title="No pending listings"
+                        description="New seller submissions will appear here automatically from PostgreSQL."
+                      />
+                    )}
+                  </section>
+                )}
+
+                {activeQueue === 'REPORTS' && (
+                  <section aria-labelledby="reports-heading" className="contents">
+                    <h2 id="reports-heading" className="sr-only">
+                      Buyer reports
+                    </h2>
+                    <div className="mt-4 flex sm:justify-end">
+                      <div
+                        className="inline-flex rounded-control border border-line-2 bg-surface p-1"
+                        role="group"
+                        aria-label="Filter reports by status"
+                      >
+                        {reportStatusFilters.map((filter) => (
+                          <button
+                            key={filter.value}
+                            type="button"
+                            onClick={() => handleReportStatusChange(filter.value)}
+                            aria-pressed={reportStatus === filter.value}
+                            className={`rounded-[3px] px-3.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] transition ${
+                              reportStatus === filter.value
+                                ? 'bg-primary-950 text-white'
+                                : 'text-muted hover:bg-surface-2 hover:text-ink'
+                            }`}
+                          >
+                            {filter.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {reports.length > 0 ? (
+                      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                        <AnimatePresence mode="popLayout">
+                          {reports.map((report) => (
+                            <ReportCard
+                              key={report.id}
+                              report={report}
+                              note={feedback[`report:${report.id}`] ?? ''}
+                              onNoteChange={(value) =>
+                                updateFeedback(`report:${report.id}`, value)
+                              }
+                              onAction={(action) => handleReportAction(report, action)}
+                              isProcessing={resolvingReportId === report.id}
+                              isOpen={report.status === 'OPEN'}
+                            />
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    ) : (
+                      <AdminEmptyState
+                        icon={ShieldCheck}
+                        title={`No ${reportStatus.toLowerCase()} reports`}
+                        description="Buyer reports on live listings will appear here for review."
+                      />
+                    )}
+                  </section>
+                )}
+              </div>
+            </Panel>
+          </>
         )}
-      </section>
+      </Container>
     </div>
   )
 }
 
 function AdminEmptyState({ icon: Icon, title, description }) {
   return (
-    <div className="mt-6 rounded-card border border-dashed border-primary-200 bg-white px-6 py-14 text-center">
-      <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-primary-50 text-primary-600">
-        <Icon className="size-8" aria-hidden="true" />
+    <div className="mt-6 border border-dashed border-line-2 bg-surface-2 px-6 py-14 text-center">
+      <span className="mx-auto grid size-14 place-items-center rounded-control bg-surface text-subtle ring-1 ring-inset ring-line">
+        <Icon className="size-6" aria-hidden="true" />
       </span>
-      <h3 className="mt-5 text-2xl font-semibold text-ink">{title}</h3>
+      <h3 className="mt-5 font-display text-xl font-bold tracking-tight text-ink">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm leading-body text-muted">{description}</p>
     </div>
   )

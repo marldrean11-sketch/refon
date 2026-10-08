@@ -1,235 +1,500 @@
-import { motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, BatteryCharging, ShieldCheck, Sparkles } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { PhoneArtwork } from '../listings/PhoneArtwork.jsx'
-import { BatteryHealth } from '../../components/ui/BatteryHealth.jsx'
-import { ConditionBadge } from '../../components/ui/ConditionBadge.jsx'
-import { WarrantyBadge } from '../../components/ui/WarrantyBadge.jsx'
-import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
-import { formatPeso } from '../../lib/format.js'
-import { gradeFromLegacyCondition } from '../../lib/listing-taxonomy.js'
-import { HERO_STATS } from '../../content/home-content.js'
-
-const heroBadge =
-  'inline-flex items-center gap-2 rounded-pill border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-primary-100 backdrop-blur'
-
-const heroPrimaryCta =
-  'group inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-accent-500 px-6 text-sm font-bold text-white shadow-lg shadow-emerald-950/25 transition duration-200 hover:-translate-y-0.5 hover:bg-accent-600 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-primary-950 motion-reduce:transform-none motion-reduce:transition-none'
-
-const heroSecondaryCta =
-  'inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/[0.08] px-6 text-sm font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white motion-reduce:transform-none motion-reduce:transition-none'
-
 /**
- * Hero.
+ * The hero.
  *
- * The headline states what ReFon sells and what makes it different in one
- * breath. The composition on the right is a real approved listing, so the
- * trust signals shown in the hero are the same signals that appear on the shop
- * page rather than decorative placeholders.
+ * A rounded panel on the warm page ground, holding a statement on the left and the
+ * currently-featured phone's published measurements on the right.
+ *
+ * **There are no photographs.** Not a stylistic choice: all 28 approved listings
+ * carry `photos: []` and `mainPhoto: null`, and `prisma/seed-data.js` explains why
+ * the four seed SVGs are deliberately not attached ("Four shared SVGs across
+ * twenty-eight phones would render twenty-eight visually identical cards, which is
+ * worse than no photo at all"). So the right-hand side is a **typographic plate**
+ * built from the listing's real fields — grade, battery, warranty, price, the
+ * saving against the original — which is the same evidence the floating product
+ * card used to show, set as type instead of rendered as invented art.
+ *
+ * Because the plate reads from `listing`, a seller who uploads photographs changes
+ * nothing here today, and the moment real photography exists this plate is the only
+ * thing on the page that will look thin.
+ *
+ * The headline masks and reveals line by line; the plate parallaxes at two speeds
+ * on scroll and leans with the pointer; three chips drift on a 4s loop. All of it
+ * is transform and opacity only, and all of it is inert under reduced motion.
  */
-export function HeroSection({ featured }) {
-  const reduceMotion = useReducedMotion()
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowLeft, ArrowRight, BatteryFull, ShieldCheck } from 'lucide-react'
+import { Container } from '../design/Container.jsx'
+import { ConditionBadge } from '../../components/ui/ConditionBadge.jsx'
+import { PriceDisplay } from '../../components/ui/PriceDisplay.jsx'
+import { MARKETPLACE_ROUTES, productPath } from '../../lib/routes.js'
+import { getConditionGrade } from '../../lib/listing-taxonomy.js'
+import {
+  durations,
+  easings,
+  maskReveal,
+  usePrefersReducedMotion,
+} from '../../lib/motion.ts'
+import { HERO_HEADLINE, HERO_SUBTEXT } from '../../content/home-content.js'
+import { useHeroCarousel, useHeroParallax, useMagneticPull } from './use-hero-motion.js'
+
+/** Parallax needs a pointer to read against, so it starts at the `lg` breakpoint. */
+const PARALLAX_MIN_WIDTH = 1024
+
+/** How far a chip drifts on its loop. Small enough to read as breathing. */
+const CHIP_TRAVEL = 6
+
+/** At most five plates; past that the panel stops being a hero and starts a grid. */
+const MAX_SLIDES = 5
+
+export function HeroSection({ featured = [] }) {
+  const reducedMotion = usePrefersReducedMotion()
+  const [isWide, setIsWide] = useState(false)
+
+  // A media query rather than a Tailwind class, because this switches a JavaScript
+  // effect off and there is no way to do that from CSS.
+  useEffect(() => {
+    const query = window.matchMedia(`(min-width: ${PARALLAX_MIN_WIDTH}px)`)
+
+    const apply = () => setIsWide(query.matches)
+
+    apply()
+    query.addEventListener('change', apply)
+
+    return () => query.removeEventListener('change', apply)
+  }, [])
+
+  const slides = useMemo(() => featured.slice(0, MAX_SLIDES), [featured])
+  const carousel = useHeroCarousel(slides.length)
+  const current = slides[carousel.index] ?? null
 
   return (
-    <section className="relative overflow-hidden bg-primary-950 text-white">
-      <div
-        className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:54px_54px]"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -left-40 -top-40 size-[34rem] rounded-full bg-primary-500/25 blur-3xl"
-        aria-hidden="true"
-      />
-      <div
-        className="absolute -bottom-52 right-0 size-[38rem] rounded-full bg-accent-500/10 blur-3xl"
-        aria-hidden="true"
-      />
+    <section aria-label="Featured phones" className="bg-page pb-4 pt-4 lg:pb-6 lg:pt-6">
+      <Container size="full" className="px-4 sm:px-6 lg:px-8">
+        <HeroPanel
+          current={current}
+          carousel={carousel}
+          reduced={reducedMotion}
+          parallax={isWide && !reducedMotion}
+        />
 
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
-        <div className="max-w-2xl">
-          <motion.p
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={heroBadge}
-          >
-            <Sparkles className="size-3.5 text-accent-400" aria-hidden="true" />
-            Tested, graded, and published
-          </motion.p>
-
-          <motion.h1
-            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06 }}
-            className="mt-7 text-[2.5rem] font-semibold leading-[1.03] tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl"
-          >
-            Premium Phones.{' '}
-            <span className="text-accent-300">Smarter Prices.</span>
-            <br className="hidden sm:block" /> Tested for You.
-          </motion.h1>
-
-          <motion.p
-            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
-            className="mt-6 max-w-xl text-lg leading-body text-primary-100/85"
-          >
-            Shop quality-tested refurbished smartphones with transparent condition
-            grades, published battery health, warranty coverage, and verified
-            sellers — so you buy the phone, not the risk.
-          </motion.p>
-
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.18 }}
-            className="mt-9 flex flex-col gap-3 sm:flex-row"
-          >
-            <Link to={MARKETPLACE_ROUTES.shop} className={heroPrimaryCta}>
-              Shop Refurbished Phones
-              <ArrowRight
-                className="size-4 transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
-                aria-hidden="true"
-              />
-            </Link>
-            <Link to={MARKETPLACE_ROUTES.howItWorks} className={heroSecondaryCta}>
-              <ShieldCheck className="size-4" aria-hidden="true" />
-              How It Works
-            </Link>
-          </motion.div>
-
-          <motion.dl
-            initial={reduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.26 }}
-            className="mt-11 grid max-w-xl grid-cols-3 gap-3 border-t border-white/10 pt-7"
-          >
-            {HERO_STATS.map((stat) => (
-              <div key={stat.label}>
-                <dt className="sr-only">{stat.label}</dt>
-                <dd>
-                  <span className="block font-display text-2xl font-bold text-white sm:text-3xl">
-                    {stat.value}
-                  </span>
-                  <span className="mt-1 block text-xs leading-relaxed text-primary-200/70 sm:text-sm">
-                    {stat.label}
-                  </span>
-                </dd>
-              </div>
-            ))}
-          </motion.dl>
-        </div>
-
-        <HeroPhone featured={featured} reduceMotion={reduceMotion} />
-      </div>
+        {slides.length > 1 ? (
+          <HeroControls slides={slides} carousel={carousel} index={carousel.index} />
+        ) : null}
+      </Container>
     </section>
   )
 }
 
 /**
- * Product composition.
+ * The panel shell.
  *
- * Renders a live approved listing rather than a mock device, so the battery
- * figure, grade, and warranty in the hero are real data. Falls back to a
- * neutral placeholder while listings load so the layout never collapses.
+ * Owns the pause-on-hover-and-focus region and the two parallax layers. Pause is
+ * bound to `focusCapture`/`blurCapture` rather than to the dots individually so
+ * that tabbing into the panel anywhere — including onto the price link — stops the
+ * carousel rather than only stopping it while a dot happens to be focused.
  */
-function HeroPhone({ featured, reduceMotion }) {
-  const hasListing = Boolean(featured)
-  const grade = hasListing
-    ? (featured.grade ?? gradeFromLegacyCondition(featured.condition))
-    : 'A'
+function HeroPanel({ current, carousel, reduced, parallax }) {
+  const { setLayer } = useHeroParallax({ enabled: parallax })
 
   return (
-    <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-      <div className="relative overflow-hidden rounded-card-xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur sm:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent-300">
-              Featured today
-            </p>
-            <p className="mt-1.5 truncate font-display text-xl font-semibold text-white">
-              {hasListing ? `${featured.brand} ${featured.model}` : 'Refurbished phone'}
-            </p>
-            <p className="mt-0.5 text-sm text-primary-100/70">
-              {hasListing
-                ? [featured.year, featured.storage].filter(Boolean).join(' • ')
-                : 'Loading verified listings'}
-            </p>
-          </div>
-          <ConditionBadge grade={grade} size="lg" />
+    <div
+      data-testid="hero-panel"
+      data-parallax={parallax ? 'on' : 'off'}
+      onPointerEnter={carousel.pause}
+      onPointerLeave={carousel.resume}
+      onFocusCapture={carousel.pause}
+      onBlurCapture={carousel.resume}
+      className="relative overflow-hidden rounded-card-lg border border-line bg-panel"
+    >
+      <div className="grid gap-10 px-6 py-12 sm:px-10 sm:py-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(24rem,0.95fr)] lg:gap-14 lg:px-14 lg:py-16">
+        <div className="min-w-0">
+          <HeroEyebrow reduced={reduced} />
+
+          <h1 className="mt-7 text-[2.75rem] font-bold leading-[1.02] tracking-[-0.04em] text-ink sm:text-[3.5rem] lg:text-[4.25rem] xl:text-[5rem]">
+            {HERO_HEADLINE.map((line, lineIndex) => (
+              <MaskedLine key={lineIndex} line={line} reduced={reduced} index={lineIndex} />
+            ))}
+          </h1>
+
+          <motion.p
+            {...enter(3, reduced)}
+            className="mt-7 max-w-xl text-base leading-body text-ink/75 sm:text-lg"
+          >
+            {HERO_SUBTEXT}
+          </motion.p>
+
+          <HeroActions reduced={reduced} />
         </div>
 
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="mt-5 overflow-hidden rounded-card-lg"
-        >
-          <PhoneArtwork
-            brand={featured?.brand ?? 'Apple'}
-            model={featured?.model ?? 'Refurbished'}
-            color={featured?.color ?? 'Midnight'}
-            view="front"
-            className="aspect-[4/3] w-full"
-          />
-        </motion.div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl bg-white/10 p-4">
-            <BatteryHealth
-              percent={featured?.batteryPercent ?? 0}
-              size="sm"
-              tone="inverse"
-            />
-          </div>
-          <div className="rounded-2xl bg-white/10 p-4">
-            <p className="text-xs font-semibold text-primary-100/70">Price</p>
-            <p className="mt-1 font-display text-2xl font-bold text-white">
-              {hasListing ? formatPeso(featured.price) : '₱—'}
-            </p>
-            <div className="mt-2">
-              <WarrantyBadge months={featured?.warrantyMonths ?? 0} />
-            </div>
+        {/*
+          The far layer drifts a third as fast as the near one. Two layers at two
+          speeds read as depth; one layer reads as the panel sliding.
+        */}
+        <div ref={setLayer('far')} className="relative min-h-[20rem] lg:min-h-0">
+          <div ref={setLayer('near')} className="flex h-full flex-col justify-center">
+            <AnimatePresence mode="wait" initial={false}>
+              {current ? (
+                <motion.div
+                  key={current.id}
+                  data-testid="hero-plate"
+                  data-listing={current.id}
+                  initial={reduced ? false : { opacity: 0, scale: 0.985 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={reduced ? undefined : { opacity: 0, scale: 0.99 }}
+                  transition={{
+                    duration: reduced ? 0 : durations.standard,
+                    ease: easings.ui,
+                  }}
+                >
+                  <HeroPlate listing={current} reduced={reduced} />
+                </motion.div>
+              ) : (
+                <HeroPlatePlaceholder key="placeholder" />
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
+    </div>
+  )
+}
 
-      {/* Floating stat cards sit outside the panel so they never cover the
-          price, battery figure, or condition badge they sit next to. */}
+/** The shared entrance for the two pieces of copy under the headline. */
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: durations.standard } },
+}
+
+/** Seconds between each element in the hero's reveal. */
+const HERO_STEP = 0.07
+
+/**
+ * Seconds between headline lines.
+ *
+ * Double the default `staggerStep`, and deliberately so. The hero easing is
+ * `[0.22, 1, 0.36, 1]`, which front-loads almost all of its movement into the
+ * first tenth of its duration: at the 0.08s default step, three lines were only
+ * 1–3px apart at any instant, so the headline animated as one block rather than
+ * line by line. 0.16s is the smallest step at which the offset between consecutive
+ * lines is actually legible on a 0.9s reveal.
+ */
+const HEADLINE_STEP = 0.16
+
+/**
+ * Explicit entrance props for the hero's reveal order.
+ *
+ * Written out per element rather than relying on Framer's variant propagation
+ * from a `stagger` parent. Propagation works for direct motion children, but the
+ * headline lines are three levels down through a plain `<h1>` and a `MaskedLine`
+ * component, and relying on it there meant the lines mounted straight at their
+ * final position with no animation at all — invisible in a screenshot, and only
+ * findable by sampling the transform frame by frame.
+ *
+ * Being explicit also means the timing is legible in one place, which is what the
+ * Phase 3A spec asserts against.
+ */
+function enter(index, reduced, variant = fadeUp, step = HERO_STEP) {
+  if (reduced) {
+    return {}
+  }
+
+  /*
+   * The nested `transition` is stripped out of the target on purpose.
+   *
+   * Every shared variant in `lib/motion.ts` carries its own transition inside
+   * `visible` (`{ opacity: 1, y: 0, transition: transitions.standard }`). Passing
+   * that object straight to `animate` works, but a `transition` written *inside*
+   * the `animate` object takes precedence over the `transition` prop — so the
+   * per-line `delay` was silently discarded and all three headline lines moved as
+   * one block. Everything now lives on the `transition` prop, where the delay is
+   * not competing with anything.
+   */
+  const { transition, ...target } = variant.visible
+
+  return {
+    initial: variant.hidden,
+    animate: target,
+    transition: { ...transition, delay: index * step },
+  }
+}
+
+/**
+ * One headline line, masked.
+ *
+ * `overflow-hidden` on the wrapper is what makes `y: '100%'` read as type sliding
+ * out from under an edge rather than as a box teleporting — the entire point of
+ * `maskReveal`, and the reason the variant in `lib/motion.ts` documents that the
+ * element must sit inside a clipping parent.
+ */
+function MaskedLine({ line, reduced, index }) {
+  return (
+    <span className="block overflow-hidden pb-[0.06em]">
+      <motion.span {...enter(index + 1, reduced, maskReveal, HEADLINE_STEP)} className="block">
+        {line.map((run, runIndex) =>
+          run.accent ? (
+            <span key={runIndex} className="font-accent text-muted">
+              {run.text}
+            </span>
+          ) : (
+            <span key={runIndex}>{run.text}</span>
+          ),
+        )}
+      </motion.span>
+    </span>
+  )
+}
+
+/**
+ * The eyebrow.
+ *
+ * The two labels are **not** `text-muted` and `text-accent-strong` here, even
+ * though those are the tokens used on the page background. This panel is
+ * `bg-panel` (#ECEAE4), one step darker than `bg-page`, and on it `text-muted`
+ * measures 4.45:1 and `text-accent-strong` 3.62:1 — both under the 4.5:1 AA
+ * threshold at this size. So the pair is `text-ink` and `accent-800`, which clear
+ * it. Same reason the subtext uses `text-ink/75` rather than `text-muted`.
+ */
+function HeroEyebrow({ reduced }) {
+  return (
+    <motion.p
+      {...enter(0, reduced)}
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink"
+    >
+      <span className="inline-flex items-center gap-2 text-accent-800">
+        <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
+        Live inventory
+      </span>
+      <span aria-hidden="true" className="text-ink/40">
+        /
+      </span>
+      <span>Refurbished smartphones</span>
+    </motion.p>
+  )
+}
+
+/**
+ * The two hero actions.
+ *
+ * The primary is the brand green with a near-black label: white on `#10B981` is
+ * 2.54:1 and fails AA at this size, while ink on the same fill is 7.60:1. The pull
+ * is a magnetic lean toward the pointer, capped at 12px so the button can never be
+ * drawn out from under the cursor.
+ */
+function HeroActions({ reduced }) {
+  const magnetic = useMagneticPull(!reduced)
+  const pull = reduced ? { x: 0, y: 0 } : magnetic.offset
+
+  return (
+    <motion.div {...enter(4, reduced)} className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
       <motion.div
-        initial={reduceMotion ? false : { opacity: 0, x: 18 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
-        className="absolute -left-8 top-1/3 hidden w-48 rounded-2xl border border-line bg-white p-4 shadow-card-hover xl:block"
+        animate={{ x: pull.x, y: pull.y }}
+        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
       >
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent-50 text-accent-700">
-            <BatteryCharging className="size-5" aria-hidden="true" />
-          </span>
+        <Link
+          to={MARKETPLACE_ROUTES.shop}
+          data-testid="hero-shop"
+          onPointerMove={magnetic.onPointerMove}
+          onPointerLeave={magnetic.reset}
+          onBlur={magnetic.reset}
+          className="inline-flex min-h-12 items-center gap-2 rounded-control bg-accent px-7 text-base font-semibold text-dark ring-1 ring-inset ring-accent-hover transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+        >
+          Shop now
+          <ArrowRight className="size-[18px]" strokeWidth={1.5} aria-hidden="true" />
+        </Link>
+      </motion.div>
+
+      <Link
+        to={MARKETPLACE_ROUTES.qualityCheck}
+        data-testid="hero-how-we-test"
+        className="group inline-flex min-h-12 items-center gap-1.5 rounded-control text-base font-medium text-ink underline decoration-line-2 underline-offset-4 transition-colors duration-150 hover:decoration-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+      >
+        How we test
+        <ArrowRight
+          className="size-[18px] transition-transform duration-150 group-hover:translate-x-1"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
+      </Link>
+    </motion.div>
+  )
+}
+
+/**
+ * The featured listing, as a typographic plate.
+ *
+ * Everything on it is a field the API actually returns. No drawn phone, no stock
+ * image: the plate is the listing's own published evidence, set at display size,
+ * with the price as the largest element because that is what the section argues.
+ */
+function HeroPlate({ listing, reduced }) {
+  const grade = getConditionGrade(listing.grade)
+  const hasDiscount =
+    Number(listing.originalPrice) > Number(listing.price) && Number(listing.discountPercent) > 0
+
+  return (
+    <div className="relative">
+      <Link
+        to={productPath(listing)}
+        data-testid="hero-plate-link"
+        className="group block rounded-card-lg border border-line bg-card p-7 shadow-card transition-shadow duration-200 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+      >
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs text-muted">Battery measured</p>
-            <p className="font-display text-base font-bold text-ink">
-              {hasListing ? `${featured.batteryPercent}%` : '—'}
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+              {listing.brand}
+            </p>
+            <p className="mt-2 text-2xl font-bold leading-tight tracking-[-0.02em] text-ink">
+              {listing.model}
+            </p>
+            <p className="mt-1.5 text-sm text-muted">
+              {[listing.storage, listing.color].filter(Boolean).join(' · ')}
             </p>
           </div>
+          <ConditionBadge grade={listing.grade} />
         </div>
-      </motion.div>
 
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, x: -18 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.36, duration: 0.4 }}
-        className="absolute -right-8 bottom-1/4 hidden w-52 rounded-2xl border border-line bg-white p-4 shadow-card-hover xl:block"
-      >
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-50 text-primary-700">
-            <ShieldCheck className="size-5" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs text-muted">Inspection</p>
-            <p className="font-display text-base font-bold text-ink">11 checks passed</p>
-          </div>
+        <div className="mt-7">
+          <PriceDisplay
+            price={listing.price}
+            originalPrice={hasDiscount ? listing.originalPrice : null}
+            discountPercent={hasDiscount ? listing.discountPercent : null}
+            size="lg"
+          />
         </div>
-      </motion.div>
+
+        <p className="mt-6 border-t border-line pt-5 text-[13px] leading-relaxed text-muted">
+          {grade.label} condition · {listing.inspectionTotal ?? 11}-point inspection ·{' '}
+          {listing.warrantyMonths}-month warranty
+        </p>
+      </Link>
+
+      {/* Two chips, drifting out of phase with each other. */}
+      <HeroChip
+        lean="left"
+        travel={CHIP_TRAVEL * 2}
+        reduced={reduced}
+        className="-left-2 top-16 sm:-left-6"
+      >
+        <BatteryFull className="size-4 text-accent-strong" strokeWidth={1.5} aria-hidden="true" />
+        <span className="font-semibold tabular-nums text-ink">{listing.batteryPercent}%</span>
+        <span className="text-muted">battery</span>
+      </HeroChip>
+
+      <HeroChip
+        lean="right"
+        travel={CHIP_TRAVEL * 3}
+        reduced={reduced}
+        className="-right-2 bottom-16 sm:-right-7"
+      >
+        <ShieldCheck className="size-4 text-accent-strong" strokeWidth={1.5} aria-hidden="true" />
+        <span className="font-semibold text-ink">{listing.warrantyMonths} months</span>
+        <span className="text-muted">warranty</span>
+      </HeroChip>
+    </div>
+  )
+}
+
+/**
+ * A floating measurement chip on a 4s loop.
+ *
+ * `travel` is both the distance and the phase offset, so the two chips are never
+ * in step. The distance is 6px — enough to read as alive, small enough that
+ * nobody's eye is pulled off the price.
+ */
+function HeroChip({ lean, travel, reduced, className = '', children }) {
+  return (
+    <motion.span
+      data-testid="hero-chip"
+      animate={reduced ? undefined : { y: [travel, -travel] }}
+      transition={
+        reduced
+          ? undefined
+          : { duration: 4, repeat: Infinity, ease: 'easeInOut', repeatType: 'reverse' }
+      }
+      className={`pointer-events-none absolute inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2 text-[13px] shadow-card ${
+        lean === 'left' ? 'rotate-[-2deg]' : 'rotate-[2deg]'
+      } ${className}`}
+    >
+      {children}
+    </motion.span>
+  )
+}
+
+/** Dots, a position readout, and the two arrow buttons. */
+function HeroControls({ slides, carousel, index }) {
+  return (
+    <div className="flex items-center justify-between gap-4 py-4">
+      {/* A tablist, not decoration: the dots are the only way to reach a slide
+          without waiting for it, so they have to be keyboard reachable and they
+          have to announce which slide is showing. */}
+      <div role="tablist" aria-label="Featured phones" className="flex flex-wrap items-center gap-1.5">
+        {slides.map((slide, slideIndex) => {
+          const isActive = slideIndex === index
+
+          return (
+            <button
+              key={slide.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-label={`Show ${slide.brand} ${slide.model}`}
+              onClick={() => carousel.goTo(slideIndex)}
+              className={`h-2 w-8 origin-left rounded-full transition-transform duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page ${
+                isActive ? 'scale-x-100 bg-ink' : 'scale-x-[0.25] bg-ink/20 hover:bg-ink/40'
+              }`}
+            />
+          )
+        })}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <p className="text-[13px] tabular-nums text-muted">
+          {index + 1} / {slides.length}
+        </p>
+
+        <button
+          type="button"
+          data-testid="hero-prev"
+          onClick={carousel.previous}
+          aria-label="Previous featured phone"
+          className="grid size-10 place-items-center rounded-control border border-line-2 bg-surface text-ink transition-colors duration-150 hover:border-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+        >
+          <ArrowLeft className="size-[18px]" strokeWidth={1.5} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          data-testid="hero-next"
+          onClick={carousel.next}
+          aria-label="Next featured phone"
+          className="grid size-10 place-items-center rounded-control border border-line-2 bg-surface text-ink transition-colors duration-150 hover:border-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+        >
+          <ArrowRight className="size-[18px]" strokeWidth={1.5} aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Before the featured set resolves, a placeholder that reserves the plate's space.
+ *
+ * Static rather than a shimmer: the panel is the first thing on the page and a
+ * pulsing skeleton in the hero reads as a loading failure. The `New Arrivals`
+ * section below is where skeletons belong.
+ */
+function HeroPlatePlaceholder() {
+  return (
+    <div
+      data-testid="hero-plate-placeholder"
+      className="rounded-card-lg border border-line bg-card p-7 shadow-card"
+    >
+      <div className="h-3 w-16 rounded-full bg-surface-2" />
+      <div className="mt-4 h-7 w-48 max-w-full rounded-full bg-surface-2" />
+      <div className="mt-3 h-4 w-32 rounded-full bg-surface-2" />
+      <div className="mt-8 h-9 w-36 rounded-full bg-surface-2" />
+      <div className="mt-7 h-3 w-full rounded-full bg-surface-2" />
     </div>
   )
 }

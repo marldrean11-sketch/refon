@@ -96,10 +96,6 @@ export const env = Object.freeze({
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   authCookieName: 'refon_token',
-  /// Guest cart identifier cookie. Holds an opaque random token only — never cart
-  /// contents — so the browser cannot read or edit what is in the cart.
-  cartCookieName: 'refon_cart',
-  cartCookieMaxAgeMs: 30 * 24 * 60 * 60 * 1000,
   reservationMinutes,
   reservationMs: reservationMinutes * 60 * 1000,
   appUrl: (process.env.APP_URL ?? 'http://localhost:5173').replace(/\/$/, ''),

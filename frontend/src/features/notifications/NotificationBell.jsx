@@ -10,7 +10,7 @@ import {
   ShieldAlert,
   ShoppingBag,
 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { AUTH_ROUTES } from '../auth/auth.routes.js'
@@ -20,7 +20,8 @@ import {
   markNotificationReadRequest,
 } from './notification-api.js'
 import { subscribeToMarketplaceChanges } from '../../lib/marketplace-sync.js'
-import { quickTransition } from '../../lib/motion.js'
+import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
+import { formatRelativeTime } from '../../lib/format.js'
 
 const notificationPresentation = {
   NEW_INQUIRY: {
@@ -59,34 +60,6 @@ const notificationPresentation = {
     icon: BadgeCheck,
     iconClass: 'bg-primary-50 text-primary-700',
   },
-}
-
-function formatRelativeTimestamp(value) {
-  const elapsed = Math.max(0, Date.now() - new Date(value).getTime())
-  const minutes = Math.floor(elapsed / 60_000)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (minutes < 1) {
-    return 'Just now'
-  }
-
-  if (hours < 1) {
-    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`
-  }
-
-  if (days < 1) {
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
-  }
-
-  if (days < 7) {
-    return `${days} ${days === 1 ? 'day' : 'days'} ago`
-  }
-
-  return new Intl.DateTimeFormat('en-PH', {
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(value))
 }
 
 function getNotificationTarget(notification) {
@@ -139,7 +112,7 @@ export function NotificationBell() {
   const [error, setError] = useState('')
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
   const notificationId = useId()
   const panelId = `notifications-panel-${notificationId}`
 
@@ -277,7 +250,7 @@ export function NotificationBell() {
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="relative grid size-11 place-items-center rounded-xl border border-line bg-white text-muted shadow-sm transition duration-200 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+        className="relative grid size-11 place-items-center rounded-control border border-line bg-white text-muted transition duration-200 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
         aria-label={
           unreadCount > 0
             ? `Notifications, ${unreadCount} unread`
@@ -307,7 +280,7 @@ export function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -8, scale: 0.98 }}
             transition={quickTransition}
-            className="absolute right-0 top-14 z-[70] w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-line bg-white shadow-2xl"
+            className="absolute right-0 top-14 z-drawer w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-card-lg border border-line bg-white shadow-2xl"
           >
             <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-4">
               <div>
@@ -373,7 +346,7 @@ export function NotificationBell() {
                           </span>
                           <span className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-muted">
                             <Clock3 className="size-3.5" aria-hidden="true" />
-                            {formatRelativeTimestamp(notification.createdAt)}
+                            {formatRelativeTime(notification.createdAt)}
                             {!notification.isRead && (
                               <span className="ml-1 size-1.5 rounded-full bg-accent-500" aria-label="Unread" />
                             )}

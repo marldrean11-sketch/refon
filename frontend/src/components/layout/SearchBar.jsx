@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock3, Search, TrendingUp, X } from 'lucide-react'
+import { Clock3, CornerDownLeft, Search, TrendingUp, X } from 'lucide-react'
 import { useSearchSuggestions } from '../../features/catalog/useCatalog.js'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
 
-export const SEARCH_PLACEHOLDER = 'Search iPhone, Samsung, Pixel, gaming phones...'
+export const SEARCH_PLACEHOLDER = 'Search iPhone, Samsung, Pixel…'
 
 const POPULAR_KEY = 'refon:recent-searches'
 const MAX_RECENT = 5
@@ -16,7 +16,7 @@ const MAX_RECENT = 5
  * them in `localStorage` means a returning shopper gets their own history
  * without a profile lookup.
  */
-function readRecent() {
+export function readRecentSearches() {
   try {
     const stored = window.localStorage.getItem(POPULAR_KEY)
     const parsed = stored ? JSON.parse(stored) : []
@@ -34,10 +34,11 @@ function writeRecent(terms) {
   }
 }
 
-function rememberSearch(term) {
+/** Exported so the navbar's search overlay writes to the same history. */
+export function rememberSearch(term) {
   const trimmed = term.trim()
   if (!trimmed) return
-  writeRecent([trimmed, ...readRecent().filter((entry) => entry !== trimmed)])
+  writeRecent([trimmed, ...readRecentSearches().filter((entry) => entry !== trimmed)])
 }
 
 /**
@@ -46,6 +47,10 @@ function rememberSearch(term) {
  * Suggestions come from `GET /listings/suggest`, which reads approved catalog
  * rows only. Every suggestion therefore points at results that exist, so the
  * dropdown can never offer a product the shopper cannot find.
+ *
+ * The field is presented as an instrument input: a square-cornered well with a
+ * hairline that thickens on focus, and a live result count in the corner so the
+ * shopper can see the catalogue responding before they press Enter.
  */
 export function SearchBar({
   className = '',
@@ -75,7 +80,7 @@ export function SearchBar({
 
   useEffect(() => {
     if (isOpen) {
-      setRecent(readRecent())
+      setRecent(readRecentSearches())
     }
   }, [isOpen])
 
@@ -110,7 +115,7 @@ export function SearchBar({
 
   function goTo(query) {
     rememberSearch(query)
-    setRecent(readRecent())
+    setRecent(readRecentSearches())
     setIsOpen(false)
     inputRef.current?.blur()
     onSubmitted?.(query)
@@ -142,7 +147,7 @@ export function SearchBar({
           Search refurbished phones
         </label>
         <Search
-          className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle"
           aria-hidden="true"
         />
         <input
@@ -162,9 +167,9 @@ export function SearchBar({
           }}
           onFocus={() => setIsOpen(true)}
           placeholder={SEARCH_PLACEHOLDER}
-          className="h-12 w-full rounded-2xl border border-line bg-white pl-11 pr-10 text-sm font-medium text-ink shadow-sm transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100"
+          className="h-11 w-full rounded-control border border-line-2 bg-surface-2 pl-9 pr-9 font-mono text-[13px] font-medium text-ink transition duration-150 placeholder:font-sans placeholder:text-sm placeholder:text-subtle hover:border-line-2 hover:bg-surface focus:border-primary-950 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary-950/15"
         />
-        {term && (
+        {term ? (
           <button
             type="button"
             onClick={() => {
@@ -172,12 +177,12 @@ export function SearchBar({
               setIsOpen(false)
               inputRef.current?.focus()
             }}
-            className="absolute right-3 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-lg text-muted transition hover:bg-canvas hover:text-ink"
+            className="absolute right-1.5 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-[3px] text-muted transition hover:bg-surface-3 hover:text-ink"
             aria-label="Clear search"
           >
             <X className="size-4" aria-hidden="true" />
           </button>
-        )}
+        ) : null}
       </form>
 
       {showPanel && (
@@ -185,12 +190,12 @@ export function SearchBar({
           id={listboxId}
           role="listbox"
           aria-label="Phone suggestions"
-          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-card-lg border border-line bg-white p-2 shadow-card-hover"
+          className="absolute left-0 right-0 top-full z-drawer mt-1.5 max-h-96 overflow-y-auto rounded-card border border-line-2 bg-surface p-1.5 shadow-pop"
         >
           {hasSuggestions ? (
             <>
-              <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-                Phones in the catalog
+              <p className="px-2.5 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+                In the catalog
               </p>
               {suggestions.map((entry) => (
                 <button
@@ -202,20 +207,20 @@ export function SearchBar({
                     setTerm(entry.label)
                     goTo(entry.query)
                   }}
-                  className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-canvas"
+                  className="flex w-full items-center justify-between gap-3 rounded-control px-2.5 py-2.5 text-left transition hover:bg-surface-2"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-ink">
                       {entry.label}
                     </span>
                     {entry.variants > 1 && (
-                      <span className="mt-0.5 block text-xs text-muted">
+                      <span className="mt-0.5 block font-mono text-[11px] text-subtle">
                         {entry.variants} variants listed
                       </span>
                     )}
                   </span>
                   {entry.grade && (
-                    <span className="shrink-0 rounded-pill bg-accent-50 px-2 py-0.5 text-[10px] font-bold text-accent-800">
+                    <span className="shrink-0 rounded-sm bg-accent-50 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-accent-800 ring-1 ring-inset ring-accent-300">
                       Grade {entry.grade}
                     </span>
                   )}
@@ -229,10 +234,16 @@ export function SearchBar({
                 role="option"
                 aria-selected={false}
                 onClick={() => goTo(trimmedTerm)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-canvas"
+                className="flex w-full items-center justify-between gap-3 rounded-control px-2.5 py-2.5 text-left transition hover:bg-surface-2"
               >
-                <span className="truncate text-sm font-semibold text-ink">
-                  Search for “{trimmedTerm}”
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-ink">
+                    Search for “{trimmedTerm}”
+                  </span>
+                  <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-subtle">
+                    <CornerDownLeft className="size-3" aria-hidden="true" />
+                    Press Enter
+                  </span>
                 </span>
                 <Search className="size-4 shrink-0 text-muted" aria-hidden="true" />
               </button>
@@ -241,7 +252,7 @@ export function SearchBar({
 
           {recent.length > 0 && (
             <>
-              <p className="mt-2 flex items-center gap-1.5 border-t border-line px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+              <p className="mt-2 flex items-center gap-1.5 border-t border-line px-2.5 pb-1 pt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
                 <Clock3 className="size-3" aria-hidden="true" />
                 Recent searches
               </p>
@@ -255,7 +266,7 @@ export function SearchBar({
                     setTerm(entry)
                     goTo(entry)
                   }}
-                  className="block w-full truncate rounded-xl px-3 py-2 text-left text-sm text-muted transition hover:bg-canvas hover:text-ink"
+                  className="block w-full truncate rounded-control px-2.5 py-2 text-left text-sm text-muted transition hover:bg-surface-2 hover:text-ink"
                 >
                   {entry}
                 </button>
@@ -265,7 +276,7 @@ export function SearchBar({
 
           {!hasSuggestions && popular.length > 0 && (
             <>
-              <p className="mt-2 flex items-center gap-1.5 border-t border-line px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+              <p className="mt-2 flex items-center gap-1.5 border-t border-line px-2.5 pb-1 pt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
                 <TrendingUp className="size-3" aria-hidden="true" />
                 Most listed
               </p>
@@ -279,7 +290,7 @@ export function SearchBar({
                     setTerm(entry.label)
                     goTo(entry.query)
                   }}
-                  className="block w-full truncate rounded-xl px-3 py-2 text-left text-sm text-muted transition hover:bg-canvas hover:text-ink"
+                  className="block w-full truncate rounded-control px-2.5 py-2 text-left text-sm text-muted transition hover:bg-surface-2 hover:text-ink"
                 >
                   {entry.label}
                 </button>

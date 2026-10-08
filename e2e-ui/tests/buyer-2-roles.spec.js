@@ -93,27 +93,50 @@ test.describe('buyer C7', () => {
 test.describe('seller C8', () => {
   test.use({ storageState: 'state/seller.json' })
 
-  test('C8 seller: no hearts, may open /saved and /my-inquiries', async ({ page }) => {
+  test('C8 seller: no hearts, no /saved, but may open /my-inquiries', async ({ page }) => {
     const all = watchErrors(page)
     await page.goto('/browse')
     await page.locator('article').first().waitFor()
     await page.waitForTimeout(700)
     await page.screenshot({ path: 'screenshots/C8-01-seller-browse.png' })
     const sellerHearts = await page.locator('button[aria-label^="Save "]').count()
-    console.log('C8_SELLER_HEARTS', sellerHearts)
+    const sellerSavedLinks = await page.locator('a[href="/saved"]').count()
+    console.log('C8_SELLER_HEARTS', sellerHearts, 'SAVED_LINKS', sellerSavedLinks)
     expect(sellerHearts, 'seller sees no hearts').toBe(0)
+    // The wishlist is a purchasing surface now, so a seller is not offered it.
+    expect(sellerSavedLinks, 'seller has no Saved link').toBe(0)
 
-    for (const [name, path] of [['saved', '/saved'], ['myinquiries', '/my-inquiries']]) {
-      await page.goto(path)
-      await page.waitForLoadState('networkidle')
-      await page.waitForTimeout(900)
-      await page.screenshot({ path: `screenshots/C8-0${name === 'saved' ? 2 : 3}-seller-${name}.png` })
-      const forbidden = await page.getByText(/access restricted|not authorized|forbidden/i).count()
-      const heading = await page.locator('h1').first().innerText().catch(() => '')
-      console.log(`C8_SELLER_${name.toUpperCase()}_URL`, page.url(), 'FORBIDDEN', forbidden, 'HEADING', JSON.stringify(heading))
-      expect(new URL(page.url()).pathname, `seller reaches ${path}`).toBe(path)
-      expect(forbidden, `seller not forbidden on ${path}`).toBe(0)
-    }
+    // `/saved` is buyer-only now, and a signed-in seller is refused rather than bounced
+    // to the sign-in page: they are already signed in, so signing in again would make
+    // them the same seller. The app's standing "you cannot do that" route is where a
+    // signed-in user of the wrong role lands, which is the pre-existing convention.
+    await page.goto('/saved')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(900)
+    await page.screenshot({ path: 'screenshots/C8-02-seller-saved-refused.png' })
+    const savedPath = new URL(page.url()).pathname
+    console.log('C8_SELLER_SAVED_URL', page.url())
+    expect(savedPath, 'seller is redirected away from /saved').not.toBe('/saved')
+    expect(savedPath, 'and is never sent to sign in, which would loop').not.toBe('/login')
+    expect(savedPath, 'but to the app’s own access-restricted route').toBe('/forbidden')
+
+    // A buyer following the same link gets the page. That is the whole difference.
+    expect(
+      await page.getByText(/buyer accounts|not available|access restricted/i).first().isVisible(),
+      'the refusal is explained rather than silent',
+    ).toBe(true)
+
+    // An inquiry is a message to a seller rather than a purchasing action, so this one
+    // still opens for them.
+    await page.goto('/my-inquiries')
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(900)
+    await page.screenshot({ path: 'screenshots/C8-03-seller-my-inquiries.png' })
+    const forbidden = await page.getByText(/access restricted|not authorized|forbidden/i).count()
+    console.log('C8_SELLER_MYINQUIRIES_URL', page.url(), 'FORBIDDEN', forbidden)
+    expect(new URL(page.url()).pathname, 'seller reaches /my-inquiries').toBe('/my-inquiries')
+    expect(forbidden, 'seller not forbidden on /my-inquiries').toBe(0)
+
     expectNoFatalErrors(all, 'C8')
   })
 })
@@ -121,7 +144,7 @@ test.describe('seller C8', () => {
 test.describe('admin C8', () => {
   test.use({ storageState: 'state/admin.json' })
 
-  test('C8 admin: no hearts and no Saved/My Inquiries links', async ({ page }) => {
+  test('C8 admin: no hearts, no Cart, and no Saved/My Inquiries links', async ({ page }) => {
     const all = watchErrors(page)
     await page.goto('/browse')
     await page.locator('article').first().waitFor()
@@ -130,10 +153,15 @@ test.describe('admin C8', () => {
     const adminHearts = await page.locator('button[aria-label^="Save "]').count()
     const adminSaved = await page.locator('a[href="/saved"]').count()
     const adminInq = await page.locator('a[href="/my-inquiries"]').count()
-    console.log('C8_ADMIN_HEARTS', adminHearts, 'SAVED_LINKS', adminSaved, 'INQUIRY_LINKS', adminInq)
+    const adminCart = await page.locator('[data-testid="navbar-cart"]').count()
+    console.log('C8_ADMIN_HEARTS', adminHearts, 'SAVED_LINKS', adminSaved, 'INQUIRY_LINKS', adminInq, 'CART', adminCart)
     expect(adminHearts, 'admin sees no hearts').toBe(0)
     expect(adminSaved, 'admin has no Saved link').toBe(0)
     expect(adminInq, 'admin has no My Inquiries link').toBe(0)
+    // Purchasing is buyer-only, and an admin has no cart, so the cart affordance is
+    // not rendered at all rather than rendered and bouncing them.
+    expect(adminCart, 'admin sees no cart control').toBe(0)
+
     expectNoFatalErrors(all, 'C8-admin')
   })
 })

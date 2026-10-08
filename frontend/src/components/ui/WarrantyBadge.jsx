@@ -18,7 +18,14 @@ export function formatWarrantyLabel(months) {
   return `${Math.round(value)}-Month Warranty`
 }
 
-/** Warranty chip. Links to the policy so coverage is never a dead end. */
+/**
+ * Coverage chips.
+ *
+ * Coverage is the reason a buyer trusts a refurb marketplace more than a
+ * classifieds site, so it is stated in words rather than left to an icon's
+ * accessible name. Square-cornered, hairline, monospace — the same instrument
+ * label treatment as every other measurement on a listing.
+ */
 export function WarrantyBadge({ months, size = 'md', linkToPolicy = false, className = '' }) {
   const label = formatWarrantyLabel(months)
 
@@ -26,12 +33,16 @@ export function WarrantyBadge({ months, size = 'md', linkToPolicy = false, class
     return null
   }
 
-  const padding = size === 'lg' ? 'px-3.5 py-2 text-sm' : 'px-2.5 py-1 text-[11px]'
-  const classes = `inline-flex items-center gap-1.5 rounded-pill bg-primary-50 font-bold uppercase tracking-[0.08em] text-primary-800 ring-1 ring-inset ring-primary-200 ${padding} ${className}`
+  const padding = size === 'lg' ? 'px-3 py-2 text-xs' : 'px-2 py-1 text-[11px]'
+  const classes = `inline-flex items-center gap-1.5 rounded-sm font-mono font-semibold uppercase tracking-[0.08em] ${padding} ring-1 ring-inset`
+  // Quiet by design. Coverage is one of four trust signals on a card, so it is
+  // drawn as an outline rather than a filled block; a filled jade chip next to a
+  // filled jade grade chip would make two of them look like the primary action.
+  const tone = 'bg-surface-2 text-accent-800 ring-accent-300'
 
   if (!linkToPolicy) {
     return (
-      <span className={classes}>
+      <span className={`${classes} ${tone} ${className}`}>
         <ShieldCheck className="size-3.5" strokeWidth={2.4} aria-hidden="true" />
         {label}
       </span>
@@ -41,7 +52,7 @@ export function WarrantyBadge({ months, size = 'md', linkToPolicy = false, class
   return (
     <Link
       to={MARKETPLACE_ROUTES.warranty}
-      className={`${classes} transition hover:bg-primary-100`}
+      className={`${classes} ${tone} transition hover:bg-accent-100 ${className}`}
     >
       <ShieldCheck className="size-3.5" strokeWidth={2.4} aria-hidden="true" />
       {label}
@@ -51,15 +62,15 @@ export function WarrantyBadge({ months, size = 'md', linkToPolicy = false, class
 }
 
 export function ReturnPolicyBadge({ days = RETURN_WINDOW_DAYS, size = 'md', className = '' }) {
-  const padding = size === 'lg' ? 'px-3.5 py-2 text-sm' : 'px-2.5 py-1 text-[11px]'
+  const padding = size === 'lg' ? 'px-3 py-2 text-xs' : 'px-2 py-1 text-[11px]'
 
   return (
     <Link
       to={MARKETPLACE_ROUTES.returns}
-      className={`inline-flex items-center gap-1.5 rounded-pill bg-accent-50 font-bold uppercase tracking-[0.08em] text-accent-800 ring-1 ring-inset ring-accent-200 ${padding} transition hover:bg-accent-100 ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm font-mono font-semibold uppercase tracking-[0.08em] ${padding} bg-primary-950 text-white ring-1 ring-inset ring-primary-950 transition hover:bg-primary-800 ${className}`}
     >
       <Undo2 className="size-3.5" strokeWidth={2.4} aria-hidden="true" />
-      {days}-Day Return Guarantee
+      {days}-Day Returns
       <span className="sr-only"> — view the return policy</span>
     </Link>
   )

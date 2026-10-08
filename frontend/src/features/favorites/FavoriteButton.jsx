@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { AUTH_ROUTES } from '../auth/auth.routes.js'
 import { useSavedListings } from './useSavedListings.js'
+import { useToast } from '../../components/ui/Toast.jsx'
+import { rememberIntent } from '../cart/pending-intent.js'
 
 /**
  * Wishlist toggle.
@@ -25,6 +27,7 @@ export function FavoriteButton({
 }) {
   const { user } = useAuth()
   const { isSaved, toggle } = useSavedListings()
+  const toast = useToast()
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState('')
   const location = useLocation()
@@ -42,15 +45,32 @@ export function FavoriteButton({
   const label = `Save ${listing.brand} ${listing.model}`
   const fullLabel = saved ? `Remove ${label}` : label
 
+  /**
+   * Three behaviours, matching the cart's.
+   *
+   *  - **Buyer.** Saves the listing.
+   *  - **Visitor.** Records the intent and signs in. The wishlist intent is replayed
+   *    the same way the cart one is, so the phone is saved on return.
+   *  - **Seller or admin.** Cannot reach this branch: the heart is not rendered for
+   *    them at all. The message below is the belt-and-braces path.
+   */
   async function handleClick() {
     if (!user) {
+      rememberIntent(listing.id, 'save-wishlist')
       navigate(AUTH_ROUTES.login, {
         state: { from: `${location.pathname}${location.search}` },
       })
       return
     }
 
-    if (!canSave || isBusy) {
+    if (!canSave) {
+      toast.error('Cart and wishlist are for buyer accounts.', {
+        description: 'Your seller account cannot buy from this marketplace.',
+      })
+      return
+    }
+
+    if (isBusy) {
       return
     }
 
@@ -86,15 +106,15 @@ export function FavoriteButton({
           aria-disabled={isBusy || undefined}
           aria-pressed={canSave ? saved : undefined}
           aria-label={fullLabel}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl border font-bold transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 aria-disabled:opacity-60 ${sizing} ${
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-control font-mono font-semibold uppercase tracking-[0.1em] ring-1 ring-inset transition duration-150 aria-disabled:opacity-60 ${sizing} ${
             saved
-              ? 'border-danger/30 bg-danger/10 text-danger hover:bg-danger/15'
-              : 'border-line bg-white text-ink hover:border-primary-200 hover:bg-primary-50'
+              ? 'bg-surface-2 text-ink ring-line-2 hover:bg-surface-3'
+              : 'bg-surface text-primary-900 ring-line-2 hover:border-primary-950 hover:bg-primary-950 hover:text-white hover:ring-primary-950'
           }`}
         >
           <Heart
-            className={`size-5 ${saved ? 'fill-current' : ''}`}
-            strokeWidth={2.2}
+            className={`size-4.5 ${saved ? 'fill-current' : ''}`}
+            style={{ width: 18, height: 18 }}
             aria-hidden="true"
           />
           {!compact && (saved ? 'Saved to wishlist' : 'Add to wishlist')}
@@ -120,8 +140,8 @@ export function FavoriteButton({
       aria-pressed={canSave ? saved : undefined}
       aria-label={fullLabel}
       title={saved ? 'Remove from saved listings' : 'Save this listing'}
-      className={`relative grid size-9 place-items-center rounded-xl bg-white/90 shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 aria-disabled:opacity-60 ${
-        saved ? 'text-danger' : 'text-muted hover:text-danger'
+      className={`relative grid size-9 place-items-center rounded-control border border-line-2 bg-surface/90 text-muted backdrop-blur transition duration-150 hover:border-primary-950 hover:bg-primary-950 hover:text-white aria-disabled:opacity-60 ${
+        saved ? 'border-primary-950 bg-primary-950 text-white' : ''
       } ${className}`}
     >
       <Heart

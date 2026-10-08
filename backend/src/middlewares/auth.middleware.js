@@ -80,5 +80,12 @@ export function requireRole(...allowedRoles) {
 export const requireAdmin = requireRole('ADMIN')
 export const requireSeller = requireRole('SELLER')
 export const requireBuyer = requireRole('BUYER')
-// Saved listings and sent inquiries stay readable after a buyer becomes a seller.
+/**
+ * Sent inquiries stay readable after a buyer becomes a seller.
+ *
+ * This is deliberately narrower than `requireBuyer`. An inquiry is a message to a
+ * seller, not a purchasing action, so a seller who also buys keeps access to the
+ * inquiries they sent. Cart, wishlist and checkout use `requireBuyer` instead, which
+ * is what stops a seller from buying any listing, including one of their own.
+ */
 export const requireBuyerOrSeller = requireRole('BUYER', 'SELLER')

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { AlertTriangle, LoaderCircle, Trash2, X } from 'lucide-react'
-import { standardTransition } from '../../../lib/motion.js'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { standardTransition, usePrefersReducedMotion } from '../../../lib/motion.ts'
+import { AnimatePresence, motion } from 'framer-motion'
 
 export function ConfirmDialog({
   open,
@@ -14,7 +14,7 @@ export function ConfirmDialog({
   isProcessing = false,
 }) {
   const dialogRef = useRef(null)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   useEffect(() => {
     if (!open) {
@@ -94,30 +94,37 @@ export function ConfirmDialog({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={reduceMotion ? undefined : { opacity: 0, y: 12, scale: 0.98 }}
         transition={standardTransition}
-        className="relative z-10 w-full max-w-md rounded-card-xl border border-white/60 bg-white p-6 shadow-2xl sm:p-7"
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-card-lg border border-line-2 bg-surface shadow-pop"
       >
         <button
           type="button"
           onClick={onCancel}
           disabled={isProcessing}
-          className="absolute right-4 top-4 grid size-10 place-items-center rounded-xl text-muted transition hover:bg-canvas hover:text-ink disabled:opacity-50"
+          className="absolute right-3 top-3 grid size-9 place-items-center rounded-control border border-line-2 text-muted transition hover:bg-surface-2 hover:text-ink disabled:opacity-50"
           aria-label="Close confirmation"
         >
-          <X className="size-5" aria-hidden="true" />
+          <X className="size-4" aria-hidden="true" />
         </button>
-        <span className="grid size-12 place-items-center rounded-2xl bg-red-50 text-danger">
-          <AlertTriangle className="size-6" aria-hidden="true" />
-        </span>
-        <h2 id="confirm-dialog-title" className="mt-5 text-2xl font-semibold tracking-tight text-ink">
-          {title}
-        </h2>
-        <p id="confirm-dialog-description" className="mt-3 leading-body text-muted">{message}</p>
-        <div className="mt-7 grid grid-cols-2 gap-3">
+        <div className="border-b border-line px-5 py-5 sm:px-6">
+          <span className="grid size-10 place-items-center rounded-control bg-red-50 text-danger">
+            <AlertTriangle className="size-5" aria-hidden="true" />
+          </span>
+          <h2
+            id="confirm-dialog-title"
+            className="mt-4 font-display text-xl font-bold tracking-tight text-ink"
+          >
+            {title}
+          </h2>
+          <p id="confirm-dialog-description" className="mt-2 leading-body text-muted">
+            {message}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5 bg-surface-2 px-5 py-4 sm:px-6">
           <button
             type="button"
             onClick={onCancel}
             disabled={isProcessing}
-            className="h-12 rounded-xl border border-line bg-white px-4 text-sm font-bold text-muted transition hover:bg-canvas disabled:opacity-50"
+            className="h-11 rounded-control border border-line-2 bg-surface px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted transition hover:bg-surface-3 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -125,12 +132,12 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={isProcessing}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-danger px-4 text-sm font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-60"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-danger px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-red-700 disabled:opacity-60"
           >
             {isProcessing ? (
-              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+              <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
             ) : (
-              <Trash2 className="size-4" aria-hidden="true" />
+              <Trash2 className="size-3.5" aria-hidden="true" />
             )}
             {isProcessing ? 'Deleting…' : confirmLabel}
           </button>

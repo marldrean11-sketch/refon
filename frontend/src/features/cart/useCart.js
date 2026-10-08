@@ -23,6 +23,10 @@ export const detachedCart = {
   emptyCart: noop,
   containsListing: () => false,
   isReady: false,
+  // No provider means no buyer session, so a replay here would find no intent and
+  // could not add anything. Kept as a no-op so a caller never has to null-check it.
+  isBuyer: false,
+  replayPendingIntent: noop,
 }
 
 export function useCart() {

@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react'
-import { quickTransition } from '../../lib/motion.js'
+import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 
 const ToastContext = createContext(null)
 
@@ -24,7 +24,7 @@ const DEFAULT_DURATION = 4200
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
   const nextId = useRef(1)
-  const reduceMotion = useReducedMotion()
+  const reduceMotion = usePrefersReducedMotion()
 
   const dismiss = useCallback((id) => {
     setToasts((current) => current.filter((toast) => toast.id !== id))
@@ -63,7 +63,7 @@ export function ToastProvider({ children }) {
       {typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="pointer-events-none fixed inset-x-0 bottom-4 z-[200] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:items-end sm:px-6"
+            className="pointer-events-none fixed inset-x-0 bottom-4 z-toast flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:items-end sm:px-6"
             role="region"
             aria-label="Notifications"
           >

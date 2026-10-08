@@ -43,25 +43,23 @@ export function StaticPageLayout({
         <div className="mx-auto max-w-3xl">{children}</div>
       </Section>
 
-      <Section tone="navy">
+      {/* `tone="navy"` was never a key in `Section`'s tone map, so this band
+          silently fell back to the canvas while its heading asked for white
+          text — white on off-white. The muted panel is the intended contrast
+          step now that the dark tone is gone. */}
+      <Section tone="muted">
         <div className="mx-auto max-w-3xl text-center">
           <SectionHeading
-            tone="light"
             align="center"
             eyebrow="Ready when you are"
             title="Every phone, graded and tested before you pay"
             description="Compare condition grades, battery health, and warranty terms across the full catalog."
             action={
               <div className="flex flex-wrap justify-center gap-3">
-                <ButtonLink to={cta.to} variant="accent" size="lg">
+                <ButtonLink to={cta.to} variant="primary" size="lg">
                   {cta.label}
                 </ButtonLink>
-                <ButtonLink
-                  to={MARKETPLACE_ROUTES.howItWorks}
-                  variant="secondary"
-                  size="lg"
-                  className="border-white/20 bg-white/10 text-white hover:bg-white/20"
-                >
+                <ButtonLink to={MARKETPLACE_ROUTES.howItWorks} variant="secondary" size="lg">
                   How it works
                 </ButtonLink>
               </div>

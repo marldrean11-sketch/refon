@@ -9,3 +9,5 @@ export {
   productPath,
   sellerPath,
 } from '../../lib/routes.js'
+
+export { getSafeDestination } from './auth.validation.js'

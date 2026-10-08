@@ -10,23 +10,23 @@ import { ImageIcon } from 'lucide-react'
  */
 
 const BRAND_SURFACES = {
-  Apple: { from: '#f1f5f9', via: '#e2e8f0', to: '#cbd5e1', glow: 'rgba(100,116,139,0.28)' },
-  Samsung: { from: '#eff6ff', via: '#dbeafe', to: '#bfdbfe', glow: 'rgba(37,99,235,0.24)' },
-  Google: { from: '#f8fafc', via: '#eef2ff', to: '#e0e7ff', glow: 'rgba(79,70,229,0.22)' },
-  Xiaomi: { from: '#fff7ed', via: '#ffedd5', to: '#fed7aa', glow: 'rgba(234,88,12,0.22)' },
-  Oppo: { from: '#ecfdf5', via: '#d1fae5', to: '#a7f3d0', glow: 'rgba(5,150,105,0.22)' },
-  Vivo: { from: '#eff6ff', via: '#dbeafe', to: '#bfdbfe', glow: 'rgba(14,165,233,0.22)' },
-  OnePlus: { from: '#fef2f2', via: '#fee2e2', to: '#fecaca', glow: 'rgba(220,38,38,0.2)' },
-  Realme: { from: '#fffbeb', via: '#fef3c7', to: '#fde68a', glow: 'rgba(217,119,6,0.2)' },
-  Nokia: { from: '#f8fafc', via: '#f1f5f9', to: '#e2e8f0', glow: 'rgba(71,85,105,0.2)' },
-  Huawei: { from: '#fff7ed', via: '#ffedd5', to: '#fdba74', glow: 'rgba(234,88,12,0.2)' },
+  Apple: { from: '#f4f4f1', via: '#e8e8e2', to: '#d8d8cf', glow: 'rgba(120,133,138,0.22)' },
+  Samsung: { from: '#f3f5f6', via: '#e6ebee', to: '#d6dee2', glow: 'rgba(37,99,235,0.16)' },
+  Google: { from: '#f5f4f2', via: '#eaeae6', to: '#dbdcd6', glow: 'rgba(79,70,229,0.16)' },
+  Xiaomi: { from: '#faf5ef', via: '#f0e6da', to: '#e3d4c2', glow: 'rgba(217,119,6,0.16)' },
+  Oppo: { from: '#f2f7f4', via: '#e4eee8', to: '#d3e2d8', glow: 'rgba(5,150,105,0.16)' },
+  Vivo: { from: '#f2f5f8', via: '#e3eaf0', to: '#d2dde7', glow: 'rgba(14,165,233,0.16)' },
+  OnePlus: { from: '#faf3f2', via: '#f0e3e1', to: '#e2cecb', glow: 'rgba(185,28,28,0.15)' },
+  Realme: { from: '#faf7f0', via: '#efe8da', to: '#e0d5c1', glow: 'rgba(217,119,6,0.15)' },
+  Nokia: { from: '#f5f5f2', via: '#e9e9e3', to: '#d9d9d1', glow: 'rgba(71,85,105,0.16)' },
+  Huawei: { from: '#faf4ef', via: '#efe3d9', to: '#e0cdbd', glow: 'rgba(234,88,12,0.15)' },
 }
 
 const DEFAULT_SURFACE = {
-  from: '#f1f5f9',
-  via: '#e2e8f0',
-  to: '#cbd5e1',
-  glow: 'rgba(15,23,42,0.18)',
+  from: '#f4f4f1',
+  via: '#e8e8e2',
+  to: '#d8d8cf',
+  glow: 'rgba(17,22,26,0.14)',
 }
 
 /** Maps the free-text colour on a listing to a real device body colour. */
@@ -232,8 +232,13 @@ export function PhoneArtwork({
   const rotation = isAngle ? 'rotate-[-8deg]' : view === 'front' ? 'rotate-[-2deg]' : ''
   const tilt = view === 'detail' ? 'rotate-[6deg]' : ''
 
+  // The device is sized from its height and locked to a real handset ratio
+  // rather than from a percentage width. A fixed width meant the same drawing
+  // filled a 4:3 frame and shrank to nothing in a 4:5 one, which is the
+  // difference between a card that shows the product and one that shows a
+  // background with a phone somewhere in it.
   const deviceShell = [
-    'relative h-[74%] w-[38%] min-w-26 max-w-40 rounded-[1.6rem] p-[3px] shadow-2xl transition-transform duration-300 motion-reduce:transform-none',
+    'relative h-[78%] w-auto max-w-[48%] rounded-[1.6rem] p-[3px] shadow-2xl transition-transform duration-300 motion-reduce:transform-none',
     frame.corners,
     rotation,
     tilt,
@@ -261,17 +266,23 @@ export function PhoneArtwork({
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 opacity-35"
+        className="absolute inset-0 opacity-45"
         style={{
           backgroundImage:
-            'radial-gradient(rgba(100,116,139,0.6) 0.6px, transparent 0.6px)',
+            'radial-gradient(rgba(110,110,100,0.55) 0.6px, transparent 0.6px)',
           backgroundSize: '13px 13px',
         }}
         aria-hidden="true"
       />
 
       {showLabel && (
-        <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1.5 rounded-pill bg-white/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted backdrop-blur">
+        /* `z-10` is load-bearing. The device body below is painted after this
+           chip in DOM order and reaches up past it, so without an explicit
+           stacking order the device's shoulder covers the first few characters
+           and the label reads "STRATION". Opaque ink rather than a translucent
+           surface, because the backdrop is a coloured gradient and a 90%-white
+           chip vanishes wherever that gradient is light. */
+        <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 whitespace-nowrap rounded-control bg-ink/95 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
           <ImageIcon className="size-3" aria-hidden="true" />
           Illustration
         </span>
@@ -281,6 +292,7 @@ export function PhoneArtwork({
         <div
           className={deviceShell}
           style={{
+            aspectRatio: '1 / 2.05',
             background: `linear-gradient(160deg, ${body.trim}, rgba(255,255,255,0.28), ${body.trim})`,
           }}
           aria-hidden="true"
@@ -332,7 +344,7 @@ export function PhoneArtwork({
       </div>
 
       {showColor && color && (
-        <span className="absolute bottom-3.5 right-3.5 rounded-pill bg-white/85 px-2.5 py-1 text-[10px] font-semibold text-muted backdrop-blur">
+        <span className="absolute bottom-3 right-3 rounded-sm bg-surface/90 px-2 py-1 font-mono text-[10px] font-medium text-muted ring-1 ring-inset ring-line-2 backdrop-blur">
           {color}
         </span>
       )}
@@ -349,12 +361,12 @@ function ScreenContent({ batteryPercent, brand }) {
             <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-white/55">
               Battery health
             </p>
-            <p className="font-display text-xl font-bold leading-none text-white">
+            <p className="font-mono text-lg font-semibold tabular-nums leading-none text-white">
               {batteryPercent}%
             </p>
-            <div className="mt-1.5 h-1 overflow-hidden rounded-pill bg-white/20">
+            <div className="mt-1.5 h-1 overflow-hidden rounded-[2px] bg-white/20">
               <div
-                className="h-full rounded-pill bg-accent-400"
+                className="h-full rounded-[2px] bg-accent-300"
                 style={{ width: `${batteryPercent}%` }}
               />
             </div>

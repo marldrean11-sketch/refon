@@ -4,12 +4,17 @@ import { createServer } from 'node:http'
 import { PrismaClient } from '@prisma/client'
 
 /**
- * Phase 5 commerce backend suite: carts, guest carts, guest-to-account merge,
- * inventory reservations, price snapshots, and the authorization around all of it.
+ * Phase 5 commerce backend suite: buyer carts, inventory reservations, price
+ * snapshots, and the authorization around all of it.
  *
  * Everything runs against a real server, a real PostgreSQL database, and real
  * signed sessions, because the properties under test — a partial unique index, a
- * row lock, a transactional merge — are properties of the database, not of a mock.
+ * row lock, a NOT NULL owner column — are properties of the database, not of a mock.
+ *
+ * Purchasing is buyer-only, so every successful path here is a signed-in BUYER. A
+ * visitor and a signed-in SELLER or ADMIN are refused on every cart route, and those
+ * refusals are asserted as precisely as the successes: 401 for no session, 403 for the
+ * wrong role, with no cart row created as a side effect.
  *
  * No test reaches into the API to assert something the API does not promise, and no
  * test asserts a fabricated figure: every value compared here is read back from the
@@ -24,6 +29,7 @@ const { default: app } = await import(`../src/app.js?cart-e2e=${stamp}`)
 const prisma = new PrismaClient()
 
 const SELLER_PASSWORD = 'SellerTest123!'
+const ADMIN_PASSWORD = 'AdminTest123!'
 const BUYER_PASSWORD = 'BuyerTest123!'
 const SEED_PHOTO = '/uploads/seed/phone-front.svg'
 
@@ -35,8 +41,13 @@ const createdUserIds = []
 const createdListingIds = []
 const createdCartIds = []
 
-/** Two independent guests, plus a signed-in buyer, so ownership can be tested. */
-function guestClient() {
+/**
+ * A client with no session at all.
+ *
+ * Kept as its own name because "no session" is now a distinct, tested case rather
+ * than the implicit default every happy path used to be built on.
+ */
+function anonymousClient() {
   return createClient()
 }
 
@@ -94,6 +105,20 @@ async function signIn(client, email, password) {
   assert.equal(response.status, 200, `sign in as ${email}`)
 
   return response.json.user
+}
+
+/** The seeded demo seller, signed in. Used to prove a seller cannot buy. */
+function sellerClient() {
+  const client = createClient()
+
+  return signIn(client, 'seller@refon.test', SELLER_PASSWORD).then((user) => ({ client, user }))
+}
+
+/** The seeded admin, signed in. Used to prove an admin cannot buy either. */
+function adminClient() {
+  const client = createClient()
+
+  return signIn(client, 'admin@refon.test', ADMIN_PASSWORD).then((user) => ({ client, user }))
 }
 
 async function registerBuyer(email) {
@@ -242,13 +267,6 @@ async function ageReservationPastExpiry(listingId, millisecondsAgo = 60_000) {
   })
 }
 
-async function storedCartItem(listingId) {
-  return prisma.cartItem.findFirst({
-    where: { listingId },
-    orderBy: { addedAt: 'desc' },
-  })
-}
-
 // ------------------------------------------------------------------ suite
 
 async function main() {
@@ -256,39 +274,212 @@ async function main() {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   baseUrl = `http://127.0.0.1:${server.address().port}`
 
+  // -------------------------------------------------- buyer-only refusal
+
+  console.log('\n— purchasing is buyer-only —')
+
+  {
+    // A visitor has no cart at all. Not an empty one: no cart.
+    const anonymous = anonymousClient()
+    const response = await anonymous.raw('/api/cart')
+
+    assert.equal(response.status, 401, 'reading a cart with no session is refused')
+    assert.equal(response.json.code, 'AUTHENTICATION_REQUIRED')
+    assert.equal(response.json.cart, undefined, 'and no cart is described')
+    assert.equal(
+      anonymous.cookies.has('refon_cart'),
+      false,
+      'no guest identity is issued, because there is no guest cart',
+    )
+    // Queried in SQL rather than through the client: `userId: null` is not a legal
+    // Prisma filter now that the column is NOT NULL, which is itself the proof.
+    const ownerless = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count FROM carts WHERE user_id IS NULL
+    `
+
+    assert.equal(ownerless[0].count, 0, 'no ownerless cart row exists')
+  }
+
+  {
+    // Every write is refused for a visitor too, and nothing is written.
+    const listing = await createApprovedListing()
+    const anonymous = anonymousClient()
+
+    const added = await anonymous.raw('/api/cart/items', {
+      method: 'POST',
+      body: { listingId: listing.id },
+    })
+    assert.equal(added.status, 401, 'a visitor cannot add to a cart')
+    assert.equal(added.json.code, 'AUTHENTICATION_REQUIRED')
+
+    const removed = await anonymous.raw(`/api/cart/items/${listing.id}`, { method: 'DELETE' })
+    assert.equal(removed.status, 401, 'a visitor cannot remove a cart line')
+
+    const emptied = await anonymous.raw('/api/cart', { method: 'DELETE' })
+    assert.equal(emptied.status, 401, 'a visitor cannot empty a cart')
+
+    assert.equal(
+      await prisma.cartItem.count({ where: { listingId: listing.id } }),
+      0,
+      'none of those attempts created a cart line',
+    )
+    assert.equal(
+      await storedReservationFor(listing.id),
+      null,
+      'and none of them took a hold on the listing',
+    )
+  }
+
+  {
+    // A signed-in seller is a different refusal from a visitor: 403, not 401. The
+    // distinction matters to the client, which sends a 401 to the sign-in page and a
+    // 403 nowhere.
+    const { client: seller, user: sellerUser } = await sellerClient()
+    const listing = await createApprovedListing()
+
+    const read = await seller.raw('/api/cart')
+    assert.equal(read.status, 403, 'a seller cannot read a cart')
+    assert.equal(read.json.code, 'FORBIDDEN')
+
+    const added = await seller.raw('/api/cart/items', {
+      method: 'POST',
+      body: { listingId: listing.id },
+    })
+    assert.equal(added.status, 403, 'a seller cannot add to a cart')
+
+    const removed = await seller.raw(`/api/cart/items/${listing.id}`, { method: 'DELETE' })
+    assert.equal(removed.status, 403, 'a seller cannot remove a cart line')
+
+    const emptied = await seller.raw('/api/cart', { method: 'DELETE' })
+    assert.equal(emptied.status, 403, 'a seller cannot empty a cart')
+
+    assert.equal(
+      await prisma.cart.count({ where: { userId: sellerUser.id } }),
+      0,
+      'no cart is created for a seller by any of those attempts',
+    )
+    assert.equal(
+      await prisma.cartItem.count({ where: { listingId: listing.id } }),
+      0,
+      'and no cart line',
+    )
+  }
+
+  {
+    // A seller cannot buy their own listing, and is refused before the listing is
+    // even looked at: the role gate runs ahead of the own-listing rule. That
+    // ordering is the point — the seller is refused for what they are, not for what
+    // they happened to click.
+    const { client: seller, user: sellerUser } = await sellerClient()
+
+    const ownListing = await prisma.listing.findFirst({
+      where: { seller: { userId: sellerUser.id }, status: 'APPROVED' },
+      select: { id: true },
+    })
+
+    assert.ok(ownListing, 'the fixture seller has approved inventory')
+
+    const response = await seller.raw('/api/cart/items', {
+      method: 'POST',
+      body: { listingId: ownListing.id },
+    })
+
+    assert.equal(response.status, 403, 'a seller is refused at the role gate')
+    assert.equal(response.json.code, 'FORBIDDEN')
+    assert.notEqual(
+      response.json.code,
+      'OWN_LISTING_NOT_PURCHASABLE',
+      'the role gate answers first, so the listing-specific rule is never reached',
+    )
+    assert.equal(
+      await storedReservationFor(ownListing.id),
+      null,
+      'and the seller takes no hold on their own inventory',
+    )
+  }
+
+  {
+    // An admin is refused the same way. An admin moderates listings; they do not buy.
+    const { client: admin, user: adminUser } = await adminClient()
+    const listing = await createApprovedListing()
+
+    const read = await admin.raw('/api/cart')
+    assert.equal(read.status, 403, 'an admin cannot read a cart')
+
+    const added = await admin.raw('/api/cart/items', {
+      method: 'POST',
+      body: { listingId: listing.id },
+    })
+    assert.equal(added.status, 403, 'an admin cannot add to a cart')
+
+    assert.equal(await prisma.cart.count({ where: { userId: adminUser.id } }), 0)
+    assert.equal(await prisma.cartItem.count({ where: { listingId: listing.id } }), 0)
+  }
+
+  {
+    // There is no merge endpoint any more, because there is nothing to merge: a cart
+    // only exists for a signed-in buyer, so signing in creates one rather than
+    // absorbing a guest one.
+    const anonymous = anonymousClient()
+    const response = await anonymous.raw('/api/cart/merge', { method: 'POST' })
+
+    assert.equal(response.status, 404, 'the merge route is gone')
+  }
+
+  {
+    // A cart cannot be addressed by anything other than the session. Supplying a user
+    // id in the body is refused outright rather than quietly honoured or ignored.
+    const { client } = await registerBuyer(`cart-nominate-${stamp}@example.test`)
+    const listing = await createApprovedListing()
+
+    const response = await client.raw('/api/cart/items', {
+      method: 'POST',
+      body: { listingId: listing.id, userId: crypto.randomUUID() },
+    })
+
+    assert.equal(response.status, 422, 'a client-supplied owner is rejected')
+    assert.ok(response.json.errors._body, 'and keyed to the request body')
+
+    const clean = await client.raw('/api/cart/items', {
+      method: 'POST',
+      body: { listingId: listing.id },
+    })
+    assert.equal(clean.status, 201, 'the buyer can still add with the session alone')
+
+    const other = await registerBuyer(`cart-nominate-other-${stamp}@example.test`)
+
+    // A signed-in buyer's cart is not reachable by a query string either: naming
+    // somebody else reads the sender's own cart, not theirs.
+    const spoofed = await client.raw(`/api/cart?userId=${other.user.id}`)
+    assert.equal(
+      spoofed.json.cart.itemCount,
+      1,
+      'a nominated owner in the query string does not address anybody',
+    )
+    assert.equal(
+      (await other.client.raw('/api/cart')).json.cart.itemCount,
+      0,
+      'and the other buyer’s cart is still their own',
+    )
+  }
+
   // ---------------------------------------------------------------- cart
 
   console.log('\n— cart —')
 
   {
-    const anonymous = createClient()
-    const response = await anonymous.raw('/api/cart')
-
-    assert.equal(response.status, 200)
-    assert.equal(response.json.cart.itemCount, 0, 'a visitor with no cart gets an empty one')
-    assert.equal(response.json.cart.subtotal, 0)
-    assert.equal(response.json.cart.currency, 'PHP')
-    assert.equal(
-      anonymous.cookies.has('refon_cart'),
-      false,
-      'reading an empty cart must not set a guest cookie',
-    )
-  }
-
-  {
     const listing = await createApprovedListing()
-    const guest = guestClient()
+    const { client } = await registerBuyer(`cart-buyer-${stamp}@example.test`)
 
-    const added = await guest.raw('/api/cart/items', {
+    const added = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
 
-    assert.equal(added.status, 201, 'guest add')
+    assert.equal(added.status, 201, 'account add')
     assert.equal(added.json.created, true)
+    assert.equal(added.json.cart.owner, 'ACCOUNT')
     assert.equal(added.json.cart.itemCount, 1)
-    assert.equal(added.json.cart.owner, 'GUEST')
-    assert.ok(guest.cookies.has('refon_cart'), 'the guest identity is issued on first write')
 
     const item = added.json.cart.items[0]
     assert.equal(item.listing.id, listing.id)
@@ -312,9 +503,9 @@ async function main() {
       `the hold is 15 minutes, got ${windowMinutes}`,
     )
 
-    const readBack = await guest.raw('/api/cart')
+    const readBack = await client.raw('/api/cart')
     assert.equal(readBack.status, 200)
-    assert.equal(readBack.json.cart.itemCount, 1, 'the guest cart is retrievable')
+    assert.equal(readBack.json.cart.itemCount, 1, 'the cart is retrievable')
     assert.equal(readBack.json.cart.items[0].reservation.status, 'ACTIVE')
     assert.ok(
       readBack.json.cart.items[0].reservation.secondsRemaining > 0,
@@ -326,7 +517,7 @@ async function main() {
     )
 
     // Repeating an add is idempotent, not a conflict.
-    const again = await guest.raw('/api/cart/items', {
+    const again = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
@@ -334,7 +525,7 @@ async function main() {
     assert.equal(again.json.created, false)
     assert.equal(again.json.cart.itemCount, 1, 'still one line')
 
-    const removed = await guest.raw(`/api/cart/items/${listing.id}`, { method: 'DELETE' })
+    const removed = await client.raw(`/api/cart/items/${listing.id}`, { method: 'DELETE' })
     assert.equal(removed.status, 200)
     assert.equal(removed.json.removed, true)
     assert.equal(removed.json.cart.itemCount, 0)
@@ -346,17 +537,23 @@ async function main() {
     )
 
     // A repeated removal is harmless.
-    const removedTwice = await guest.raw(`/api/cart/items/${listing.id}`, { method: 'DELETE' })
+    const removedTwice = await client.raw(`/api/cart/items/${listing.id}`, { method: 'DELETE' })
     assert.equal(removedTwice.status, 200)
     assert.equal(removedTwice.json.removed, false)
   }
 
   {
     const listing = await createApprovedListing()
-    const guest = guestClient()
+    const { client } = await registerBuyer(`cart-buyer-empty-${stamp}@example.test`)
 
-    await guest.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
-    const second = await guest.raw('/api/cart/items', {
+    const empty = await client.raw('/api/cart')
+    assert.equal(empty.status, 200)
+    assert.equal(empty.json.cart.itemCount, 0, 'a buyer with no cart gets an empty one')
+    assert.equal(empty.json.cart.subtotal, 0)
+    assert.equal(empty.json.cart.currency, 'PHP')
+
+    await client.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
+    const second = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: (await createApprovedListing()).id },
     })
@@ -369,241 +566,37 @@ async function main() {
     )
     assert.equal(second.json.cart.subtotal, subtotal, 'the subtotal is derived from stored prices')
 
-    const emptied = await guest.raw('/api/cart', { method: 'DELETE' })
+    const emptied = await client.raw('/api/cart', { method: 'DELETE' })
     assert.equal(emptied.status, 200)
     assert.equal(emptied.json.cart.itemCount, 0)
     assert.equal(await storedReservationFor(listing.id), null, 'emptying releases every hold')
   }
 
-  // ------------------------------------------------------- authenticated
-
-  console.log('— authenticated cart —')
-
   {
+    // The cart row is persisted against the account, and the schema now says so:
+    // `user_id` is NOT NULL, so there is no possible ownerless cart row.
     const listing = await createApprovedListing()
-    const { client, user } = await registerBuyer(`cart-buyer-${stamp}@example.test`)
+    const { client, user } = await registerBuyer(`cart-persist-${stamp}@example.test`)
 
     const added = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
 
-    assert.equal(added.status, 201, 'account add')
+    assert.equal(added.status, 201)
     assert.equal(added.json.cart.owner, 'ACCOUNT')
-    assert.equal(added.json.cart.itemCount, 1)
 
     const cartRow = await prisma.cart.findUnique({ where: { userId: user.id } })
     assert.ok(cartRow, 'the cart is persisted against the account')
-    assert.equal(cartRow.guestTokenHash, null, 'an account cart has no guest identity')
+    assert.equal(cartRow.userId, user.id, 'and owned by exactly that account')
     createdCartIds.push(cartRow.id)
+
+    // A second buyer never sees the first buyer's lines.
+    const stranger = await registerBuyer(`cart-persist-other-${stamp}@example.test`)
+    assert.equal((await stranger.client.raw('/api/cart')).json.cart.itemCount, 0)
 
     const readBack = await client.raw('/api/cart')
     assert.equal(readBack.json.cart.itemCount, 1, 'the account cart survives a new request')
-  }
-
-  // ------------------------------------------------------------- merge
-
-  console.log('— guest to account merge —')
-
-  {
-    // Empty guest cart merging into an empty account cart is a no-op.
-    const { client } = await registerBuyer(`cart-merge-empty-${stamp}@example.test`)
-    const merged = await client.raw('/api/cart/merge', { method: 'POST' })
-
-    assert.equal(merged.status, 200, 'merging without a guest cart succeeds')
-    assert.equal(merged.json.merged, null, 'nothing to merge is reported as null')
-    assert.equal(merged.json.cart.itemCount, 0)
-  }
-
-  {
-    // Guest items merge into an account cart that already has different items.
-    const accountListing = await createApprovedListing()
-    const guestListing = await createApprovedListing()
-
-    const { client, user } = await registerBuyer(`cart-merge-both-${stamp}@example.test`)
-    await client.raw('/api/cart/items', {
-      method: 'POST',
-      body: { listingId: accountListing.id },
-    })
-
-    const guest = guestClient()
-    await guest.raw('/api/cart/items', { method: 'POST', body: { listingId: guestListing.id } })
-    assert.equal((await guest.raw('/api/cart')).json.cart.itemCount, 1)
-
-    // Sign in while the guest cookie is present, as the browser would.
-    const signInResponse = await guest.raw('/api/auth/login', {
-      method: 'POST',
-      body: {
-        email: `cart-merge-both-${stamp}@example.test`,
-        password: BUYER_PASSWORD,
-      },
-    })
-    assert.equal(signInResponse.status, 200, 'sign-in succeeds with a guest cart present')
-
-    const afterMerge = await guest.raw('/api/cart')
-    assert.equal(afterMerge.json.cart.owner, 'ACCOUNT', 'the session now owns the cart')
-    assert.equal(afterMerge.json.cart.itemCount, 2, 'both listings survive the merge')
-
-    const listingIds = afterMerge.json.cart.items.map((item) => item.listing.id)
-    assert.ok(listingIds.includes(accountListing.id), 'the account item is kept')
-    assert.ok(listingIds.includes(guestListing.id), 'the guest item is moved over')
-
-    // The guest cart is consumed and its cookie cleared.
-    assert.equal(
-      await prisma.cart.count({ where: { userId: user.id, guestTokenHash: { not: null } } }),
-      0,
-      'no guest-owned cart is left behind',
-    )
-    assert.equal(
-      afterMerge.json.cart.items.find((item) => item.listing.id === guestListing.id)
-        .reservation.status,
-      'ACTIVE',
-      'the moved line keeps a live hold',
-    )
-
-    // Signing in again must not duplicate anything.
-    await guest.raw('/api/auth/login', {
-      method: 'POST',
-      body: { email: `cart-merge-both-${stamp}@example.test`, password: BUYER_PASSWORD },
-    })
-    const second = await guest.raw('/api/cart')
-    assert.equal(second.json.cart.itemCount, 2, 'a second sign-in does not re-merge')
-  }
-
-  {
-    // The same physical listing in both carts collapses to one line.
-    //
-    // This state is reached the way it happens in practice: the account held the
-    // phone, the hold lapsed, and the same person then added it as a guest before
-    // signing in again. It cannot be manufactured directly, because while one cart
-    // holds a listing no other cart is allowed to — which is itself the guarantee
-    // this suite is testing.
-    const shared = await createApprovedListing()
-    const { client } = await registerBuyer(`cart-merge-dupe-${stamp}@example.test`)
-    const other = await createApprovedListing()
-
-    await client.raw('/api/cart/items', { method: 'POST', body: { listingId: shared.id } })
-    await client.raw('/api/cart/items', { method: 'POST', body: { listingId: other.id } })
-
-    // The account's hold lapses, freeing the phone.
-    await ageReservationPastExpiry(shared.id)
-
-    const guest = guestClient()
-    const guestAdd = await guest.raw('/api/cart/items', {
-      method: 'POST',
-      body: { listingId: shared.id },
-    })
-    assert.equal(guestAdd.status, 201, 'the guest can now hold the freed phone')
-    assert.equal((await guest.raw('/api/cart')).json.cart.itemCount, 1)
-
-    await guest.raw('/api/auth/login', {
-      method: 'POST',
-      body: { email: `cart-merge-dupe-${stamp}@example.test`, password: BUYER_PASSWORD },
-    })
-
-    const merged = await guest.raw('/api/cart')
-    assert.equal(merged.json.cart.itemCount, 2, 'the duplicate collapses to one line')
-
-    const occurrences = merged.json.cart.items.filter(
-      (item) => item.listing.id === shared.id,
-    )
-    assert.equal(occurrences.length, 1, 'the listing appears exactly once')
-    assert.equal(occurrences[0].quantity, 1, 'and never with quantity 2')
-    assert.equal(
-      occurrences[0].reservation.status,
-      'ACTIVE',
-      'the buyer keeps a live hold on the phone they were holding',
-    )
-
-    assert.equal(
-      await prisma.cartItem.count({ where: { listingId: shared.id } }),
-      1,
-      'only one cart line exists in the database',
-    )
-    assert.equal(
-      await prisma.reservation.count({
-        where: { listingId: shared.id, releasedAt: null },
-      }),
-      1,
-      'and exactly one hold',
-    )
-  }
-
-  {
-    // An unavailable guest item is carried over and marked, not silently dropped.
-    const listed = await createApprovedListing()
-    const { client } = await registerBuyer(`cart-merge-unavail-${stamp}@example.test`)
-
-    const guest = guestClient()
-    await guest.raw('/api/cart/items', { method: 'POST', body: { listingId: listed.id } })
-
-    // The listing is taken down between add and sign-in.
-    await prisma.listing.update({ where: { id: listed.id }, data: { status: 'REJECTED' } })
-
-    await guest.raw('/api/auth/login', {
-      method: 'POST',
-      body: { email: `cart-merge-unavail-${stamp}@example.test`, password: BUYER_PASSWORD },
-    })
-
-    const merged = await guest.raw('/api/cart')
-    assert.equal(merged.json.cart.itemCount, 1, 'the line is kept so nothing vanishes')
-
-    const item = merged.json.cart.items[0]
-    assert.equal(item.availability, 'UNAVAILABLE')
-    assert.ok(item.unavailableReason, 'a reason is given')
-    assert.ok(item.issues.includes('LISTING_UNAVAILABLE'))
-    assert.equal(item.reservation, null, 'no hold is taken on an unavailable listing')
-    assert.equal(merged.json.cart.hasUnavailableItems, true)
-    assert.equal(merged.json.cart.subtotal, 0, 'an unavailable line is not counted as buyable')
-  }
-
-  {
-    // A guest hold that lapsed before sign-in is reported as expired to the guest,
-    // and signing in restores a fresh hold rather than leaving the buyer with a
-    // cart they can no longer act on. If somebody else took the phone in the
-    // meantime the merge would refuse, which the reservation tests cover.
-    const listing = await createApprovedListing()
-    const { client } = await registerBuyer(`cart-merge-expired-${stamp}@example.test`)
-
-    const guest = guestClient()
-    await guest.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
-
-    // Age the hold past its window, as the passage of time would.
-    await ageReservationPastExpiry(listing.id)
-
-    const lapsed = await guest.raw('/api/cart')
-    assert.equal(
-      lapsed.json.cart.items[0].availability,
-      'RESERVATION_EXPIRED',
-      'a lapsed hold is reported as expired to the guest, never as held',
-    )
-    assert.equal(
-      lapsed.json.cart.items[0].reservation.secondsRemaining,
-      0,
-      'and carries no remaining time',
-    )
-    assert.ok(lapsed.json.cart.items[0].issues.includes('RESERVATION_EXPIRED'))
-
-    await guest.raw('/api/auth/login', {
-      method: 'POST',
-      body: { email: `cart-merge-expired-${stamp}@example.test`, password: BUYER_PASSWORD },
-    })
-
-    const merged = await guest.raw('/api/cart')
-    const item = merged.json.cart.items[0]
-
-    assert.equal(merged.json.cart.itemCount, 1, 'the line is still carried over')
-    assert.equal(
-      item.availability,
-      'AVAILABLE',
-      'signing in restores a hold the buyer can act on',
-    )
-    assert.equal(item.reservation.status, 'ACTIVE')
-    assert.ok(item.reservation.secondsRemaining > 0, 'with a fresh window')
-
-    // The stale snapshot must not resurface as a price change.
-    assert.equal(item.priceChanged, false, 'the snapshot is refreshed from the live price')
-    assert.deepEqual(item.issues, ['OK'])
   }
 
   // -------------------------------------------------------- reservation
@@ -612,16 +605,16 @@ async function main() {
 
   {
     const listing = await createApprovedListing()
-    const first = guestClient()
-    const second = guestClient()
+    const first = await registerBuyer(`cart-res-first-${stamp}@example.test`)
+    const second = await registerBuyer(`cart-res-second-${stamp}@example.test`)
 
-    const heldByFirst = await first.raw('/api/cart/items', {
+    const heldByFirst = await first.client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
     assert.equal(heldByFirst.status, 201)
 
-    const denied = await second.raw('/api/cart/items', {
+    const denied = await second.client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
@@ -638,14 +631,14 @@ async function main() {
   {
     // Expiry is judged against the database clock, and a lapsed hold frees the phone.
     const listing = await createApprovedListing()
-    const first = guestClient()
-    const second = guestClient()
+    const first = await registerBuyer(`cart-exp-first-${stamp}@example.test`)
+    const second = await registerBuyer(`cart-exp-second-${stamp}@example.test`)
 
-    await first.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
+    await first.client.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
 
     await ageReservationPastExpiry(listing.id)
 
-    const expiredRead = await first.raw('/api/cart')
+    const expiredRead = await first.client.raw('/api/cart')
     assert.equal(
       expiredRead.json.cart.items[0].reservation.status,
       'EXPIRED',
@@ -662,7 +655,7 @@ async function main() {
       'reading the cart retires the lapsed hold rather than leaving it live',
     )
 
-    const takenBySecond = await second.raw('/api/cart/items', {
+    const takenBySecond = await second.client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
@@ -670,34 +663,142 @@ async function main() {
   }
 
   {
-    // Two authenticated buyers, same phone, one winner.
+    // A hold that lapses while the buyer still has the line is reported honestly, and
+    // the buyer can take a fresh one by removing the line and adding it again.
     const listing = await createApprovedListing()
-    const one = await registerBuyer(`cart-res-a-${stamp}@example.test`)
-    const two = await registerBuyer(`cart-res-b-${stamp}@example.test`)
+    const { client } = await registerBuyer(`cart-lapsed-${stamp}@example.test`)
 
-    const firstAdd = await one.client.raw('/api/cart/items', {
+    await client.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
+    await ageReservationPastExpiry(listing.id)
+
+    const lapsed = await client.raw('/api/cart')
+    assert.equal(
+      lapsed.json.cart.items[0].availability,
+      'RESERVATION_EXPIRED',
+      'a lapsed hold is reported as expired, never as held',
+    )
+    assert.equal(
+      lapsed.json.cart.items[0].reservation.secondsRemaining,
+      0,
+      'and carries no remaining time',
+    )
+    assert.ok(lapsed.json.cart.items[0].issues.includes('RESERVATION_EXPIRED'))
+
+    // Re-adding the line is idempotent, and it does not paper over the lapse: the
+    // buyer is told the hold is gone rather than being shown a fresh window that
+    // does not exist. This is the honest reading, because the hold really has
+    // lapsed and checkout would refuse it.
+    const readded = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
-    const secondAdd = await two.client.raw('/api/cart/items', {
+    assert.equal(readded.status, 200, 're-adding a lapsed line is not an error')
+    assert.equal(readded.json.created, false, 'and creates no second line')
+    assert.equal(readded.json.cart.itemCount, 1)
+    assert.equal(
+      readded.json.cart.items[0].availability,
+      'RESERVATION_EXPIRED',
+      'a re-add does not claim a hold that has lapsed',
+    )
+
+    // Removing the line and adding it again is what takes a fresh hold. That is the
+    // path a buyer has, so it has to work.
+    const removed = await client.raw(`/api/cart/items/${listing.id}`, { method: 'DELETE' })
+    assert.equal(removed.status, 200)
+    assert.equal(removed.json.removed, true)
+
+    const readdedFresh = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
+    assert.equal(readdedFresh.status, 201, 'the freed phone can be held again')
 
-    assert.equal(firstAdd.status, 201)
-    assert.equal(secondAdd.status, 409, 'the second buyer is refused')
-    assert.equal(secondAdd.json.code, 'LISTING_RESERVED')
+    const after = await client.raw('/api/cart')
+    assert.equal(after.json.cart.itemCount, 1, 'and does not duplicate the line')
+    assert.equal(after.json.cart.items[0].availability, 'AVAILABLE', 'the hold is live again')
+    assert.ok(after.json.cart.items[0].reservation.secondsRemaining > 0, 'with a fresh window')
+    assert.deepEqual(after.json.cart.items[0].issues, ['OK'])
+  }
 
-    const active = await prisma.reservation.count({
-      where: { listingId: listing.id, releasedAt: null },
+  {
+    // A line that goes away between add and read is kept and marked, not silently
+    // dropped: the buyer can see that something they chose is no longer buyable.
+    const listed = await createApprovedListing()
+    const { client } = await registerBuyer(`cart-unavail-${stamp}@example.test`)
+
+    await client.raw('/api/cart/items', { method: 'POST', body: { listingId: listed.id } })
+
+    // The listing is taken down while the buyer is still holding it.
+    await prisma.listing.update({ where: { id: listed.id }, data: { status: 'REJECTED' } })
+
+    const cart = await client.raw('/api/cart')
+    assert.equal(cart.json.cart.itemCount, 1, 'the line is kept so nothing vanishes')
+
+    const item = cart.json.cart.items[0]
+    assert.equal(item.availability, 'UNAVAILABLE')
+    assert.ok(item.unavailableReason, 'a reason is given')
+    assert.ok(item.issues.includes('LISTING_UNAVAILABLE'))
+    assert.equal(cart.json.cart.hasUnavailableItems, true)
+    assert.equal(cart.json.cart.subtotal, 0, 'an unavailable line is not counted as buyable')
+    assert.equal(cart.json.cart.purchasableCount, 0, 'and it is not buyable')
+
+    // The hold row itself survives the listing being taken down, because a hold is
+    // only retired lazily and this one has not lapsed yet. That is harmless rather
+    // than a leak: nothing can be added to a listing that is not APPROVED, so the
+    // live row blocks nobody.
+    const other = await registerBuyer(`cart-unavail-other-${stamp}@example.test`)
+    const secondAttempt = await other.client.raw('/api/cart/items', {
+      method: 'POST',
+      body: { listingId: listed.id },
     })
-    assert.equal(active, 1, 'exactly one live hold exists')
+    assert.equal(
+      secondAttempt.status,
+      404,
+      'an unavailable listing cannot be held by anyone, so the surviving row blocks nobody',
+    )
+  }
+
+  {
+    // The same physical listing cannot end up on one buyer's cart twice, whatever
+    // order the requests arrive in.
+    const listing = await createApprovedListing()
+    const { client } = await registerBuyer(`cart-dupe-${stamp}@example.test`)
+
+    const [first, second] = await Promise.all([
+      client.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } }),
+      client.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } }),
+    ])
+
+    assert.ok(
+      [first.status, second.status].includes(201),
+      'one of two identical concurrent adds succeeds',
+    )
+
+    const cart = await client.raw('/api/cart')
+    assert.equal(cart.json.cart.itemCount, 1, 'the listing appears exactly once')
+    assert.equal(
+      cart.json.cart.items[0].quantity,
+      1,
+      'and never with quantity 2',
+    )
+    assert.equal(
+      await prisma.cartItem.count({ where: { listingId: listing.id } }),
+      1,
+      'only one cart line exists in the database',
+    )
+    assert.equal(
+      await prisma.reservation.count({
+        where: { listingId: listing.id, releasedAt: null },
+      }),
+      1,
+      'and exactly one hold',
+    )
   }
 
   {
     const pending = await createPendingListing()
-    const guest = guestClient()
-    const response = await guest.raw('/api/cart/items', {
+    const { client } = await registerBuyer(`cart-pending-${stamp}@example.test`)
+    const response = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: pending.id },
     })
@@ -707,15 +808,15 @@ async function main() {
   }
 
   {
-    const guest = guestClient()
+    const { client } = await registerBuyer(`cart-badid-${stamp}@example.test`)
 
-    const missing = await guest.raw('/api/cart/items', {
+    const missing = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: crypto.randomUUID() },
     })
     assert.equal(missing.status, 404, 'a listing that does not exist is a 404')
 
-    const malformed = await guest.raw('/api/cart/items', {
+    const malformed = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: 'nonsense' },
     })
@@ -723,12 +824,20 @@ async function main() {
   }
 
   {
-    // Concurrency: many simultaneous attempts for one listing yield exactly one hold.
+    // Concurrency: eight signed-in buyers race for one listing, and exactly one wins.
+    //
+    // This is the property that actually matters — one physical phone, one hold. The
+    // clients are separate buyer accounts rather than anonymous ones because a cart,
+    // and therefore a hold, now requires a signed-in buyer.
     const listing = await createApprovedListing()
-    const clients = Array.from({ length: 8 }, () => guestClient())
+    const buyers = await Promise.all(
+      Array.from({ length: 8 }, (_, index) =>
+        registerBuyer(`cart-race-${index}-${stamp}@example.test`),
+      ),
+    )
 
     const results = await Promise.all(
-      clients.map((client) =>
+      buyers.map(({ client }) =>
         client.raw('/api/cart/items', {
           method: 'POST',
           body: { listingId: listing.id },
@@ -745,6 +854,10 @@ async function main() {
 
     assert.equal(granted.length, 1, 'exactly one concurrent attempt may win')
     assert.equal(refused.length, results.length - 1, 'every other attempt is refused')
+    assert.ok(
+      refused.every((result) => result.json.code === 'LISTING_RESERVED'),
+      'and every refusal names the reservation',
+    )
 
     const live = await prisma.reservation.count({
       where: { listingId: listing.id, releasedAt: null },
@@ -776,9 +889,9 @@ async function main() {
 
   {
     const listing = await createApprovedListing('Priceworks')
-    const guest = guestClient()
+    const { client } = await registerBuyer(`cart-price-${stamp}@example.test`)
 
-    const added = await guest.raw('/api/cart/items', {
+    const added = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
@@ -790,7 +903,7 @@ async function main() {
       data: { price: 20999 },
     })
 
-    const afterIncrease = await guest.raw('/api/cart')
+    const afterIncrease = await client.raw('/api/cart')
     const item = afterIncrease.json.cart.items[0]
     assert.equal(item.priceSnapshot, Number(listing.price), 'the snapshot is retained')
     assert.equal(item.currentPrice, 20999, 'the live price is reported')
@@ -805,7 +918,7 @@ async function main() {
 
     // And back down again.
     await prisma.listing.update({ where: { id: listing.id }, data: { price: 17999 } })
-    const afterDecrease = await guest.raw('/api/cart')
+    const afterDecrease = await client.raw('/api/cart')
     assert.equal(afterDecrease.json.cart.items[0].priceChanged, true)
     assert.equal(afterDecrease.json.cart.items[0].priceDelta, -1000)
     assert.ok(afterDecrease.json.cart.items[0].issues.includes('PRICE_DECREASED'))
@@ -814,9 +927,9 @@ async function main() {
   {
     // A client-supplied price or quantity is never accepted.
     const listing = await createApprovedListing()
-    const guest = guestClient()
+    const { client } = await registerBuyer(`cart-smuggle-${stamp}@example.test`)
 
-    const withPrice = await guest.raw('/api/cart/items', {
+    const withPrice = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id, price: 1 },
     })
@@ -825,25 +938,25 @@ async function main() {
     // request source it came from.
     assert.ok(withPrice.json.errors._body, 'and keyed to the request body')
 
-    const withQuantity = await guest.raw('/api/cart/items', {
+    const withQuantity = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id, quantity: 5 },
     })
     assert.equal(withQuantity.status, 422, 'a client quantity is rejected')
 
-    const withUserId = await guest.raw('/api/cart/items', {
+    const withUserId = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id, userId: crypto.randomUUID() },
     })
     assert.equal(withUserId.status, 422, 'a client user id is rejected')
 
-    const withExpires = await guest.raw('/api/cart/items', {
+    const withExpires = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id, expiresAt: '2999-01-01T00:00:00.000Z' },
     })
     assert.equal(withExpires.status, 422, 'a client expiry is rejected')
 
-    const clean = await guest.raw('/api/cart/items', {
+    const clean = await client.raw('/api/cart/items', {
       method: 'POST',
       body: { listingId: listing.id },
     })
@@ -887,118 +1000,118 @@ async function main() {
   }
 
   {
-    // A guest holding one cookie cannot read a guest cart with another cookie.
+    // One buyer's session cannot reach another's cart by carrying a foreign cookie
+    // alongside its own, and a stale session cookie does not resurrect one either.
     const listing = await createApprovedListing()
-    const first = guestClient()
-    const second = guestClient()
+    const owner = await registerBuyer(`cart-cookie-owner-${stamp}@example.test`)
+    const stranger = await registerBuyer(`cart-cookie-other-${stamp}@example.test`)
 
-    await first.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
-    assert.equal((await first.raw('/api/cart')).json.cart.itemCount, 1)
-    assert.equal((await second.raw('/api/cart')).json.cart.itemCount, 0)
+    await owner.client.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
 
-    // A forged cookie cannot address a cart either: only the SHA-256 of the real
-    // token matches, so an arbitrary value resolves to nothing.
-    const forged = guestClient()
-    forged.cookies.set('refon_cart', crypto.randomBytes(32).toString('hex'))
-    assert.equal((await forged.raw('/api/cart')).json.cart.itemCount, 0)
-
-    const malformed = guestClient()
-    malformed.cookies.set('refon_cart', "'; DROP TABLE carts; --")
-    assert.equal((await malformed.raw('/api/cart')).json.cart.itemCount, 0)
-  }
-
-  {
-    // Only the hash of the guest token is stored.
-    const listing = await createApprovedListing()
-    const guest = guestClient()
-    await guest.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
-
-    const rawToken = guest.cookies.get('refon_cart')
-    const cartRow = await prisma.cart.findFirst({
-      where: { guestTokenHash: { not: null } },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    assert.ok(cartRow, 'the guest cart exists')
-    assert.notEqual(cartRow.guestTokenHash, rawToken, 'the raw token is never stored')
+    // One buyer's token presented under a second, ignored cookie name is still just
+    // one session: the cart it reads is the token owner's, and nothing else.
+    const both = createClient()
+    both.cookies.set('refon_token', owner.client.cookies.get('refon_token'))
+    both.cookies.set('refon_token_other', stranger.client.cookies.get('refon_token'))
     assert.equal(
-      cartRow.guestTokenHash,
-      crypto.createHash('sha256').update(rawToken).digest('hex'),
-      'the stored value is the SHA-256 of the cookie',
+      (await both.raw('/api/cart')).json.cart.itemCount,
+      1,
+      'an unrelated cookie name does not change which session is used',
     )
-    assert.equal(rawToken.length, 64, 'the cookie carries a 256-bit random token')
 
-    const stored = JSON.stringify(cartRow)
-    assert.ok(!stored.includes(rawToken), 'no stored column leaks the token')
+    // A forged or malformed session cookie resolves to no session at all. The code
+    // differs from a missing cookie — a token that cannot be verified is an expired
+    // session, where no token at all is an unauthenticated request — but the
+    // refusal is the same 401, and nothing is readable either way.
+    const forged = createClient()
+    forged.cookies.set('refon_token', crypto.randomBytes(32).toString('hex'))
+    const forgedResponse = await forged.raw('/api/cart')
+    assert.equal(forgedResponse.status, 401, 'a forged session cookie is not a session')
+    assert.equal(forgedResponse.json.code, 'SESSION_EXPIRED')
+    assert.equal(forgedResponse.json.cart, undefined, 'and reads no cart')
+
+    const malformed = createClient()
+    malformed.cookies.set('refon_token', "'; DROP TABLE carts; --")
+    assert.equal(
+      (await malformed.raw('/api/cart')).status,
+      401,
+      'a malformed session cookie is not a session',
+    )
+
+    // Signing out does not leave the cart readable.
+    await owner.client.raw('/api/auth/logout', { method: 'POST' })
+    assert.equal(
+      (await owner.client.raw('/api/cart')).status,
+      401,
+      'the cart is unreachable once the session is gone',
+    )
   }
 
   {
-    // Signing in does not silently transfer a guest cart to an unrelated account
-    // unless the guest cookie is actually presented.
+    // The schema no longer admits a cart without an owner, so there is no stored
+    // guest identity to leak and nothing to hash.
+    const columns = await prisma.$queryRaw`
+      SELECT column_name, is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'carts'
+    `
+
+    const names = columns.map((row) => row.column_name)
+
+    assert.ok(names.includes('user_id'), 'carts.user_id exists')
+    assert.ok(
+      !names.includes('guest_token_hash'),
+      'the guest token column is gone, so no cart is addressable by cookie',
+    )
+
+    const userId = columns.find((row) => row.column_name === 'user_id')
+    assert.equal(userId.is_nullable, 'NO', 'a cart cannot exist without an owner')
+
+    const stillOwnerless = await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count FROM carts WHERE user_id IS NULL
+    `
+
+    assert.equal(stillOwnerless[0].count, 0, 'and no ownerless cart row exists')
+  }
+
+  {
+    // Signing in gives a buyer their own empty cart rather than somebody else's.
+    const { client: holder } = await registerBuyer(`cart-signin-holder-${stamp}@example.test`)
     const listing = await createApprovedListing()
-    const guest = guestClient()
-    await guest.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
+    await holder.raw('/api/cart/items', { method: 'POST', body: { listingId: listing.id } })
 
-    const { client } = await registerBuyer(`cart-nocookie-${stamp}@example.test`)
-    const cart = await client.raw('/api/cart')
+    const fresh = await registerBuyer(`cart-signin-fresh-${stamp}@example.test`)
+    const cart = await fresh.client.raw('/api/cart')
 
-    assert.equal(cart.json.cart.itemCount, 0, 'a fresh session without the cookie sees nothing')
+    assert.equal(cart.json.cart.itemCount, 0, 'a newly signed-in buyer sees nothing of another’s')
     assert.ok(
       await storedReservationFor(listing.id),
-      'the guest hold is untouched',
+      'and the other buyer keeps their hold',
     )
-  }
-
-  {
-    // A seller cannot reserve their own device.
-    const sellerClient = createClient()
-    const seller = await signIn(sellerClient, 'seller@refon.test', SELLER_PASSWORD)
-
-    const ownListing = await prisma.listing.findFirst({
-      where: { seller: { userId: seller.id }, status: 'APPROVED' },
-      select: { id: true },
-    })
-    assert.ok(ownListing, 'the fixture seller has approved inventory')
-
-    const response = await sellerClient.raw('/api/cart/items', {
-      method: 'POST',
-      body: { listingId: ownListing.id },
-    })
-
-    assert.equal(response.status, 409)
-    assert.equal(response.json.code, 'OWN_LISTING_NOT_PURCHASABLE')
-  }
-
-  {
-    // The merge route requires a session.
-    const anonymous = createClient()
-    const response = await anonymous.raw('/api/cart/merge', { method: 'POST' })
-    assert.equal(response.status, 401)
-    assert.equal(response.json.code, 'AUTHENTICATION_REQUIRED')
   }
 
   {
     // Cart reads are never cached.
-    const client = guestClient()
+    const { client } = await registerBuyer(`cart-cache-${stamp}@example.test`)
     const response = await client.raw('/api/cart')
-    assert.equal(
-      response.status,
-      200,
-    )
+    assert.equal(response.status, 200)
     // The /api no-store middleware already covers this; assert it explicitly so a
     // cart cannot be cached by a shared proxy.
-    const probe = await fetch(`${baseUrl}/api/cart`)
+    const probe = await fetch(`${baseUrl}/api/cart`, {
+      headers: { Cookie: `refon_token=${client.cookies.get('refon_token')}` },
+    })
     assert.equal(probe.headers.get('cache-control'), 'no-store')
   }
 
   console.log(
-    '\nCart E2E passed: guest and account carts, idempotent add, removal and emptying, ' +
-      'guest-to-account merge on sign-in including duplicate collapsing, unavailable ' +
-      'carry-over and lapsed holds; fifteen-minute database-clock reservations with ' +
-      'lazy expiry; concurrent attempts yielding exactly one holder (eight-way race ' +
-      'and a two-buyer race); price snapshot retention and change detection; client ' +
-      'price, quantity, user id, and expiry rejected; IDOR, guest-cookie forgery, ' +
-      'token hashing, and own-listing purchase refused.',
+    '\nCart E2E passed: buyer-only enforcement on every route — 401 for a visitor, ' +
+      '403 for a seller and an admin, and no cart, line, or hold written as a side ' +
+      'effect; idempotent add, removal and emptying; unavailable carry-over and ' +
+      'lapsed holds reported honestly; fifteen-minute database-clock reservations ' +
+      'with lazy expiry; concurrent attempts yielding exactly one holder (eight-way ' +
+      'race and a two-buyer race); price snapshot retention and change detection; ' +
+      'client price, quantity, user id, and expiry rejected; IDOR, forged session ' +
+      'cookies, sign-out, and a NOT NULL cart owner.',
   )
 }
 
