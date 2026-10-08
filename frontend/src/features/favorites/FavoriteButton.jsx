@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import { AUTH_ROUTES } from '../auth/auth.routes.js'
 import { useSavedListings } from './useSavedListings.js'
+import { useToast } from '../../components/ui/Toast.jsx'
+import { rememberIntent } from '../cart/pending-intent.js'
 
 /**
  * Wishlist toggle.
@@ -25,6 +27,7 @@ export function FavoriteButton({
 }) {
   const { user } = useAuth()
   const { isSaved, toggle } = useSavedListings()
+  const toast = useToast()
   const [isBusy, setIsBusy] = useState(false)
   const [error, setError] = useState('')
   const location = useLocation()
@@ -42,15 +45,32 @@ export function FavoriteButton({
   const label = `Save ${listing.brand} ${listing.model}`
   const fullLabel = saved ? `Remove ${label}` : label
 
+  /**
+   * Three behaviours, matching the cart's.
+   *
+   *  - **Buyer.** Saves the listing.
+   *  - **Visitor.** Records the intent and signs in. The wishlist intent is replayed
+   *    the same way the cart one is, so the phone is saved on return.
+   *  - **Seller or admin.** Cannot reach this branch: the heart is not rendered for
+   *    them at all. The message below is the belt-and-braces path.
+   */
   async function handleClick() {
     if (!user) {
+      rememberIntent(listing.id, 'save-wishlist')
       navigate(AUTH_ROUTES.login, {
         state: { from: `${location.pathname}${location.search}` },
       })
       return
     }
 
-    if (!canSave || isBusy) {
+    if (!canSave) {
+      toast.error('Cart and wishlist are for buyer accounts.', {
+        description: 'Your seller account cannot buy from this marketplace.',
+      })
+      return
+    }
+
+    if (isBusy) {
       return
     }
 

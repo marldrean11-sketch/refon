@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Check, ShoppingBag, TriangleAlert } from 'lucide-react'
 import { useCart } from '../useCart.js'
 import { cartErrorHeadline, cartErrorMessage } from '../cart-errors.js'
 import { useToast } from '../../../components/ui/Toast.jsx'
+import { useAuth } from '../../auth/useAuth.js'
+import { rememberIntent } from '../pending-intent.js'
 import { deviceName } from '../cart-state.js'
-import { MARKETPLACE_ROUTES } from '../../../lib/routes.js'
+import { AUTH_ROUTES, MARKETPLACE_ROUTES } from '../../../lib/routes.js'
 
 const SIZE_CLASSES = {
   sm: 'h-12 px-5 text-[13px]',
@@ -49,8 +51,11 @@ export function AddToCartButton({
   placement = 'desktop',
   label = 'Add to Cart',
 }) {
-  const { addListing, containsListing, isMutating } = useCart()
+  const { addListing, containsListing, isMutating, isBuyer } = useCart()
   const toast = useToast()
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const [isAdding, setIsAdding] = useState(false)
   const [errorMessage, setErrorMessage] = useState(null)
@@ -58,6 +63,33 @@ export function AddToCartButton({
 
   const inCart = containsListing(listing.id)
   const isBusy = isAdding || isMutating
+
+  /**
+   * Only a buyer holds a phone, so this control has three behaviours.
+   *
+   *  - **Buyer.** Adds the phone, exactly as before.
+   *  - **Visitor.** Records the intent and goes to sign in. `PendingIntentReplay` adds
+   *    the phone once the session resolves, which is also when the hold starts.
+   *  - **Seller or admin.** Says so and stays put. Sending them to sign in would be
+   *    pointless: they already have an account, and signing in again would make them
+   *    the same seller.
+   */
+  function handleBuyerOnlyAction() {
+    if (!user) {
+      rememberIntent(listing.id, 'add-to-cart')
+      toast.success('Sign in to reserve this phone.', {
+        description: 'We will add it to your cart straight after.',
+      })
+      navigate(AUTH_ROUTES.login, {
+        state: { from: `${location.pathname}${location.search}` },
+      })
+      return
+    }
+
+    toast.error('Cart and wishlist are for buyer accounts.', {
+      description: 'Your seller account cannot buy from this marketplace.',
+    })
+  }
 
   // The confirmation settles back to the steady "in cart" state rather than leaving a
   // stale success message on screen. In an effect, so it is one timer per
@@ -74,6 +106,11 @@ export function AddToCartButton({
 
   async function handleAdd() {
     if (isBusy) {
+      return
+    }
+
+    if (!isBuyer) {
+      handleBuyerOnlyAction()
       return
     }
 

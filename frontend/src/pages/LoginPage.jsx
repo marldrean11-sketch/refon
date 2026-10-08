@@ -10,6 +10,8 @@ import {
   getSafeDestination,
   validateLoginForm,
 } from '../features/auth/auth.validation.js'
+import { canUseBuyerDestinations } from '../features/design/navigation-config.js'
+import { clearIntent } from '../features/cart/pending-intent.js'
 
 const initialForm = {
   email: '',
@@ -57,8 +59,20 @@ export function LoginPage() {
         email: form.email.trim(),
         password: form.password,
       })
+
+      // A seller or admin cannot use the cart or wishlist they were heading for, so
+      // they go to their own workspace rather than to a page that would refuse them.
       const fallback = getRoleHome(user.role)
-      const destination = getSafeDestination(location.state?.from, fallback)
+      const destination = canUseBuyerDestinations(user)
+        ? getSafeDestination(location.state?.from, fallback)
+        : fallback
+
+      // A pending intent only makes sense for a buyer. Anyone else gets it dropped, so
+      // it cannot fire later under a different account.
+      if (!canUseBuyerDestinations(user)) {
+        clearIntent()
+      }
+
       navigate(destination, { replace: true })
     } catch (error) {
       const fieldErrors = error.errors ?? {}

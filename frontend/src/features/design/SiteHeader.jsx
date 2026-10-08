@@ -42,6 +42,10 @@ import { useSavedListings } from '../favorites/useSavedListings.js'
 import { useOptionalSellerInquiries } from '../inquiries/useSellerInquiries.js'
 import { AUTH_ROUTES, MARKETPLACE_ROUTES } from '../../lib/routes.js'
 import { easings, stagger, usePrefersReducedMotion } from '../../lib/motion.ts'
+import {
+  canSeeBuyerDestinations,
+  canUseBuyerDestinations,
+} from './navigation-config.js'
 import { NAVBAR_LINKS, isNavbarLinkActive, underlineLayoutId } from './navbar-links.js'
 import { NavbarUiProvider, SURFACE, useNavbarUi } from './navbar-ui-context.jsx'
 import { SearchOverlay } from './SearchOverlay.jsx'
@@ -89,6 +93,16 @@ function Header() {
   const menuTriggerRef = useRef(null)
 
   const savedCount = savedIds?.size ?? 0
+
+  /**
+   * Whether the cart and Saved surfaces appear in this header at all.
+   *
+   * A visitor sees them and is sent to sign in; a seller or admin does not, because
+   * they are already signed in and have no cart to open. `isBuyer` is the separate
+   * question of whether the cart is real.
+   */
+  const showBuyerSurfaces = canSeeBuyerDestinations(user)
+  const isBuyer = canUseBuyerDestinations(user)
 
   // A route change closes every overlay. A tap-through must never leave a panel
   // floating over the page it just navigated to.
@@ -254,36 +268,52 @@ function Header() {
               <Search className="size-5" strokeWidth={1.5} aria-hidden="true" />
             </button>
 
-            {/* A button, not a link: the cart is a drawer now, and a button is
-                what a control that opens a panel should be. */}
-            <button
-              ref={cartTriggerRef}
-              type="button"
-              data-testid="navbar-cart"
-              onClick={() => open(SURFACE.cart)}
-              aria-expanded={isCartOpen}
-              aria-haspopup="dialog"
-              aria-label={`Cart, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
-              className={`${ICON_BUTTON} relative`}
-            >
-              <ShoppingBag className="size-5" strokeWidth={1.5} aria-hidden="true" />
-              {itemCount > 0 && (
-                <motion.span
-                  data-testid="navbar-cart-badge"
-                  key={itemCount}
-                  initial={reducedMotion ? false : { scale: 1 }}
-                  animate={{ scale: [1, 1.25, 1] }}
-                  transition={
-                    reducedMotion
-                      ? { duration: 0 }
-                      : { duration: 0.3, ease: 'easeOut', times: [0, 0.4, 1] }
-                  }
-                  className="absolute -right-0.5 -top-0.5"
+            {showBuyerSurfaces &&
+              (isBuyer ? (
+                /* A button, not a link: the cart is a drawer now, and a button is
+                   what a control that opens a panel should be. */
+                <button
+                  ref={cartTriggerRef}
+                  type="button"
+                  data-testid="navbar-cart"
+                  onClick={() => open(SURFACE.cart)}
+                  aria-expanded={isCartOpen}
+                  aria-haspopup="dialog"
+                  aria-label={`Cart, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
+                  className={`${ICON_BUTTON} relative`}
                 >
-                  <CountBadge count={itemCount} srLabel="items in cart" />
-                </motion.span>
-              )}
-            </button>
+                  <ShoppingBag className="size-5" strokeWidth={1.5} aria-hidden="true" />
+                  {itemCount > 0 && (
+                    <motion.span
+                      data-testid="navbar-cart-badge"
+                      key={itemCount}
+                      initial={reducedMotion ? false : { scale: 1 }}
+                      animate={{ scale: [1, 1.25, 1] }}
+                      transition={
+                        reducedMotion
+                          ? { duration: 0 }
+                          : { duration: 0.3, ease: 'easeOut', times: [0, 0.4, 1] }
+                      }
+                      className="absolute -right-0.5 -top-0.5"
+                    >
+                      <CountBadge count={itemCount} srLabel="items in cart" />
+                    </motion.span>
+                  )}
+                </button>
+              ) : (
+                /* A visitor still sees the cart, because hiding it would leave no
+                   discoverable way to find it. Clicking it signs them in and brings
+                   them back here. No drawer: there is nothing in it to show. */
+                <Link
+                  to={AUTH_ROUTES.login}
+                  state={{ from: MARKETPLACE_ROUTES.cart }}
+                  data-testid="navbar-cart"
+                  aria-label="Cart, sign in to use"
+                  className={ICON_BUTTON}
+                >
+                  <ShoppingBag className="size-5" strokeWidth={1.5} aria-hidden="true" />
+                </Link>
+              ))}
 
             <button
               ref={menuTriggerRef}
@@ -305,7 +335,9 @@ function Header() {
       <MobileMenuOverlay />
 
       <SearchOverlay triggerRef={searchTriggerRef} />
-      <CartDrawer triggerRef={cartTriggerRef} />
+      {/* Buyers only. A visitor is sent to sign in from the cart link instead, and a
+          seller or admin has no cart, so an empty drawer would be all they could see. */}
+      {isBuyer && <CartDrawer triggerRef={cartTriggerRef} />}
 
       <MobileTabBar />
     </>
@@ -371,16 +403,40 @@ function MobileMenuOverlay() {
 
   const savedCount = savedIds?.size ?? 0
 
+  /**
+   * Saved and Cart, for the roles that have them.
+   *
+   * A visitor keeps both, pointed at sign-in so the tap is not wasted. A seller or
+   * admin keeps neither: there is nothing to sign into and no cart to open, and a
+   * link to a page that would immediately redirect them back here is a dead end.
+   */
+  const buyerLinks = [
+    {
+      key: 'saved',
+      label: 'Saved',
+      to: user ? AUTH_ROUTES.saved : AUTH_ROUTES.login,
+      meta: savedCount,
+      from: AUTH_ROUTES.saved,
+    },
+    {
+      key: 'cart',
+      label: 'Cart',
+      to: user ? MARKETPLACE_ROUTES.cart : AUTH_ROUTES.login,
+      meta: itemCount,
+      from: MARKETPLACE_ROUTES.cart,
+    },
+  ].filter(() => canSeeBuyerDestinations(user))
+
   const links = user
     ? [
-        { key: 'saved', label: 'Saved', to: AUTH_ROUTES.saved, meta: savedCount },
-        { key: 'cart', label: 'Cart', to: MARKETPLACE_ROUTES.cart, meta: itemCount },
+        ...buyerLinks,
         { key: 'account', label: 'Account', to: AUTH_ROUTES.account },
         user.role === 'ADMIN'
           ? { key: 'admin', label: 'Admin dashboard', to: AUTH_ROUTES.admin }
           : { key: 'seller', label: 'Seller dashboard', to: AUTH_ROUTES.seller },
       ]
     : [
+        ...buyerLinks,
         { key: 'signin', label: 'Sign in', to: AUTH_ROUTES.login },
         { key: 'join', label: 'Join ReFon', to: AUTH_ROUTES.register },
       ]
@@ -483,6 +539,7 @@ function MobileMenuOverlay() {
                 >
                   <Link
                     to={link.to}
+                    state={link.from && !user ? { from: link.from } : undefined}
                     onClick={close}
                     className="flex min-h-14 items-center justify-between border-b border-line text-lg font-medium text-muted transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
                   >
@@ -505,14 +562,20 @@ function MobileMenuOverlay() {
               }
               className="mt-8"
             >
-              <Link
-                to={MARKETPLACE_ROUTES.cart}
-                onClick={close}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-ink px-5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-              >
-                <ShoppingBag className="size-4" strokeWidth={1.5} aria-hidden="true" />
-                View cart
-              </Link>
+              {/* The call to action follows the same rule as the links above it: a buyer and a
+                visitor both get one, pointed at the cart or at sign-in respectively.
+                A seller or admin gets none, because there is no cart to view. */}
+              {showBuyerSurfaces && (
+                <Link
+                  to={user ? MARKETPLACE_ROUTES.cart : AUTH_ROUTES.login}
+                  state={user ? undefined : { from: MARKETPLACE_ROUTES.cart }}
+                  onClick={close}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-ink px-5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                >
+                  <ShoppingBag className="size-4" strokeWidth={1.5} aria-hidden="true" />
+                  {user ? 'View cart' : 'Sign in to buy'}
+                </Link>
+              )}
             </motion.div>
           </motion.nav>
         </motion.div>

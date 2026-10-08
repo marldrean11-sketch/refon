@@ -7,6 +7,7 @@ import {
   registerRequest,
 } from './auth-api.js'
 import { ApiClientError } from '../../lib/api-client.js'
+import { clearIntent } from '../cart/pending-intent.js'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -60,6 +61,9 @@ export function AuthProvider({ children }) {
     try {
       await logoutRequest()
     } finally {
+      // Any pending cart or wishlist intent belongs to the account that is ending, so
+      // it is dropped here rather than left to fire under whoever signs in next.
+      clearIntent()
       setUser(null)
     }
   }, [])

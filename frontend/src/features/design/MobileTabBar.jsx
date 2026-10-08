@@ -3,8 +3,13 @@ import { useAuth } from '../auth/useAuth.js'
 import { useSavedListings } from '../favorites/useSavedListings.js'
 import { useCartSummary } from '../cart/useCartSummary.js'
 import { useOwnsBottomActionBar } from '../../lib/bottom-action-bar.js'
+import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
 import { Container } from './Container.jsx'
-import { MOBILE_TABS, canUseBuyerDestinations, isNavActive } from './navigation-config.js'
+import {
+  MOBILE_TABS,
+  canSeeBuyerDestinations,
+  isNavActive,
+} from './navigation-config.js'
 
 const TAB_BASE =
   'relative flex min-h-14 flex-1 flex-col items-center justify-center gap-1 rounded-control px-1 py-2 transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-inset'
@@ -42,17 +47,29 @@ export function MobileTabBar() {
   const location = useLocation()
 
   const savedCount = savedIds?.size ?? 0
-  const showBuyerDestinations = canUseBuyerDestinations(user)
+  // A visitor still sees Saved and Cart and is taken to sign in; a seller or admin
+  // sees neither, because there is nothing to sign into and no cart to open.
+  const showBuyerDestinations = canSeeBuyerDestinations(user)
   const yieldsToActionBar = useOwnsBottomActionBar()
 
   const tabs = MOBILE_TABS.filter(
     (tab) => !tab.requiresBuyerRole || showBuyerDestinations,
-  ).map((tab) =>
+  ).map((tab) => {
     // An anonymous visitor's Account tab is the way in, not a dead destination.
-    tab.key === 'account' && !user
-      ? { ...tab, to: '/login', activePaths: ['/login'] }
-      : tab,
-  )
+    if (tab.key === 'account' && !user) {
+      return { ...tab, to: '/login', activePaths: ['/login'] }
+    }
+
+    // Cart and Saved go to sign in for a visitor, remembering where they were so
+    // they land back on the cart or wishlist rather than on a generic dashboard.
+    // `activePaths` stays pointed at the real destination, so the tab is not
+    // highlighted while the visitor is on the sign-in page.
+    if (tab.requiresBuyerRole && !user) {
+      return { ...tab, gated: true, to: '/login', activePaths: [] }
+    }
+
+    return tab
+  })
 
   if (yieldsToActionBar) {
     return null
@@ -73,7 +90,11 @@ export function MobileTabBar() {
               <li key={tab.key} className="flex flex-1">
                 <Link
                   to={tab.to}
+                  // A gated tab remembers where it was headed, so signing in returns
+                  // the shopper to the cart or wishlist rather than to a dashboard.
+                  state={tab.gated ? { from: MARKETPLACE_ROUTES.cart } : undefined}
                   aria-current={isActive ? 'page' : undefined}
+                  aria-label={tab.gated ? `${tab.label}, sign in to use` : undefined}
                   className={tabClasses(isActive)}
                 >
                   <span className="relative">

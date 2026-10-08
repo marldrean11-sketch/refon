@@ -1,5 +1,15 @@
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+/**
+ * Control characters, which have no legitimate place in a route.
+ *
+ * The escapes cover C0 (including tab, newline and carriage return), DEL, and the
+ * C1 range. Written as escapes rather than literals so the pattern stays readable
+ * and cannot itself introduce invisible bytes into this file.
+ */
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F-\u009F]/
+
 export function validateLoginForm({ email, password }) {
   const errors = {}
 
@@ -40,8 +50,47 @@ export function validateRegisterForm({ name, email, password, role }) {
   return errors
 }
 
+/**
+ * A redirect target that is safe to send a browser to.
+ *
+ * Only a same-origin relative path is accepted. Everything else falls back.
+ *
+ * The rejections, and what each one stops:
+ *
+ *   - `//host` and `/\host` are protocol-relative URLs. A browser reads `//evil.com`
+ *     as a different origin, so a target starting `//` would send the shopper (and
+ *     any session cookie riding along on a non-SameSite request) off-site. The
+ *     backslash form matters because several browsers normalise `\` to `/` before
+ *     resolving, so `/\evil.com` is a live bypass of the `//` check alone.
+ *   - Any scheme (`https:`, `javascript:`, `data:`) is refused. A target that does
+ *     not begin with a single `/` cannot be a path.
+ *   - Control characters are refused. A newline or tab inside the target can be
+ *     used to smuggle a second header or to defeat a naive prefix comparison, and
+ *     they have no legitimate place in a route.
+ *
+ * The check is applied at the point of use rather than trusted from storage, because
+ * router state and query parameters are both writable by the person using the
+ * browser.
+ */
 export function getSafeDestination(candidate, fallback) {
-  return typeof candidate === 'string' && candidate.startsWith('/') && !candidate.startsWith('//')
-    ? candidate
-    : fallback
+  if (typeof candidate !== 'string' || candidate.length === 0) {
+    return fallback
+  }
+
+  if (!candidate.startsWith('/')) {
+    return fallback
+  }
+
+  // Protocol-relative, in either slash direction.
+  if (candidate.startsWith('//') || candidate.startsWith('/\\')) {
+    return fallback
+  }
+
+  // Control characters, including the encoded forms a router or storage layer might
+  // hand back decoded.
+  if (CONTROL_CHARACTER_PATTERN.test(candidate)) {
+    return fallback
+  }
+
+  return candidate
 }

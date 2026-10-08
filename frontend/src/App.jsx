@@ -5,6 +5,7 @@ import { AuthProvider } from './features/auth/AuthProvider.jsx'
 import { AUTH_ROUTES, MARKETPLACE_ROUTES } from './features/auth/auth.routes.js'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute.jsx'
 import { RequireAuth } from './components/auth/RequireAuth.jsx'
+import { RequireBuyer } from './components/auth/RequireBuyer.jsx'
 import { RequireRole } from './components/auth/RequireRole.jsx'
 import { AuthenticatedLayout } from './components/layout/AuthenticatedLayout.jsx'
 import { MarketplaceLayout } from './components/layout/MarketplaceLayout.jsx'
@@ -13,6 +14,7 @@ import { SellerListingsProvider } from './features/seller/SellerListingsProvider
 import { SellerInquiriesProvider } from './features/inquiries/SellerInquiriesProvider.jsx'
 import { SavedListingsProvider } from './features/favorites/SavedListingsProvider.jsx'
 import { CartProvider } from './features/cart/CartProvider.jsx'
+import { PendingIntentReplay } from './features/cart/PendingIntentReplay.jsx'
 import { ToastProvider } from './components/ui/Toast.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
 import { SmoothScroll } from './components/layout/SmoothScroll.jsx'
@@ -158,6 +160,10 @@ function App() {
             cart, and checkout all read one cart, so they cannot disagree. */}
         <CartProvider>
         <ToastProvider>
+        {/* Replays a visitor's deferred add-to-cart once they are a signed-in buyer.
+            It must sit inside ToastProvider, which is itself inside CartProvider, so
+            that it can read the cart and raise a toast. */}
+        <PendingIntentReplay />
         <RouteEffects />
         <a
           href="#main-content"
@@ -199,6 +205,14 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
                 <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
                 <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
+              </Route>
+
+              {/* Purchasing is buyer-only. The guard sits *inside* the marketplace
+                  shell rather than replacing it, so a buyer who follows a saved cart
+                  link sees the redesigned header, search overlay and drawer exactly
+                  as everywhere else. A visitor is sent to sign in; a seller or admin
+                  is sent to their own dashboard. */}
+              <Route element={<RequireBuyer />}>
                 <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
                 <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
                 <Route

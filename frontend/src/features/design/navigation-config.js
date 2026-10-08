@@ -97,9 +97,10 @@ export const PRIMARY_NAV = [
 /**
  * Signed-in destinations that sit beside the shopping links.
  *
- * `/saved` and `/my-inquiries` are guarded to BUYER and SELLER, so one predicate
- * hides them from an administrator in the header, the tab bar, the drawer, and
- * the account menu. One rule, so a role can never be shown a link it cannot open.
+ * `/saved` and `/my-inquiries` are buyer-only now that the wishlist is gated along
+ * with the rest of purchasing. One predicate hides them from anyone who cannot use
+ * them, in the header, the tab bar, the drawer and the account menu alike, so a role
+ * can never be shown a link it cannot open.
  */
 export const ACCOUNT_NAV = [
   {
@@ -136,13 +137,20 @@ export const ACCOUNT_LINK = {
   activePaths: ['/account', '/account/*'],
 }
 
-/** Cart, which every visitor has a real route to, signed in or not. */
+/**
+ * Cart.
+ *
+ * `requiresBuyerRole` marks it as a purchasing surface. A visitor still sees it and
+ * is sent to sign in; a seller or admin does not see it at all. See
+ * `canSeeBuyerDestinations`.
+ */
 export const CART_LINK = {
   key: 'cart',
   label: 'Cart',
   to: MARKETPLACE_ROUTES.cart,
   icon: ShoppingBag,
   activePaths: ['/cart'],
+  requiresBuyerRole: true,
 }
 
 /**
@@ -208,6 +216,7 @@ export const MOBILE_TABS = [
     to: MARKETPLACE_ROUTES.cart,
     icon: ShoppingBag,
     activePaths: ['/cart'],
+    requiresBuyerRole: true,
   },
   {
     key: 'account',
@@ -325,9 +334,29 @@ export const FOOTER_GROUPS = Object.freeze([
   },
 ])
 
-/** `/saved` and `/my-inquiries` are BUYER- and SELLER-only. */
+/**
+ * Who may *use* the purchasing surfaces: the cart and the wishlist.
+ *
+ * Only a BUYER. A seller and an admin are signed in but have no cart, because buying
+ * is a buyer action, and that is what stops a seller buying their own listing.
+ */
 export function canUseBuyerDestinations(user) {
-  return Boolean(user) && user.role !== 'ADMIN'
+  return user?.role === 'BUYER'
+}
+
+/**
+ * Who may *see* the purchasing surfaces.
+ *
+ * A visitor does, and this is the deliberate difference from `canUseBuyerDestinations`:
+ * hiding the cart from someone who has not signed in yet would leave a shopper with
+ * no visible way to discover it exists. Clicking it sends them to sign in with their
+ * destination remembered, so the click is productive rather than inert.
+ *
+ * A seller or an admin does not: they are signed in, so there is nothing to sign into,
+ * and offering them a cart they can never open would be a dead end.
+ */
+export function canSeeBuyerDestinations(user) {
+  return !user || canUseBuyerDestinations(user)
 }
 
 export function workspaceLinkFor(user) {

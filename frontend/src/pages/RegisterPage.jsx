@@ -13,7 +13,12 @@ import { PasswordField } from '../components/auth/PasswordField.jsx'
 import { TextField } from '../components/ui/TextField.jsx'
 import { useAuth } from '../features/auth/useAuth.js'
 import { AUTH_ROUTES, getRoleHome } from '../features/auth/auth.routes.js'
-import { validateRegisterForm } from '../features/auth/auth.validation.js'
+import {
+  getSafeDestination,
+  validateRegisterForm,
+} from '../features/auth/auth.validation.js'
+import { canUseBuyerDestinations } from '../features/design/navigation-config.js'
+import { clearIntent } from '../features/cart/pending-intent.js'
 
 const initialForm = {
   name: '',
@@ -86,7 +91,26 @@ export function RegisterPage() {
         password: form.password,
         role: form.role,
       })
-      navigate(getRoleHome(user.role), { replace: true })
+
+      // Registration is a full-page reset in some paths, so the "return to" target
+      // has to be recovered from the query string the redirect carried rather than
+      // from router state, which a reload would have dropped. `getSafeDestination`
+      // refuses anything that is not a same-origin relative path, so a crafted
+      // `?next=https://evil.com` cannot turn this into an open redirect.
+      const params = new URLSearchParams(window.location.search)
+      const fallback = getRoleHome(user.role)
+
+      // Only a buyer can act on a cart or wishlist intent. A seller who registered
+      // from the same page keeps nothing pending.
+      if (!canUseBuyerDestinations(user)) {
+        clearIntent()
+      }
+
+      const destination = canUseBuyerDestinations(user)
+        ? getSafeDestination(params.get('next'), fallback)
+        : fallback
+
+      navigate(destination, { replace: true })
     } catch (error) {
       const fieldErrors = error.errors ?? {}
       setFieldErrors(fieldErrors)
