@@ -78,15 +78,18 @@ export function SavedListingsProvider({ children }) {
   /**
    * Saves the listing a visitor tried to save before signing in.
    *
-   * Declared after `isSaved` because it uses it, and it is referenced by the effect
-   * above through the dependency list, so both are declared before that effect runs
-   * on the next render. `takeIntent` clears the entry before returning it, which is
-   * what makes this safe to run twice.
+   * Scoped to this replay's own action. There is one stored intent and two readers —
+   * this one and the cart's — and both run in the same tick once a buyer signs in. An
+   * unscoped read here would swallow an `add-to-cart` intent and drop it, so a shopper
+   * who asked to reserve a phone and sign in would silently end up with an empty cart.
+   *
+   * `takeIntent` clears a matching entry before returning it, so a React StrictMode
+   * double-invoke still saves the listing exactly once.
    */
   const replayWishlistIntent = useCallback(async () => {
-    const intent = takeIntent()
+    const intent = takeIntent('save-wishlist')
 
-    if (!intent || intent.action !== 'save-wishlist') {
+    if (!intent) {
       return
     }
 
@@ -105,17 +108,30 @@ export function SavedListingsProvider({ children }) {
    * Replays, or discards, a wishlist intent left over from before sign-in.
    *
    * This runs here rather than in the sign-in callback because it is the one place
-   * guaranteed to execute once the session has resolved, and because it also covers
-   * the case where the shopper never signs in: a seller or admin, or a visitor who
-   * abandons the sign-in page, has the intent dropped so it cannot resurface under a
-   * different account later.
+   * guaranteed to execute once the session has resolved.
+   *
+   * The three cases are deliberately different, and conflating them is the bug this
+   * guard exists to prevent:
+   *
+   *   - **Buyer.** Replay it.
+   *   - **Signed in as a seller or admin.** Drop it. They have no wishlist, and leaving
+   *     it behind would let it fire later under a different account.
+   *   - **Visitor.** Leave it alone. This is the whole point of the mechanism: the
+   *     intent was written moments ago, on this same page load, precisely so that it
+   *     survives the trip to the sign-in form. Clearing it here — where "not a buyer"
+   *     is true of every visitor — destroys the intent before anybody signs in, and
+   *     the deferred save silently never happens.
    *
    * `takeIntent` clears the stored entry before returning it, which is what makes a
    * React StrictMode double-invoke still save the listing exactly once.
    */
   useEffect(() => {
-    if (!isBuyer) {
+    if (user && !isBuyer) {
       clearIntent()
+      return
+    }
+
+    if (!isBuyer) {
       return
     }
 
@@ -124,7 +140,7 @@ export function SavedListingsProvider({ children }) {
     // earlier page), which is exactly what an effect is for.
     // eslint-disable-next-line react/set-state-in-effect
     replayWishlistIntent()
-  }, [isBuyer, replayWishlistIntent])
+  }, [isBuyer, user, replayWishlistIntent])
 
   const toggle = useCallback(
     async (id) => {

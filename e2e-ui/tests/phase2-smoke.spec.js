@@ -11,6 +11,7 @@ import { test, expect } from '@playwright/test'
 import { watchErrors, expectNoFatalErrors } from './support.js'
 
 const PRODUCT_PATH = '/listings/40000000-0000-4000-8000-000000000004'
+const API = process.env.REFON_API ?? 'http://localhost:4000/api'
 
 test.describe('P2 smoke', () => {
   test('home loads with the new shell and a clean console', async ({ page }) => {
@@ -47,6 +48,25 @@ test.describe('P2 smoke', () => {
     await page.waitForTimeout(1500)
 
     expectNoFatalErrors(all, 'P2-smoke-product')
+  })
+
+  /**
+ * The cart smoke test needs a buyer.
+ *
+ * The other three here deliberately run signed out, because they are about the shell
+ * and the public routes rendering for everyone. This one is about the cart, and a cart
+ * only exists for a signed-in BUYER — clicking Add to Cart while signed out now sends
+ * the visitor to sign in, which is correct behaviour but is not what this test is
+ * measuring. So it runs as the buyer `globalSetup` prepared, and releases its hold
+ * afterwards so the next test is not refused the same device.
+ */
+test.describe('add to cart as a buyer', () => {
+  test.use({ storageState: 'state/buyer.json' })
+
+  const API = process.env.REFON_API ?? 'http://localhost:4000/api'
+
+  test.afterEach(async ({ page }) => {
+    await page.request.delete(`${API}/cart`).catch(() => {})
   })
 
   test('add to cart still works through the new drawer', async ({ page }) => {

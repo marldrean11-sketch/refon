@@ -7,6 +7,7 @@ import {
   removeFromCartRequest,
 } from './cart-api.js'
 import { EMPTY_CART } from './cart-state.js'
+import { takeIntent } from './pending-intent.js'
 import { computeClockOffset } from './reservation-timing.js'
 import {
   notifyMarketplaceChange,
@@ -219,9 +220,12 @@ export function CartProvider({ children }) {
    * rather than silently dropped.
    */
   const replayPendingIntent = useCallback(async () => {
-    const intent = takeIntent()
+    // Scoped to this replay's own action: the wishlist replays from the same stored
+    // slot in the same tick, and an unscoped read here would consume its intent, or
+    // lose its own to it, depending on which mounted first.
+    const intent = takeIntent('add-to-cart')
 
-    if (!intent || intent.action !== 'add-to-cart') {
+    if (!intent) {
       return null
     }
 

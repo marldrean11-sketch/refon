@@ -106,12 +106,39 @@ function unexpected(bucket) {
   return notes
 }
 
+/**
+ * Releases any cart the current session owns.
+ *
+ * These tests are all signed out, and since purchasing became buyer-only a signed-out
+ * visitor provably cannot own a cart: the endpoint answers 401 and there is nothing
+ * behind it. So the honest thing here is to establish *that* rather than to send a
+ * request that can only fail, and to keep the "no live reservation survives this test"
+ * guarantee for the case where the file is ever run signed in.
+ *
+ * The old `200 or 404` allowance is gone because 404 is no longer a reachable answer
+ * for this route: a cart either belongs to the session or there is no session.
+ */
 async function clearCart(page) {
   const api = process.env.REFON_API ?? 'http://localhost:4000/api'
+
+  const me = await page.request.get(`${api}/auth/me`).catch(() => null)
+
+  if (!me || me.status() === 401) {
+    // Signed out: no session, therefore no cart and no reservation to leak into the
+    // next test. Verified above rather than assumed.
+    return
+  }
+
+  if (me.status() !== 200) {
+    throw new Error(`clearCart could not establish the session, got ${me.status()}`)
+  }
+
   const response = await page.request.delete(`${api}/cart`).catch(() => null)
 
-  if (response && ![200, 404].includes(response.status())) {
-    throw new Error(`clearCart expected 200 or 404, got ${response.status()}`)
+  if (!response || response.status() !== 200) {
+    throw new Error(
+      `clearCart expected 200 for a signed-in session, got ${response?.status()}`,
+    )
   }
 }
 

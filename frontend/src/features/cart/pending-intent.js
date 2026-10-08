@@ -81,13 +81,24 @@ export function rememberIntent(listingId, action) {
 }
 
 /**
- * Returns the recorded intent, or null.
+ * Returns the recorded intent, and consumes it.
  *
- * The entry is cleared before it is returned, so the intent survives exactly one
+ * `expectedAction` is required, and that requirement is load-bearing.
+ *
+ * There is one stored slot and two independent replays that read it: the cart's and
+ * the wishlist's. They mount in the same tick on the same page, so an unscoped reader
+ * would race the other one — and whichever lost would find nothing, so a deferred
+ * add-to-cart would silently never happen. Passing the action this caller handles
+ * means a reader only ever consumes its *own* intent and leaves the other alone.
+ *
+ * A matching entry is cleared before it is returned, so an intent survives exactly one
  * redirect-and-replay cycle. That is what makes a double replay impossible even if
- * two effects race: the second reader finds nothing.
+ * React StrictMode invokes the same effect twice: the second call finds nothing.
+ *
+ * A malformed or unrecognised entry is dropped rather than returned, since there is no
+ * caller that could act on it.
  */
-export function takeIntent() {
+export function takeIntent(expectedAction) {
   const store = storage()
 
   if (!store) {
@@ -98,7 +109,6 @@ export function takeIntent() {
 
   try {
     raw = store.getItem(STORAGE_KEY)
-    store.removeItem(STORAGE_KEY)
   } catch {
     return null
   }
@@ -112,20 +122,39 @@ export function takeIntent() {
   try {
     parsed = JSON.parse(raw)
   } catch {
+    discard(store)
     return null
   }
 
   const { listingId, action } = parsed ?? {}
+  const usable =
+    typeof listingId === 'string' &&
+    UUID_PATTERN.test(listingId) &&
+    ACTIONS.has(action) &&
+    action === expectedAction
 
-  if (typeof listingId !== 'string' || !UUID_PATTERN.test(listingId)) {
+  if (!usable) {
+    // Nothing in this entry is actionable. If it is not simply another replayer's
+    // intent, drop it so it cannot resurface under a later account.
+    if (!ACTIONS.has(action)) {
+      discard(store)
+    }
+
     return null
   }
 
-  if (!ACTIONS.has(action)) {
-    return null
-  }
+  discard(store)
 
   return { listingId, action }
+}
+
+/** Removes the stored entry, ignoring a store that refuses. */
+function discard(store) {
+  try {
+    store.removeItem(STORAGE_KEY)
+  } catch {
+    // Nothing to do: the entry is unreachable either way.
+  }
 }
 
 /**
@@ -141,9 +170,5 @@ export function clearIntent() {
     return
   }
 
-  try {
-    store.removeItem(STORAGE_KEY)
-  } catch {
-    // Nothing to do: the entry is unreachable either way.
-  }
+  discard(store)
 }

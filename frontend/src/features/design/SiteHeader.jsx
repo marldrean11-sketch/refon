@@ -404,6 +404,14 @@ function MobileMenuOverlay() {
   const savedCount = savedIds?.size ?? 0
 
   /**
+   * Whether the cart call to action is offered here at all.
+   *
+   * Local to this component, matching `buyerLinks` below: `MobileMenuOverlay` is a
+   * separate component from `Header` and cannot read that one's locals.
+   */
+  const showBuyerSurfaces = canSeeBuyerDestinations(user)
+
+  /**
    * Saved and Cart, for the roles that have them.
    *
    * A visitor keeps both, pointed at sign-in so the tap is not wasted. A seller or

@@ -14,6 +14,11 @@ import {
  * here is genuinely reserved by the database, and what the shopper reads is what the
  * server reported.
  *
+ * Purchasing is buyer-only, so every test here runs as a signed-in buyer using the
+ * session `globalSetup` saved to `state/buyer.json`. There is no guest cart: a cart
+ * belongs to an account, which is why `clearCart` uses `page.request` (the browser's
+ * own session) rather than the cookie-less `request` fixture.
+ *
  * The states worth testing are the ones a shopper can actually get into: an empty
  * cart, a live countdown, a reservation that has lapsed, a listing that has been
  * taken down, a price that moved, and a checkout that must not submit twice.
@@ -39,6 +44,14 @@ const PHONE = {
   redmiNote9: '40000000-0000-4000-8000-000000000018',
 }
 
+/**
+ * Every test in this file is a buyer.
+ *
+ * A cart, a wishlist and a checkout are buyer surfaces, so an anonymous context
+ * cannot reach any of them. Running as `buyer` is what the file is testing.
+ */
+test.use({ storageState: 'state/buyer.json' })
+
 /** Session cookie `globalSetup` already obtained, so the rate limiter is not drained. */
 function authCookie(name) {
   const state = JSON.parse(fs.readFileSync(`state/${name}.json`, 'utf8'))
@@ -48,16 +61,15 @@ function authCookie(name) {
 /**
  * Empties the cart **for the browser context that owns it**.
  *
- * This deliberately uses `page.request` rather than the `request` fixture. Each test
- * gets a fresh browser context and therefore a fresh guest cookie and a fresh guest
- * cart, while the `request` fixture has no cookie jar at all. Clearing through the
- * fixture would empty a cart nobody is using and leave the browser's own cart holding
- * a live 15-minute reservation — so the next test would be refused the same device
- * with `LISTING_RESERVED` and the failure would look like an application bug.
+ * This deliberately uses `page.request` rather than the `request` fixture. The
+ * fixture has no cookie jar at all, so clearing through it would empty a cart nobody
+ * is using and leave the buyer's own cart holding a live 15-minute reservation — the
+ * next test would then be refused the same device with `LISTING_RESERVED` and the
+ * failure would look like an application bug.
  */
 async function clearCart(page) {
   const response = await page.request.delete(`${API}/cart`)
-  expect([200, 404]).toContain(response.status())
+  expect(response.status()).toBe(200)
 }
 
 /**
@@ -87,12 +99,13 @@ async function addListing(page, id) {
 /**
  * Releases whatever the finished test was holding.
  *
- * A cart belongs to a browser cookie. When a test ends, its context is discarded
- * but the cart row — and its live 15-minute reservation on a real device — survive.
- * The next test opens a fresh context with a fresh cookie and a fresh cart, so it
- * would be refused the same device with `LISTING_RESERVED`. That failure reads as an
- * application bug and is not one, so every test cleans up after itself rather than
- * relying on the one-off database reset at the start of the run.
+ * A cart belongs to an account, and every test in this file shares one buyer. When a
+ * test ends its browser context is discarded, but the cart row — and its live
+ * 15-minute reservation on a real device — survive, because they are stored against
+ * the account rather than the context. The next test would then be refused the same
+ * device with `LISTING_RESERVED`. That failure reads as an application bug and is not
+ * one, so every test cleans up after itself rather than relying on the one-off
+ * database reset at the start of the run.
  */
 test.afterEach(async ({ page }) => {
   await page.request.delete(`${API}/cart`).catch(() => {})
@@ -276,8 +289,11 @@ test.describe('F2 add and remove', () => {
   }) => {
     await clearCart(page)
 
-    const first = await browser.newContext()
-    const second = await browser.newContext()
+    // Two *different buyer accounts*, because a cart belongs to an account: two
+    // contexts sharing one session would share one cart and could not both hold the
+    // same device, which is the opposite of what this test is about.
+    const first = await browser.newContext({ storageState: 'state/buyer.json' })
+    const second = await browser.newContext({ storageState: 'state/buyer2.json' })
 
     try {
       const firstPage = await first.newPage()
@@ -317,9 +333,9 @@ test.describe('F2 add and remove', () => {
         { timeout: 20_000 },
       )
     } finally {
-      // Both contexts hold their own guest cart and its own reservation. The
-      // automatic afterEach only knows about the default page, so these are released
-      // explicitly or the device stays held against the next test.
+      // Both accounts hold their own reservation. The automatic afterEach only
+      // knows about the default page, so these are released explicitly or the device
+      // stays held against the next test.
       await first.request.delete(`${API}/cart`).catch(() => {})
       await second.request.delete(`${API}/cart`).catch(() => {})
       await first.close()

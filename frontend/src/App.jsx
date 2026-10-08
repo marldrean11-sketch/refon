@@ -240,8 +240,16 @@ function App() {
                     <Route path={AUTH_ROUTES.admin} element={<AdminDashboardPage />} />
                   </Route>
 
-                  <Route element={<RequireRole allowedRoles={['BUYER', 'SELLER']} />}>
+                  {/* The wishlist is a purchasing surface, so it is buyer-only — same as the
+                      cart. `/saved` was previously open to a seller, who then got a
+                      403 from the server on every visit. */}
+                  <Route element={<RequireRole allowedRoles={['BUYER']} />}>
                     <Route path={AUTH_ROUTES.saved} element={<SavedListingsPage />} />
+                  </Route>
+
+                  {/* An inquiry is a message to a seller rather than a purchasing
+                      action, so a seller who also buys keeps the ones they sent. */}
+                  <Route element={<RequireRole allowedRoles={['BUYER', 'SELLER']} />}>
                     <Route path={AUTH_ROUTES.myInquiries} element={<MyInquiriesPage />} />
                   </Route>
 

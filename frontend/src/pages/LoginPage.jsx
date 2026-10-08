@@ -60,15 +60,18 @@ export function LoginPage() {
         password: form.password,
       })
 
-      // A seller or admin cannot use the cart or wishlist they were heading for, so
-      // they go to their own workspace rather than to a page that would refuse them.
-      const fallback = getRoleHome(user.role)
-      const destination = canUseBuyerDestinations(user)
-        ? getSafeDestination(location.state?.from, fallback)
-        : fallback
+      // Where they were going, if it is safe to send them there.
+      //
+      // The destination is honoured for every role, not just a buyer. A seller who
+      // clicked a heart on a product page and signed in should land back on that
+      // product, not on their dashboard. The routes a role genuinely cannot use —
+      // `/cart`, `/checkout` — are dealt with by `RequireBuyer` on arrival, which
+      // sends a non-buyer to their own workspace, so there is no need to second-guess
+      // the role here.
+      const destination = getSafeDestination(location.state?.from, getRoleHome(user.role))
 
-      // A pending intent only makes sense for a buyer. Anyone else gets it dropped, so
-      // it cannot fire later under a different account.
+      // A pending intent only means something for a buyer. A seller or admin who signs
+      // in gets it dropped, so it cannot fire later under a different account.
       if (!canUseBuyerDestinations(user)) {
         clearIntent()
       }
@@ -87,6 +90,20 @@ export function LoginPage() {
   }
 
   const visibleError = formError || initializationError
+
+  /**
+   * The registration link carries the destination across in the query string rather
+   * than in router state.
+   *
+   * Someone sent here by clicking Cart or a heart may well not have an account, and a
+   * state-based `from` would be lost the moment they switched from sign-in to sign-up.
+   * A query parameter survives that, and survives the reload that registration can
+   * cause, which is what lets the deferred add-to-cart finish on the register path
+   * too. `getSafeDestination` re-validates it at the far end.
+   */
+  const registerHref = location.state?.from
+    ? `${AUTH_ROUTES.register}?next=${encodeURIComponent(location.state.from)}`
+    : AUTH_ROUTES.register
 
   return (
     <AuthShell>
@@ -179,7 +196,7 @@ export function LoginPage() {
         <p className="mt-7 border-t border-line pt-6 text-center text-sm text-muted">
           New to ReFon?{' '}
           <Link
-            to={AUTH_ROUTES.register}
+            to={registerHref}
             className="font-bold text-primary-800 transition hover:text-primary-950 hover:underline"
           >
             Create an account

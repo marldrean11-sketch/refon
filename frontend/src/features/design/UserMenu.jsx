@@ -125,7 +125,10 @@ export function UserMenu() {
         aria-label={`Account menu for ${user.name}, signed in as ${role}`}
         className="flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-primary-950 pl-1 pr-1.5 transition duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-offset-2 sm:pr-2"
       >
-        <span className="grid size-9 place-items-center rounded-[3px] bg-primary-800 font-mono text-xs font-semibold text-white">
+        <span
+          aria-hidden="true"
+          className="grid size-9 place-items-center rounded-[3px] bg-primary-800 font-mono text-xs font-semibold text-white"
+        >
           {initialsOf(user.name)}
         </span>
         <ChevronDown

@@ -138,11 +138,12 @@ export async function resetTestData(prisma = new PrismaClient()) {
 
   // Carts and reservations left by a previous run.
   //
-  // A guest cart is the interesting case: it belongs to a browser cookie the suite
-  // discards, so the cart row survives with a live 15-minute reservation on a real
-  // device. The next run then gets `LISTING_RESERVED` when it tries to hold the same
-  // phone, which looks like an application failure and is not one. Emptying every
-  // cart releases those holds and returns the devices to the catalog.
+  // A cart belongs to an account, and the browser contexts the suite creates and
+  // discards do not own it, so the cart row survives with a live 15-minute
+  // reservation on a real device. The next run then gets `LISTING_RESERVED` when it
+  // tries to hold the same phone, which looks like an application failure and is not
+  // one. Emptying every cart releases those holds and returns the devices to the
+  // catalog.
   const reservations = await prisma.reservation.deleteMany({})
   const cartItems = await prisma.cartItem.deleteMany({})
   const carts = await prisma.cart.deleteMany({})

@@ -97,18 +97,20 @@ export function RegisterPage() {
       // from router state, which a reload would have dropped. `getSafeDestination`
       // refuses anything that is not a same-origin relative path, so a crafted
       // `?next=https://evil.com` cannot turn this into an open redirect.
+      //
+      // The target is honoured for every role. A new seller who arrived from a product
+      // page should land on that product; the routes they cannot use (`/cart`,
+      // `/checkout`) are handled on arrival by `RequireBuyer`, which sends a non-buyer
+      // to their own workspace.
       const params = new URLSearchParams(window.location.search)
-      const fallback = getRoleHome(user.role)
 
       // Only a buyer can act on a cart or wishlist intent. A seller who registered
-      // from the same page keeps nothing pending.
+      // from the same page keeps nothing pending, so it cannot fire later.
       if (!canUseBuyerDestinations(user)) {
         clearIntent()
       }
 
-      const destination = canUseBuyerDestinations(user)
-        ? getSafeDestination(params.get('next'), fallback)
-        : fallback
+      const destination = getSafeDestination(params.get('next'), getRoleHome(user.role))
 
       navigate(destination, { replace: true })
     } catch (error) {

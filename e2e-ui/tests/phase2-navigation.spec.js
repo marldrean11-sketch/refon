@@ -34,10 +34,10 @@ const API = process.env.REFON_API ?? 'http://localhost:4000/api'
 /**
  * Empties the cart and releases every reservation it holds.
  *
- * A cart belongs to a browser cookie. When a test ends its context is discarded,
- * but the cart row and its live 15-minute reservation on a real device survive.
- * The next test gets a fresh context, a fresh cookie, and therefore a fresh cart —
- * and is refused the same device with `LISTING_RESERVED` (409). That reads as an
+ * A cart belongs to an account, and the tests below all run as the same buyer, so a
+ * discarded browser context does not discard the cart: the row and its live
+ * 15-minute reservation on a real device survive into the next test, which is then
+ * refused the same device with `LISTING_RESERVED` (409). That reads as an
  * application bug and is not one.
  *
  * `cart-checkout.spec.js` documents the same trap and clears in `afterEach`. This
@@ -48,8 +48,8 @@ const API = process.env.REFON_API ?? 'http://localhost:4000/api'
 async function clearCart(page) {
   const response = await page.request.delete(`${API}/cart`).catch(() => null)
 
-  if (response && ![200, 404].includes(response.status())) {
-    throw new Error(`clearCart expected 200 or 404, got ${response.status()}`)
+  if (response && response.status() !== 200) {
+    throw new Error(`clearCart expected 200, got ${response.status()}`)
   }
 }
 
@@ -251,6 +251,11 @@ async function runAxe(page, selector) {
 /* -------------------------------------------------------------------- tests */
 
 test.describe('P2 navigation foundation', () => {
+  // The cart, the drawer and the add-to-cart flow are buyer surfaces, so these tests
+  // need a buyer. Signing in is not part of what P2-06 through P2-09b are checking,
+  // so the session comes from `globalSetup` rather than from the test.
+  test.use({ storageState: 'state/buyer.json' })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await clearCart(page)

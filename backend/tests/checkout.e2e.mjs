@@ -7,6 +7,10 @@ import { PrismaClient } from '@prisma/client'
  * Phase 6 checkout backend suite: the delivery catalogue, server-side pricing, and
  * the validation that decides whether a checkout may proceed at all.
  *
+ * Checkout is a buyer surface, so both endpoints are gated: a visitor is answered
+ * 401 and a signed-in seller or admin 403, with nothing about delivery, payment, or
+ * pricing disclosed. Every successful path below is a signed-in buyer's own cart.
+ *
  * The properties under test are the ones a client could try to subvert: that the
  * server decides every peso figure, that a request cannot smuggle in a price, and
  * that an unavailable or expired device blocks checkout instead of being quietly
@@ -24,6 +28,7 @@ const prisma = new PrismaClient()
 
 const BUYER_PASSWORD = 'BuyerTest123!'
 const SELLER_PASSWORD = 'SellerTest123!'
+const ADMIN_PASSWORD = 'AdminTest123!'
 const SEED_PHOTO = '/uploads/seed/phone-front.svg'
 
 let server
@@ -71,6 +76,38 @@ function createClient() {
   }
 }
 
+async function signIn(client, email, password) {
+  const response = await client.raw('/api/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  })
+
+  assert.equal(response.status, 200, `sign in as ${email}`)
+
+  return response.json.user
+}
+
+/**
+ * A signed-in BUYER.
+ *
+ * Checkout is a buyer surface and has been since the purchasing gate landed, so a
+ * cart with a live hold is held by a buyer rather than by an anonymous client. Every
+ * quote below is therefore some buyer's own cart, never a shared one.
+ */
+async function registerBuyer(label) {
+  const email = `${label}-${stamp}@example.test`
+  const client = createClient()
+  const response = await client.raw('/api/auth/register', {
+    method: 'POST',
+    body: { name: 'Checkout Buyer', email, password: BUYER_PASSWORD, role: 'BUYER' },
+  })
+
+  assert.equal(response.status, 201, `register ${email}`)
+  createdUserIds.push(response.json.user.id)
+
+  return { client, user: response.json.user }
+}
+
 const VALID_DETAILS = Object.freeze({
   fullName: 'Maria Santos',
   email: 'maria.santos@example.test',
@@ -82,17 +119,6 @@ const VALID_DETAILS = Object.freeze({
   street: '12 Katipunan Avenue, Tower B, Unit 4B',
   postalCode: '1100',
 })
-
-function quote(details = {}, deliveryMethodId = 'standard', paymentMethodId = 'cod') {
-  return createClient().raw('/api/checkout/quote', {
-    method: 'POST',
-    body: {
-      deliveryMethodId,
-      paymentMethodId,
-      details: { ...VALID_DETAILS, ...details },
-    },
-  })
-}
 
 /** Creates an approved listing owned by an approved seller, for a buyer to hold. */
 async function createApprovedListing(price = 24_990) {
@@ -143,17 +169,22 @@ async function createApprovedListing(price = 24_990) {
   return listing
 }
 
-/** Puts a live hold into a fresh guest cart and returns that client. */
-async function guestHolding(listingId) {
-  const guest = createClient()
-  const added = await guest.raw('/api/cart/items', {
+/**
+ * Puts a live hold into a fresh buyer's cart and returns that buyer.
+ *
+ * Every case below needs one buyer per scenario: carts are account-owned, so two
+ * cases cannot share one without one case emptying the other's holds.
+ */
+async function buyerHolding(label, listingId) {
+  const buyer = await registerBuyer(label)
+  const added = await buyer.client.raw('/api/cart/items', {
     method: 'POST',
     body: { listingId },
   })
 
   assert.equal(added.status, 201, 'fixture listing reserved')
 
-  return guest
+  return buyer
 }
 
 /** Ages a hold past its window so it has lapsed, as time passing would. */
@@ -175,9 +206,34 @@ async function main() {
 
   console.log('\n— delivery and payment catalogue —')
 
+  // The catalogue is buyer-only. It is read on the checkout page, which only a
+  // buyer reaches, so a visitor and a seller are refused it rather than being handed
+  // the delivery and payment tables.
   {
-    const guest = createClient()
-    const response = await guest.raw('/api/checkout/options')
+    const anonymous = createClient()
+    const refused = await anonymous.raw('/api/checkout/options')
+
+    assert.equal(refused.status, 401, 'a visitor cannot read the checkout catalogue')
+    assert.equal(refused.json.code, 'AUTHENTICATION_REQUIRED')
+    assert.equal(refused.json.zones, undefined, 'and is told nothing about it')
+
+    const sellerClient = createClient()
+    await signIn(sellerClient, 'seller@refon.test', SELLER_PASSWORD)
+    const sellerResponse = await sellerClient.raw('/api/checkout/options')
+    assert.equal(sellerResponse.status, 403, 'a seller cannot read it either')
+
+    const adminClient = createClient()
+    await signIn(adminClient, 'admin@refon.test', ADMIN_PASSWORD)
+    assert.equal(
+      (await adminClient.raw('/api/checkout/options')).status,
+      403,
+      'nor can an admin',
+    )
+  }
+
+  {
+    const { client } = await registerBuyer('checkout-options')
+    const response = await client.raw('/api/checkout/options')
 
     assert.equal(response.status, 200)
 
@@ -217,8 +273,8 @@ async function main() {
 
   {
     // A known zone returns that zone's fees; express is Metro Manila only.
-    const guest = createClient()
-    const provincial = await guest.raw('/api/checkout/options?zoneId=visayas_mindanao')
+    const { client } = await registerBuyer('checkout-zones')
+    const provincial = await client.raw('/api/checkout/options?zoneId=visayas_mindanao')
 
     assert.equal(provincial.status, 200)
     assert.equal(provincial.json.defaultZoneId, 'visayas_mindanao')
@@ -232,7 +288,7 @@ async function main() {
     assert.equal(standard.fee, 169)
 
     // An unknown zone is refused rather than silently defaulted.
-    const bogus = await guest.raw('/api/checkout/options?zoneId=mars')
+    const bogus = await client.raw('/api/checkout/options?zoneId=mars')
     assert.equal(bogus.status, 422)
   }
 
@@ -242,9 +298,9 @@ async function main() {
 
   {
     const listing = await createApprovedListing(12_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-below-threshold', listing.id)
 
-    const response = await guest.raw('/api/checkout/quote', {
+    const response = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
@@ -280,16 +336,16 @@ async function main() {
     assert.equal(items[0].lineTotal, 12_000)
     assert.ok(items[0].reservationExpiresAt, 'the line reports its hold expiry')
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
     // At or above the threshold, standard delivery is free and the original fee is
     // reported so the saving is visible rather than just absent.
     const listing = await createApprovedListing(15_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-threshold', listing.id)
 
-    const response = await guest.raw('/api/checkout/quote', {
+    const response = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
@@ -300,15 +356,15 @@ async function main() {
     assert.equal(response.json.quote.deliveryFeeBeforeDiscount, 79)
     assert.equal(response.json.quote.total, 15_000)
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
     // Provincial pricing differs from Metro Manila for the same listing price.
     const listing = await createApprovedListing(9_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-provincial', listing.id)
 
-    const response = await guest.raw('/api/checkout/quote', {
+    const response = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: {
         deliveryMethodId: 'standard',
@@ -322,17 +378,17 @@ async function main() {
     assert.equal(response.json.quote.deliveryFee, 169)
     assert.equal(response.json.quote.total, 9_169)
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
     // A phone sold after it entered a cart must not be quotable.
     const listing = await createApprovedListing(10_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-sold', listing.id)
 
     await prisma.listing.update({ where: { id: listing.id }, data: { status: 'SOLD' } })
 
-    const response = await guest.raw('/api/checkout/quote', {
+    const response = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
@@ -341,17 +397,17 @@ async function main() {
     assert.equal(response.json.code, 'CART_HAS_UNAVAILABLE_ITEMS')
     assert.deepEqual(response.json.errors.listingIds, [listing.id])
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
     // A lapsed hold must not be quotable either.
     const listing = await createApprovedListing(10_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-lapsed', listing.id)
 
     await ageHoldPastExpiry(listing.id)
 
-    const response = await guest.raw('/api/checkout/quote', {
+    const response = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
@@ -360,13 +416,13 @@ async function main() {
     assert.equal(response.json.code, 'CART_RESERVATION_EXPIRED')
     assert.deepEqual(response.json.errors.listingIds, [listing.id])
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
-    // An empty cart cannot be quoted.
-    const guest = createClient()
-    const response = await guest.raw('/api/checkout/quote', {
+    // An empty cart cannot be quoted, for a signed-in buyer with nothing in it.
+    const { client } = await registerBuyer('checkout-empty')
+    const response = await client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
@@ -381,7 +437,7 @@ async function main() {
 
   {
     const listing = await createApprovedListing(10_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-validation', listing.id)
 
     const cases = [
       [{ fullName: '' }, 'fullName', /full name is required/i],
@@ -400,7 +456,7 @@ async function main() {
     ]
 
     for (const [overrides, field, pattern] of cases) {
-      const response = await guest.raw('/api/checkout/quote', {
+      const response = await buyer.client.raw('/api/checkout/quote', {
         method: 'POST',
         body: {
           deliveryMethodId: 'standard',
@@ -419,7 +475,7 @@ async function main() {
     }
 
     // A mobile number a person would actually type is accepted.
-    const formatted = await guest.raw('/api/checkout/quote', {
+    const formatted = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: {
         deliveryMethodId: 'standard',
@@ -431,15 +487,15 @@ async function main() {
     assert.equal(formatted.status, 200, 'separators in a mobile number are tolerated')
     assert.equal(formatted.json.contact.mobile, '09171234567', 'and normalised for storage')
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
     // A method that does not serve the buyer's region is refused with a named field.
     const listing = await createApprovedListing(10_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-region', listing.id)
 
-    const response = await guest.raw('/api/checkout/quote', {
+    const response = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: {
         deliveryMethodId: 'express',
@@ -453,7 +509,7 @@ async function main() {
     assert.ok(response.json.errors.deliveryMethodId)
 
     // The same method is accepted in a region that does have it.
-    const inMetro = await guest.raw('/api/checkout/quote', {
+    const inMetro = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'express', paymentMethodId: 'gcash', details: VALID_DETAILS },
     })
@@ -462,7 +518,7 @@ async function main() {
     assert.equal(inMetro.json.quote.deliveryFee, 199)
     assert.equal(inMetro.json.payment.demo, true, 'GCash is reported as a demo method')
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   // ------------------------------------------------------------- security
@@ -472,10 +528,10 @@ async function main() {
   {
     // No client-supplied money is accepted, by any spelling.
     const listing = await createApprovedListing(10_000)
-    const guest = await guestHolding(listing.id)
+    const buyer = await buyerHolding('checkout-smuggle', listing.id)
 
     for (const field of ['total', 'subtotal', 'deliveryFee', 'quantity', 'price', 'userId']) {
-      const response = await guest.raw('/api/checkout/quote', {
+      const response = await buyer.client.raw('/api/checkout/quote', {
         method: 'POST',
         body: {
           deliveryMethodId: 'standard',
@@ -490,23 +546,23 @@ async function main() {
     }
 
     // The price is still the listing's own after all of that.
-    const priced = await guest.raw('/api/checkout/quote', {
+    const priced = await buyer.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
 
     assert.equal(priced.json.quote.subtotal, 10_000)
 
-    await guest.raw('/api/cart', { method: 'DELETE' })
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
     // One buyer's cart cannot be priced through another's cart line.
     const listing = await createApprovedListing(10_000)
-    const owner = await guestHolding(listing.id)
+    const owner = await buyerHolding('checkout-idor-owner', listing.id)
 
-    const stranger = createClient()
-    const response = await stranger.raw('/api/checkout/quote', {
+    const stranger = await registerBuyer('checkout-idor-stranger')
+    const response = await stranger.client.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
@@ -517,26 +573,22 @@ async function main() {
     assert.equal(response.json.code, 'CART_EMPTY')
 
     assert.equal(
-      (await owner.raw('/api/cart')).json.cart.itemCount,
+      (await owner.client.raw('/api/cart')).json.cart.itemCount,
       1,
       'the owner still holds their device',
     )
 
-    await owner.raw('/api/cart', { method: 'DELETE' })
+    await owner.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   {
-    // A seller cannot quote a purchase of their own device.
+    // A seller cannot buy, and cannot quote, a purchase of their own device. The role
+    // gate answers first, so this never reaches the own-listing rule.
     const sellerClient = createClient()
-    const signedIn = await sellerClient.raw('/api/auth/login', {
-      method: 'POST',
-      body: { email: 'seller@refon.test', password: SELLER_PASSWORD },
-    })
-
-    assert.equal(signedIn.status, 200)
+    const signedIn = await signIn(sellerClient, 'seller@refon.test', SELLER_PASSWORD)
 
     const ownListing = await prisma.listing.findFirst({
-      where: { seller: { userId: signedIn.json.user.id }, status: 'APPROVED' },
+      where: { seller: { userId: signedIn.id }, status: 'APPROVED' },
       select: { id: true },
     })
 
@@ -547,53 +599,101 @@ async function main() {
       body: { listingId: ownListing.id },
     })
 
-    assert.equal(blocked.status, 409)
-    assert.equal(blocked.json.code, 'OWN_LISTING_NOT_PURCHASABLE')
-  }
+    assert.equal(blocked.status, 403, 'a seller is refused before their own listing is read')
+    assert.equal(blocked.json.code, 'FORBIDDEN')
 
-  {
-    // An authenticated buyer's quote is their own, and the guest cart is merged on
-    // sign-in so the devices they were holding travel with them.
-    const listing = await createApprovedListing(11_000)
-    const guest = await guestHolding(listing.id)
-
-    const email = `checkout-buyer-${stamp}@example.test`
-    const registered = await guest.raw('/api/auth/register', {
-      method: 'POST',
-      body: { name: 'Checkout Buyer', email, password: BUYER_PASSWORD, role: 'BUYER' },
-    })
-
-    assert.equal(registered.status, 201)
-    createdUserIds.push(registered.json.user.id)
-
-    const response = await guest.raw('/api/checkout/quote', {
+    const quoted = await sellerClient.raw('/api/checkout/quote', {
       method: 'POST',
       body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
     })
 
-    assert.equal(response.status, 200)
-    assert.equal(response.json.quote.subtotal, 11_000)
-    assert.equal(response.json.quote.itemCount, 1)
+    assert.equal(quoted.status, 403, 'and a seller cannot quote a purchase at all')
+  }
+
+  {
+    // A visitor cannot quote, whatever their details say.
+    const anonymous = createClient()
+    const response = await anonymous.raw('/api/checkout/quote', {
+      method: 'POST',
+      body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
+    })
+
+    assert.equal(response.status, 401, 'a visitor cannot quote')
+    assert.equal(response.json.code, 'AUTHENTICATION_REQUIRED')
+
+    // Nor can they nominate somebody else who can.
+    const asBuyer = await anonymous.raw('/api/checkout/quote', {
+      method: 'POST',
+      body: {
+        deliveryMethodId: 'standard',
+        paymentMethodId: 'cod',
+        details: VALID_DETAILS,
+        userId: '00000000-0000-4000-8000-000000000000',
+      },
+    })
+    assert.equal(asBuyer.status, 401, 'and a nominated user changes nothing')
+  }
+
+  {
+    // A buyer's quote is their own, and it survives signing out and back in: the cart
+    // is stored against the account, not against the session.
+    const listing = await createApprovedListing(11_000)
+    const buyer = await buyerHolding('checkout-persist', listing.id)
+
+    const first = await buyer.client.raw('/api/checkout/quote', {
+      method: 'POST',
+      body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
+    })
+
+    assert.equal(first.status, 200)
+    assert.equal(first.json.quote.subtotal, 11_000)
+    assert.equal(first.json.quote.itemCount, 1)
 
     const cartRow = await prisma.cart.findUnique({
-      where: { userId: registered.json.user.id },
+      where: { userId: buyer.user.id },
       select: { id: true },
     })
 
-    assert.ok(cartRow, 'the merged cart belongs to the account')
+    assert.ok(cartRow, 'the cart belongs to the account')
     createdCartIds.push(cartRow.id)
+
+    await buyer.client.raw('/api/auth/logout', { method: 'POST' })
+
+    const afterLogout = await buyer.client.raw('/api/checkout/quote', {
+      method: 'POST',
+      body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
+    })
+    assert.equal(afterLogout.status, 401, 'a signed-out session cannot quote')
+
+    await signIn(buyer.client, buyer.user.email, BUYER_PASSWORD)
+
+    const afterSignIn = await buyer.client.raw('/api/checkout/quote', {
+      method: 'POST',
+      body: { deliveryMethodId: 'standard', paymentMethodId: 'cod', details: VALID_DETAILS },
+    })
+
+    assert.equal(afterSignIn.status, 200, 'and signing back in restores the same quote')
+    assert.equal(
+      afterSignIn.json.quote.subtotal,
+      11_000,
+      'so the held device is still held',
+    )
+
+    await buyer.client.raw('/api/cart', { method: 'DELETE' })
   }
 
   console.log(
-    '\nCheckout E2E passed: zone-based delivery catalogue served from one configuration ' +
-      'with express restricted to Metro Manila and enforced server-side; free standard ' +
-      'delivery at and above the threshold with the waived fee still reported; totals ' +
-      'computed from listing rows; sold and lapsed devices refused with per-listing ids; ' +
-      'empty carts refused; thirteen field-level validation messages keyed to their own ' +
-      'field; mobile numbers accepted as typed and normalised; client-supplied total, ' +
-      'subtotal, fee, quantity, price, and userId all refused; one buyer unable to price ' +
-      "another's cart; a seller unable to buy their own device; and a guest cart merging " +
-      'into an account on sign-in so the held devices travel with the buyer.',
+    '\nCheckout E2E passed: the catalogue and the quote are buyer-only — 401 for a ' +
+      'visitor, 403 for a seller and an admin, with no delivery table disclosed; ' +
+      'zone-based delivery catalogue served from one configuration with express ' +
+      'restricted to Metro Manila and enforced server-side; free standard delivery at ' +
+      'and above the threshold with the waived fee still reported; totals computed from ' +
+      'listing rows; sold and lapsed devices refused with per-listing ids; empty carts ' +
+      'refused; thirteen field-level validation messages keyed to their own field; ' +
+      'mobile numbers accepted as typed and normalised; client-supplied total, subtotal, ' +
+      'fee, quantity, price, and userId all refused; one buyer unable to price another’s ' +
+      'cart; a seller refused at the role gate before their own listing is read; and a ' +
+      'quote surviving sign-out and sign-in because the cart is stored against the account.',
   )
 }
 

@@ -14,13 +14,14 @@
  * nowhere — so this stores nothing and sends nothing, and its confirmation says
  * as much rather than implying a subscription exists. See the Phase 2 report.
  */
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Check } from 'lucide-react'
-import { useAuth } from '../auth/useAuth.js'
-import { AUTH_ROUTES, MARKETPLACE_ROUTES } from '../../lib/routes.js'
-import { usePrefersReducedMotion } from '../../lib/motion.ts'
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
+import { useAuth } from "../auth/useAuth.js";
+import { AUTH_ROUTES, MARKETPLACE_ROUTES } from "../../lib/routes.js";
+import { canSeeBuyerDestinations } from "./navigation-config.js";
+import { usePrefersReducedMotion } from "../../lib/motion.ts";
 
 /**
  * Footer columns.
@@ -31,42 +32,42 @@ import { usePrefersReducedMotion } from '../../lib/motion.ts'
  */
 const COLUMNS = [
   {
-    title: 'Shop',
+    title: "Shop",
     links: [
-      { label: 'All phones', to: MARKETPLACE_ROUTES.shop },
-      { label: 'Categories', to: MARKETPLACE_ROUTES.categories },
-      { label: 'Your cart', to: MARKETPLACE_ROUTES.cart },
-      { label: 'Compare', to: MARKETPLACE_ROUTES.compare },
+      { label: "All phones", to: MARKETPLACE_ROUTES.shop },
+      { label: "Categories", to: MARKETPLACE_ROUTES.categories },
+      { label: "Your cart", to: MARKETPLACE_ROUTES.cart },
+      { label: "Compare", to: MARKETPLACE_ROUTES.compare },
     ],
   },
   {
-    title: 'Company',
+    title: "Company",
     links: [
-      { label: 'About ReFon', to: MARKETPLACE_ROUTES.about },
-      { label: 'Sustainability', to: MARKETPLACE_ROUTES.sustainability },
-      { label: 'Sell your phone', to: MARKETPLACE_ROUTES.sellerApply },
-      { label: 'How it works', to: MARKETPLACE_ROUTES.howItWorks },
+      { label: "About ReFon", to: MARKETPLACE_ROUTES.about },
+      { label: "Sustainability", to: MARKETPLACE_ROUTES.sustainability },
+      { label: "Sell your phone", to: MARKETPLACE_ROUTES.sellerApply },
+      { label: "How it works", to: MARKETPLACE_ROUTES.howItWorks },
     ],
   },
   {
-    title: 'Support',
+    title: "Support",
     links: [
-      { label: 'How we test', to: MARKETPLACE_ROUTES.qualityCheck },
-      { label: 'Warranty', to: MARKETPLACE_ROUTES.warranty },
-      { label: 'Shipping', to: MARKETPLACE_ROUTES.shipping },
-      { label: 'Returns', to: MARKETPLACE_ROUTES.returns },
-      { label: 'FAQ', to: MARKETPLACE_ROUTES.faq },
-      { label: 'Contact us', to: MARKETPLACE_ROUTES.contact },
+      { label: "How we test", to: MARKETPLACE_ROUTES.qualityCheck },
+      { label: "Warranty", to: MARKETPLACE_ROUTES.warranty },
+      { label: "Shipping", to: MARKETPLACE_ROUTES.shipping },
+      { label: "Returns", to: MARKETPLACE_ROUTES.returns },
+      { label: "FAQ", to: MARKETPLACE_ROUTES.faq },
+      { label: "Contact us", to: MARKETPLACE_ROUTES.contact },
     ],
   },
   {
-    title: 'Legal',
+    title: "Legal",
     links: [
-      { label: 'Privacy', to: MARKETPLACE_ROUTES.privacy },
-      { label: 'Terms', to: MARKETPLACE_ROUTES.terms },
+      { label: "Privacy", to: MARKETPLACE_ROUTES.privacy },
+      { label: "Terms", to: MARKETPLACE_ROUTES.terms },
     ],
   },
-]
+];
 
 /**
  * Contrast on the dark panel.
@@ -76,33 +77,54 @@ const COLUMNS = [
  * text, which is why the footer uses a lighter grey than the old `primary-300`.
  * The green is `#34D399`, 11.2:1, so it is safe for text and not only for icons.
  */
-const MUTED_ON_DARK = '#a9aeaa'
-const ACCENT_ON_DARK = '#34d399'
+const MUTED_ON_DARK = "#a9aeaa";
+const ACCENT_ON_DARK = "#34d399";
 
 /** The wordmark's tone: 3.2:1 on `#0B0F0E`, which is the 3:1 large-text floor. */
-const WORDMARK_ON_DARK = '#5f6462'
+const WORDMARK_ON_DARK = "#5f6462";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/**
+ * The footer columns with the purchasing links resolved for this visitor.
+ *
+ * Cart is a buyer surface. A visitor keeps it, pointed at sign-in so the click is not
+ * wasted. A seller or admin loses it: there is nothing to sign into and no cart to
+ * open, so a link would only bounce them straight back to their own dashboard.
+ */
+function columnsFor(user) {
+  if (canSeeBuyerDestinations(user)) {
+    return COLUMNS;
+  }
+
+  return COLUMNS.map((column) => ({
+    ...column,
+    links: column.links.filter((link) => link.to !== MARKETPLACE_ROUTES.cart),
+  }));
+}
 
 export function SiteFooter() {
-  const { user } = useAuth()
-  const reducedMotion = usePrefersReducedMotion()
+  const { user } = useAuth();
+  const reducedMotion = usePrefersReducedMotion();
 
   const accountLinks = user
     ? [
-        { label: 'Account settings', to: AUTH_ROUTES.account },
+        { label: "Account settings", to: AUTH_ROUTES.account },
         {
-          label: user.role === 'ADMIN' ? 'Admin dashboard' : 'Seller dashboard',
-          to: user.role === 'ADMIN' ? AUTH_ROUTES.admin : AUTH_ROUTES.seller,
+          label: user.role === "ADMIN" ? "Admin dashboard" : "Seller dashboard",
+          to: user.role === "ADMIN" ? AUTH_ROUTES.admin : AUTH_ROUTES.seller,
         },
       ]
     : [
-        { label: 'Sign in', to: AUTH_ROUTES.login },
-        { label: 'Create an account', to: AUTH_ROUTES.register },
-      ]
+        { label: "Sign in", to: AUTH_ROUTES.login },
+        { label: "Create an account", to: AUTH_ROUTES.register },
+      ];
 
   return (
-    <footer data-testid="site-footer" className="mt-auto overflow-hidden bg-dark text-white">
+    <footer
+      data-testid="site-footer"
+      className="mt-auto overflow-hidden bg-dark text-white"
+    >
       {/* The extra bottom clearance clears the mobile tab bar, which is fixed to
           the viewport until the desktop navigation takes over at `lg`. */}
       <div className="mx-auto w-full max-w-7xl px-4 pb-32 pt-14 sm:px-6 lg:px-8 lg:pb-10">
@@ -128,23 +150,34 @@ export function SiteFooter() {
                   <path d="m8.6 12.4 2.1 2.2 4.5-4.9" className="text-accent" />
                 </svg>
               </span>
-              <span className="text-xl font-bold tracking-[-0.03em]">ReFon</span>
+              <span className="text-xl font-bold tracking-[-0.03em]">
+                ReFon
+              </span>
             </Link>
 
-            <p className="mt-5 max-w-sm text-sm leading-relaxed" style={{ color: MUTED_ON_DARK }}>
-              A marketplace for tested refurbished phones. Every listing publishes its
-              condition grade, measured battery health, and warranty term before you
-              decide anything.
+            <p
+              className="mt-5 max-w-sm text-sm leading-relaxed"
+              style={{ color: MUTED_ON_DARK }}
+            >
+              A marketplace for tested refurbished phones. Every listing
+              publishes its condition grade, measured battery health, and
+              warranty term before you decide anything.
             </p>
 
             <dl className="mt-7 max-w-sm border-t border-white/15 pt-5 text-sm">
               {[
-                ['11', 'inspection checks per phone'],
-                ['A / B / C', 'published condition grade'],
-                ['7', 'day return window'],
+                ["11", "inspection checks per phone"],
+                ["A / B / C", "published condition grade"],
+                ["7", "day return window"],
               ].map(([value, label]) => (
-                <div key={label} className="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 py-1.5">
-                  <dt className="font-semibold tabular-nums" style={{ color: ACCENT_ON_DARK }}>
+                <div
+                  key={label}
+                  className="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 py-1.5"
+                >
+                  <dt
+                    className="font-semibold tabular-nums"
+                    style={{ color: ACCENT_ON_DARK }}
+                  >
                     {value}
                   </dt>
                   <dd style={{ color: MUTED_ON_DARK }}>{label}</dd>
@@ -155,19 +188,24 @@ export function SiteFooter() {
             <NewsletterForm reduced={reducedMotion} />
           </div>
 
-          {COLUMNS.map((column) => (
-            <FooterColumn key={column.title} title={column.title} links={column.links} />
+          {columnsFor(user).map((column) => (
+            <FooterColumn
+              key={column.title}
+              title={column.title}
+              links={column.links}
+              user={user}
+            />
           ))}
 
-          <FooterColumn title="Account" links={accountLinks} />
+          <FooterColumn title="Account" links={accountLinks} user={user} />
         </div>
 
         <GiantWordmark reduced={reducedMotion} />
 
         <div className="mt-8 flex flex-col gap-3 border-t border-white/15 pt-6 text-[13px] sm:flex-row sm:items-center sm:justify-between">
           <p style={{ color: MUTED_ON_DARK }}>
-            © {new Date().getFullYear()} ReFon. Refurbished, with the measurements
-            published.
+            © {new Date().getFullYear()} ReFon. Refurbished, with the
+            measurements published.
           </p>
           <p style={{ color: MUTED_ON_DARK }}>
             Free standard delivery over ₱15,000 · 7-day returns
@@ -175,33 +213,42 @@ export function SiteFooter() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
 
-function FooterColumn({ title, links }) {
+function FooterColumn({ title, links, user }) {
   return (
     <div>
       {/* `text-white` is explicit and not inherited. The global heading rule in
           `index.css` sets `text-ink` on every `h1`–`h6` in the base layer, so a
           heading inside the dark footer picks up near-black text unless it says
           otherwise — which is exactly what happened here. */}
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-white">{title}</h2>
+      <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-white">
+        {title}
+      </h2>
       <ul className="mt-4 flex flex-col gap-2.5">
-        {links.map((link) => (
-          <li key={link.label}>
-            <Link
-              to={link.to}
-              data-testid="footer-link"
-              className="text-[15px] transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-dark"
-              style={{ color: MUTED_ON_DARK }}
-            >
-              {link.label}
-            </Link>
-          </li>
-        ))}
+        {links.map((link) => {
+          // A visitor's Cart link goes to sign-in and remembers the cart, so the
+          // click finishes where it started rather than on a generic dashboard.
+          const gated = link.to === MARKETPLACE_ROUTES.cart && !user;
+
+          return (
+            <li key={link.label}>
+              <Link
+                to={gated ? AUTH_ROUTES.login : link.to}
+                state={gated ? { from: MARKETPLACE_ROUTES.cart } : undefined}
+                data-testid="footer-link"
+                className="text-[15px] transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-dark"
+                style={{ color: MUTED_ON_DARK }}
+              >
+                {link.label}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
-  )
+  );
 }
 
 /**
@@ -216,41 +263,46 @@ function FooterColumn({ title, links }) {
  * than only seeing a red border.
  */
 function NewsletterForm({ reduced }) {
-  const [email, setEmail] = useState('')
-  const [error, setError] = useState(null)
-  const [isDone, setIsDone] = useState(false)
-  const inputRef = useRef(null)
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState(null);
+  const [isDone, setIsDone] = useState(false);
+  const inputRef = useRef(null);
 
   function onSubmit(event) {
-    event.preventDefault()
+    event.preventDefault();
 
-    const trimmed = email.trim()
+    const trimmed = email.trim();
 
     if (!trimmed) {
-      setError('Enter an email address.')
-      setIsDone(false)
-      inputRef.current?.focus()
-      return
+      setError("Enter an email address.");
+      setIsDone(false);
+      inputRef.current?.focus();
+      return;
     }
 
     if (!EMAIL_PATTERN.test(trimmed)) {
-      setError('That does not look like an email address.')
-      setIsDone(false)
-      inputRef.current?.focus()
-      return
+      setError("That does not look like an email address.");
+      setIsDone(false);
+      inputRef.current?.focus();
+      return;
     }
 
-    setError(null)
-    setIsDone(true)
+    setError(null);
+    setIsDone(true);
   }
 
   function onChange(event) {
-    setEmail(event.target.value)
-    if (error) setError(null)
+    setEmail(event.target.value);
+    if (error) setError(null);
   }
 
   return (
-    <form data-testid="newsletter" onSubmit={onSubmit} noValidate className="mt-8 max-w-sm">
+    <form
+      data-testid="newsletter"
+      onSubmit={onSubmit}
+      noValidate
+      className="mt-8 max-w-sm"
+    >
       <label
         htmlFor="newsletter-email"
         className="block text-[13px] font-semibold uppercase tracking-[0.12em] text-white"
@@ -268,7 +320,7 @@ function NewsletterForm({ reduced }) {
           value={email}
           onChange={onChange}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? 'newsletter-error' : 'newsletter-hint'}
+          aria-describedby={error ? "newsletter-error" : "newsletter-hint"}
           placeholder="you@example.com"
           className="min-h-11 min-w-0 flex-1 rounded-control border border-white/25 bg-transparent px-3 text-[15px] text-white placeholder:text-white/40 transition-colors duration-150 hover:border-white/40 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
         />
@@ -298,16 +350,25 @@ function NewsletterForm({ reduced }) {
           transition={reduced ? { duration: 0 } : { duration: 0.25 }}
           className="mt-2 flex items-center gap-2 text-[13px] text-white"
         >
-          <Check className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-          Thanks — there is no newsletter service wired up yet, so nothing was sent.
+          <Check
+            className="size-4 shrink-0"
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+          Thanks — there is no newsletter service wired up yet, so nothing was
+          sent.
         </motion.p>
       ) : (
-        <p id="newsletter-hint" className="mt-2 text-[13px]" style={{ color: MUTED_ON_DARK }}>
+        <p
+          id="newsletter-hint"
+          className="mt-2 text-[13px]"
+          style={{ color: MUTED_ON_DARK }}
+        >
           Occasional notes on what we list and what we test.
         </p>
       )}
     </form>
-  )
+  );
 }
 
 /**
@@ -332,10 +393,12 @@ function GiantWordmark({ reduced }) {
     <motion.div
       data-testid="footer-wordmark"
       aria-hidden="true"
-      initial={reduced ? false : { opacity: 0, y: '18%' }}
-      whileInView={{ opacity: 1, y: '0%' }}
+      initial={reduced ? false : { opacity: 0, y: "18%" }}
+      whileInView={{ opacity: 1, y: "0%" }}
       viewport={{ once: true, amount: 0.4 }}
-      transition={reduced ? { duration: 0 } : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      transition={
+        reduced ? { duration: 0 } : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }
+      }
       className="pointer-events-none mt-8 select-none"
     >
       <span
@@ -346,12 +409,12 @@ function GiantWordmark({ reduced }) {
           // footer on a very wide display, and stepped *up* from plain `vw` on
           // narrow screens — at 23vw a 390px phone got a 90px wordmark, which
           // reads as a heading rather than the closing signature it is.
-          fontSize: 'min(30vw, 20rem)',
+          fontSize: "min(30vw, 20rem)",
           color: WORDMARK_ON_DARK,
         }}
       >
         ReFon
       </span>
     </motion.div>
-  )
+  );
 }
