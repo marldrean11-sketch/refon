@@ -765,7 +765,7 @@ export async function getRelatedListings(id, limit = 6) {
  * credible. Falling back to a positional label keeps every review renderable even
  * if an author record is ever missing a name.
  */
-function reviewAuthorLabel(name, index) {
+export function reviewAuthorLabel(name, index) {
   const parts = String(name ?? '')
     .trim()
     .split(/\s+/)

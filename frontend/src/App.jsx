@@ -130,7 +130,7 @@ const SellerApplyPage = lazy(() =>
   import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.SellerApplyPage })),
 )
 const SellerStorefrontPage = lazy(() =>
-  import('./pages/NotFoundRoutePages.jsx').then((module) => ({
+  import('./pages/SellerStorefrontPage.jsx').then((module) => ({
     default: module.SellerStorefrontPage,
   })),
 )

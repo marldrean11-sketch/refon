@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ButtonLink } from '../components/ui/Button.jsx'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 import { PageTransition } from '../components/layout/PageTransition.jsx'
@@ -9,9 +9,9 @@ import { PageTransition } from '../components/layout/PageTransition.jsx'
  * Keeps every navigation target in the header and footer a working page, so the
  * site has no dead ends while the remaining phases are built out.
  *
- * `/cart`, `/checkout`, and the confirmation screen moved out in Phase 6 and now
- * have real pages; what remains here is comparison, seller application, and the
- * seller storefront.
+ * `/cart`, `/checkout`, and the confirmation screen moved out in Phase 6; the
+ * seller storefront moved out in Phase 10. What remains here is comparison and
+ * seller application.
  */
 function PendingPage({ title, phase, description, links = [] }) {
   return (
@@ -71,20 +71,7 @@ export function SellerApplyPage() {
 }
 
 /**
- * Public seller storefront.
- *
- * Wired in Phase 10 alongside the seller dashboard. Renders a phase notice
- * rather than a 404 so a storefront link from the homepage is never a dead end.
+ * `/sellers/:sellerId` moved out in Phase 10 and now has a real page in
+ * `pages/SellerStorefrontPage.jsx`, backed by the public seller storefront API.
+ * What remains here is comparison and seller application.
  */
-export function SellerStorefrontPage() {
-  const { sellerId } = useParams()
-
-  return (
-    <PendingPage
-      phase="Phase 10 — Seller experience"
-      title="Seller storefront"
-      description={`Storefront pages for verified sellers, with their full approved inventory and trust history, are being built now. This link points at seller ${sellerId ?? ''}.`}
-      links={[{ label: 'Browse phones', to: MARKETPLACE_ROUTES.shop }]}
-    />
-  )
-}
