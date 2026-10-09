@@ -64,7 +64,7 @@ export function LandingPage() {
     <>
       <HeroSection featured={featured} />
       <TrustStripSection />
-      <FeaturedCategoriesSection listings={listings} />
+      <FeaturedCategoriesSection />
       <NewArrivalsSection listings={listings} isLoading={isLoading} />
       <GradingSection />
       <InspectionSection />

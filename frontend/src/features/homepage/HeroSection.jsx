@@ -383,9 +383,9 @@ function HeroPlate({ listing, reduced }) {
           {grade.label} condition · {listing.inspectionTotal ?? 11}-point inspection ·{' '}
           {listing.warrantyMonths}-month warranty
         </p>
-      </Link>
 
-      <HeroChips listing={listing} reduced={reduced} placement={TEXT_PLATE_CHIPS} />
+        <HeroChips listing={listing} reduced={reduced} placement={TEXT_PLATE_CHIPS} />
+      </Link>
     </div>
   )
 }
@@ -435,9 +435,9 @@ function HeroPhotoPlate({ listing, reduced }) {
             <PriceDisplay price={listing.price} originalPrice={listing.originalPrice} size="sm" />
           </div>
         </div>
-      </Link>
 
-      <HeroChips listing={listing} reduced={reduced} placement={PHOTO_PLATE_CHIPS} />
+        <HeroChips listing={listing} reduced={reduced} placement={PHOTO_PLATE_CHIPS} />
+      </Link>
     </div>
   )
 }
@@ -450,6 +450,9 @@ function HeroPhotoPlate({ listing, reduced }) {
  * to hang over the card's left side at the height of the model name, which
  * covered "iPhone" on a desktop viewport. On the photo plate they sit over the
  * photograph, clear of the caption card.
+ *
+ * They render inside the plate's link, so a tap on a chip opens the phone like the
+ * rest of the plate, and hit-testing finds the chip rather than the card under it.
  */
 const TEXT_PLATE_CHIPS = { battery: '-top-6 left-5 sm:left-7', warranty: '-bottom-7 right-5 sm:right-7' }
 const PHOTO_PLATE_CHIPS = { battery: '-top-6 left-5 sm:-left-4', warranty: 'top-1/3 right-0 sm:-right-5' }
@@ -501,7 +504,7 @@ function HeroChip({ lean, travel, reduced, className = '', children }) {
           ? undefined
           : { duration: 4, repeat: Infinity, ease: 'easeInOut', repeatType: 'reverse' }
       }
-      className={`pointer-events-none absolute z-raised inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2 text-[13px] shadow-card ${
+      className={`absolute z-raised inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2 text-[13px] shadow-card ${
         reduced ? '' : lean === 'left' ? 'rotate-[-2deg]' : 'rotate-[2deg]'
       } ${className}`}
     >

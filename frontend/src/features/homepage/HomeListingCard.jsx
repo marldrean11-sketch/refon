@@ -39,7 +39,7 @@ export function HomeListingCard({ listing }) {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-subtle">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
               {listing.brand}
             </p>
             <h3 className="mt-1.5 text-[17px] font-bold leading-tight tracking-[-0.01em] text-ink">
