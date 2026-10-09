@@ -19,8 +19,14 @@ import { FinalCtaSection } from '../features/homepage/FinalCtaSection.jsx'
  *
  * Section order follows the buyer's actual decision path:
  *   what is this → can I trust it → what can I get → what just arrived →
- *   why is it cheaper → how do I know it's not broken → how do I buy →
- *   who else has bought one.
+ *   what condition is it in → does it work → what if it breaks → how do I buy →
+ *   who am I buying from → why refurbished at all → what do buyers worry about.
+ *
+ * Warranty sits straight after inspection because "what if it breaks?" is the
+ * question that follows "does it work?", and it is asked before buying, not after
+ * the FAQ. Why-refurbished sits late because it persuades visitors who have not
+ * chosen refurbished yet; between the grid and the grading it interrupts the ones
+ * who already have.
  *
  * Every product section reads live approved listings, so the homepage cannot show
  * a phone that is no longer buyable or a price that has moved.
@@ -60,13 +66,13 @@ export function LandingPage() {
       <TrustStripSection />
       <FeaturedCategoriesSection listings={listings} />
       <NewArrivalsSection listings={listings} isLoading={isLoading} />
-      <WhyRefurbishedSection />
       <GradingSection />
       <InspectionSection />
+      <WarrantySection />
       <HowItWorksSection />
       <VerifiedSellersSection listings={listings} isLoading={isLoading} />
+      <WhyRefurbishedSection />
       <TestimonialsSection />
-      <WarrantySection />
       <FaqSection />
       <FinalCtaSection />
     </>

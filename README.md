@@ -46,19 +46,15 @@ refon/
 
 The Tailwind theme lives in `frontend/tailwind.config.js`.
 
-- **Primary:** trustworthy navy, centered on `#1F4E78`
-- **Accent / verified:** emerald, centered on `#10B981`, with dedicated `verified`, `verified-soft`, and `verified-strong` trust tokens
-- **Canvas:** `#F7F9FC`
-- **Surface:** `#FFFFFF`
-- **Ink:** `#0F1F33`
-- **Muted text:** `#526174`
-- **Borders:** `#E2E8F0`
-- **Headings:** Space Grotesk
-- **Body:** Inter with a `1.7` reading line-height
-- **Type scale:** fluid `display`, `headline`, and `title` sizes
-- **Spacing:** Tailwind's standard scale, extended with `18`, `22`, `28`, `30`, and `36` for generous section whitespace
-- **Motion:** `180–300ms` transitions with a shared smooth easing curve, route fades, reduced-motion support, and animated modal/dropdown exits
-- **Surfaces:** reusable card radii and soft card/hover/glass shadows
+- **Page:** warm off-white `#F6F5F1`, with `panel` `#ECEAE4`, `card` `#FFFFFF`, and `well` `#E3E1DA` as the steps above and below it
+- **Ink:** near-black `#111111`; muted text `#6B6B66`; subtle text `#94938C`
+- **Accent:** one emerald, `#10B981`, which means verified, inspected, or cleared and nothing else. There is no second accent hue and no gradient
+- **Value and grades:** amber (`flare`) for savings and Grade B, orange for Grade C, green only for Grade A
+- **Type:** Manrope Variable (200–800), self-hosted through `@fontsource-variable/manrope`. No font is fetched from a CDN
+- **Type scale:** 17px base with a `1.6` line height, plus fluid `hero`, `display`, `headline`, and `title` sizes
+- **Shape:** 20px cards, 28px panels, pill-shaped buttons
+- **Elevation:** wide, soft shadows (`0 10px 40px rgb(0 0 0 / 0.06)`), never tight drop shadows
+- **Motion:** 200ms for controls, 500ms for entrances, 900ms for the hero, with reduced-motion support throughout
 
 Global font loading and Tailwind base styles are in `frontend/src/index.css`. `frontend/src/App.jsx` owns the public marketplace, authentication, and role-aware route trees. Listing, seller, inquiry, and moderation screens now call the Express API directly; no frontend localStorage or mock inventory is used.
 

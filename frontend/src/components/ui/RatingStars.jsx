@@ -17,7 +17,7 @@ function StarRow({ value, size }) {
 
         return (
           <span key={position} className="relative inline-block">
-            <Star className={`${sizeClasses[size]} text-slate-300`} fill="currentColor" />
+            <Star className={`${sizeClasses[size]} text-line-2`} fill="currentColor" />
             {(filled || half) && (
               <span
                 className="absolute inset-0 overflow-hidden"

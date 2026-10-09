@@ -39,29 +39,29 @@ import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 function DemoBoundaryNotice({ payment, reference }) {
   return (
     <div
-      className="rounded-card-lg border border-sky-200 bg-sky-50 p-5 sm:p-6"
+      className="rounded-card-lg border border-line-2 bg-panel p-5 sm:p-6"
       role="status"
       data-testid="checkout-boundary-notice"
     >
       <div className="flex items-start gap-3">
-        <Info className="mt-0.5 size-5 shrink-0 text-sky-700" aria-hidden="true" />
+        <Info className="mt-0.5 size-5 shrink-0 text-ink" aria-hidden="true" />
         <div className="min-w-0">
-          <p className="text-sm font-bold text-sky-950">
+          <p className="text-sm font-bold text-ink">
             No order was placed and no payment was taken
           </p>
-          <p className="mt-1.5 text-sm leading-relaxed text-sky-900">
+          <p className="mt-1.5 text-sm leading-relaxed text-ink">
             ReFon does not yet create orders or process payments. This page is a summary
             of what you entered, priced by ReFon at the total shown below.
             {payment?.demo
               ? ' The payment method you chose is a demo selection — no payment details were collected and none are needed.'
               : ''}
           </p>
-          <p className="mt-3 text-xs leading-relaxed text-sky-800">
+          <p className="mt-3 text-xs leading-relaxed text-ink">
             Your phones remain reserved while their timers run. Nothing has been charged and
             no order exists to cancel.
           </p>
           {reference && (
-            <p className="mt-3 font-mono text-xs font-semibold text-sky-900">
+            <p className="mt-3 font-mono text-xs font-semibold text-ink">
               Quote reference: {reference}
             </p>
           )}

@@ -37,18 +37,8 @@ import {
 } from '../cart/cart-state.js'
 import { MARKETPLACE_ROUTES, productPath } from '../../lib/routes.js'
 import { usePrefersReducedMotion } from '../../lib/motion.ts'
+import { FREE_DELIVERY_THRESHOLD } from '../../lib/delivery-policy.js'
 import { useNavbarUi } from './navbar-ui-context.jsx'
-
-/**
- * Free standard delivery above this amount.
- *
- * The backend owns this figure (`FREE_STANDARD_DELIVERY_THRESHOLD` in
- * `checkout.config.js`) and the shipping page publishes the same number, but the
- * cart endpoint does not send it and this phase cannot add an API call. It is
- * duplicated here as a presentation-only constant and named as such, so the one
- * place to change when the policy changes is obvious. See the Phase 2 report.
- */
-const FREE_DELIVERY_THRESHOLD = 15000
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'

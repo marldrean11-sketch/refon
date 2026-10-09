@@ -44,7 +44,7 @@ export function DeviceThumb({ listing, className = '', size = 'md' }) {
       role="img"
       aria-label={`${alt} — no photograph available`}
     >
-      <span className="font-display text-lg font-bold tracking-tight text-slate-400">
+      <span className="font-display text-lg font-bold tracking-tight text-subtle">
         {initial}
       </span>
     </div>

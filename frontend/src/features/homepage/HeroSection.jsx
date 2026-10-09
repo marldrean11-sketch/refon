@@ -232,15 +232,9 @@ function MaskedLine({ line, reduced, index }) {
   return (
     <span className="block overflow-hidden pb-[0.06em]">
       <motion.span {...enter(index + 1, reduced, maskReveal, HEADLINE_STEP)} className="block">
-        {line.map((run, runIndex) =>
-          run.accent ? (
-            <span key={runIndex} className="font-accent text-muted">
-              {run.text}
-            </span>
-          ) : (
-            <span key={runIndex}>{run.text}</span>
-          ),
-        )}
+        {line.map((run, runIndex) => (
+          <span key={runIndex}>{run.text}</span>
+        ))}
       </motion.span>
     </span>
   )

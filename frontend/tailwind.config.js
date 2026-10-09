@@ -94,7 +94,11 @@ export default {
         danger: '#ef4444',
         success: '#059669',
         warning: '#f59e0b',
-        info: '#2563eb',
+        /**
+         * Neutral, not blue. The palette has one hue that carries meaning; an
+         * informational message is set in ink rather than in a second accent.
+         */
+        info: '#111111',
 
         /**
          * The amber family, used for value: discounts, savings, and the two
@@ -140,7 +144,12 @@ export default {
          * `surface*` were the pre-redesign names for the same four surfaces. They
          * are kept so no component has to change to adopt the new palette; new
          * code uses `page` / `panel` / `card` / `well`.
+         *
+         * `canvas` is the same kind of alias, for `page`. The layouts, `Section`,
+         * and the auth shell still say `bg-canvas`; without it that class matched
+         * nothing and those surfaces were transparent.
          */
+        canvas: '#f6f5f1',
         surface: '#ffffff',
         'surface-2': '#eceae4',
         'surface-3': '#e3e1da',
@@ -165,13 +174,6 @@ export default {
          * was the only reason the mono was there.
          */
         mono: ['Manrope Variable', 'Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        /**
-         * Reserved for a single accent word — a word in a heading that should
-         * read as an annotation rather than as part of the sentence. Bundled
-         * lazily by the page that uses it; unused otherwise, so nothing here
-         * depends on a remote font.
-         */
-        accent: ['Instrument Serif', 'ui-serif', 'Georgia', 'serif'],
       },
 
       /**

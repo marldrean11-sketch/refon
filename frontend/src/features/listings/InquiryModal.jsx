@@ -342,10 +342,10 @@ export function InquiryModal({ listing, onClose, open = true }) {
                   disabled={status === 'submitting'}
                   aria-invalid={Boolean(errors.message)}
                   aria-describedby={errors.message ? 'inquiry-message-error' : undefined}
-                  className={`mt-2 w-full resize-none rounded-2xl border bg-white p-4 text-[15px] leading-relaxed text-ink shadow-sm transition duration-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 ${
+                  className={`mt-2 w-full resize-none rounded-2xl border bg-white p-4 text-[15px] leading-relaxed text-ink shadow-sm transition duration-200 placeholder:text-subtle focus:outline-none focus:ring-4 ${
                     errors.message
                       ? 'border-danger focus:border-danger focus:ring-red-100'
-                      : 'border-line hover:border-slate-300 focus:border-primary-500 focus:ring-primary-100'
+                      : 'border-line hover:border-line-2 focus:border-primary-500 focus:ring-primary-100'
                   }`}
                   required
                 />

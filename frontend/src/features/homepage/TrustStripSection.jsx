@@ -1,31 +1,32 @@
 /**
  * The standard.
  *
- * Sits directly under the hero because these four are the objections a buyer has in
- * the first five seconds: is it tested, am I covered if it fails, can I send it
- * back, and what does delivery cost.
+ * Sits directly under the hero. The four items are the ones only this
+ * marketplace's data can back: a measured battery figure, written condition
+ * notes, itemised inspection results, and a person reviewing every seller and
+ * listing. Returns and delivery terms, which any shop can match, live in the
+ * announcement bar instead.
  *
  * One divided bar of four numbered cells rather than four floating icon cards.
  * Four identical rounded tiles with coloured icon squares is the most recognisable
  * "generic landing page" component there is; a single hairline-divided bar reads as
  * a published standard instead, and the numbers make it scannable.
  *
- * Every figure here is one the site already publishes — see the citations on
- * `TRUST_STRIP` in `content/home-content.js`. The Phase 3 brief asked for "30-day
- * returns" and a "40+ point test"; neither is true of this codebase, which
- * publishes a 7-day window and an 11-point inspection, so neither is printed here.
+ * Every claim here is a required field or a moderation step — see the citations on
+ * `TRUST_STRIP` in `content/home-content.js`. IMEI is deliberately absent: the
+ * seller ticks `imeiVerified` on the listing form, so it is not a check ReFon runs.
  */
 import { motion } from 'framer-motion'
-import { ClipboardCheck, ShieldCheck, Truck, Undo2 } from 'lucide-react'
+import { BatteryFull, ClipboardCheck, NotebookPen, ShieldCheck, UserCheck } from 'lucide-react'
 import { TRUST_STRIP } from '../../content/home-content.js'
 import { Container } from '../design/Container.jsx'
 import { fadeUp, stagger, usePrefersReducedMotion } from '../../lib/motion.ts'
 
 const ICONS = {
-  tested: ClipboardCheck,
-  warranty: ShieldCheck,
-  returns: Undo2,
-  delivery: Truck,
+  battery: BatteryFull,
+  notes: NotebookPen,
+  checks: ClipboardCheck,
+  moderated: UserCheck,
 }
 
 export function TrustStripSection() {

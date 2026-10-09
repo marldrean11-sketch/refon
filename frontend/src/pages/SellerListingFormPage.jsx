@@ -37,7 +37,7 @@ const MAX_PHOTO_SIZE = 8 * 1024 * 1024
 const ACCEPTED_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 const inputClassName =
-  'h-14 w-full rounded-2xl border border-line bg-white px-4 text-[15px] text-ink shadow-sm transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100'
+  'h-14 w-full rounded-2xl border border-line bg-white px-4 text-[15px] text-ink shadow-sm transition duration-200 placeholder:text-subtle hover:border-line-2 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100'
 const labelClassName = 'text-sm font-semibold text-ink'
 
 function createPhotoId(file) {
@@ -715,7 +715,7 @@ function SellerListingFormEditor({ mode, existingListing }) {
                     step="1"
                     value={form.batteryPercent}
                     onChange={(event) => updateField('batteryPercent', event.target.value)}
-                    className="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-accent-500"
+                    className="mt-5 h-2 w-full cursor-pointer appearance-none rounded-full bg-well accent-accent-500"
                   />
                   <div className="mt-2 flex justify-between text-xs font-semibold text-muted">
                     <span>0%</span>
@@ -734,10 +734,10 @@ function SellerListingFormEditor({ mode, existingListing }) {
                     value={form.conditionNotes}
                     onChange={(event) => updateField('conditionNotes', event.target.value)}
                     placeholder="Describe scratches, dents, marks on the frame, screen, back, and camera area…"
-                    className={`mt-2 w-full resize-none rounded-2xl border bg-white p-4 text-[15px] leading-body text-ink shadow-sm transition duration-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 ${
+                    className={`mt-2 w-full resize-none rounded-2xl border bg-white p-4 text-[15px] leading-body text-ink shadow-sm transition duration-200 placeholder:text-subtle focus:outline-none focus:ring-4 ${
                       errors.conditionNotes
                         ? 'border-danger focus:border-danger focus:ring-red-100'
-                        : 'border-line hover:border-slate-300 focus:border-primary-500 focus:ring-primary-100'
+                        : 'border-line hover:border-line-2 focus:border-primary-500 focus:ring-primary-100'
                     }`}
                     aria-invalid={Boolean(errors.conditionNotes)}
                    aria-describedby={errors.conditionNotes ? 'listing-notes-error' : undefined}

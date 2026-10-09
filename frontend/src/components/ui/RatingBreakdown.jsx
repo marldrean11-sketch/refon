@@ -29,7 +29,7 @@ export function RatingBreakdown({ breakdown = [], total = 0, className = '' }) {
                 <Star className="size-3 fill-current text-warning" aria-hidden="true" />
               </span>
               <span
-                className="h-2 flex-1 overflow-hidden rounded-pill bg-slate-100"
+                className="h-2 flex-1 overflow-hidden rounded-pill bg-well"
                 aria-hidden="true"
               >
                 <span
