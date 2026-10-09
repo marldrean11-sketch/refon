@@ -501,7 +501,7 @@ function HeroChip({ lean, travel, reduced, className = '', children }) {
           ? undefined
           : { duration: 4, repeat: Infinity, ease: 'easeInOut', repeatType: 'reverse' }
       }
-      className={`pointer-events-none absolute inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2 text-[13px] shadow-card ${
+      className={`pointer-events-none absolute z-raised inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2 text-[13px] shadow-card ${
         reduced ? '' : lean === 'left' ? 'rotate-[-2deg]' : 'rotate-[2deg]'
       } ${className}`}
     >

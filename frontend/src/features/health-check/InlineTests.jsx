@@ -44,9 +44,10 @@ function Meter({ value, label }) {
         aria-valuemax={100}
         aria-valuenow={Math.round(value * 100)}
       >
+        {/* Scaled, not resized: motion here animates transform only. */}
         <div
-          className="h-full rounded-pill bg-accent transition-[width] duration-100"
-          style={{ width: `${Math.min(100, Math.round(value * 100))}%` }}
+          className="h-full origin-left rounded-pill bg-accent transition-transform duration-100"
+          style={{ transform: `scaleX(${Math.min(1, value)})` }}
         />
       </div>
     </div>

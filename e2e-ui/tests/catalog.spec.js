@@ -27,7 +27,7 @@ test.describe('C1 catalog browse and filters', () => {
     const cards = await page.locator('article').count()
     const prices = await page.locator('article').getByText(/₱[\d,]+/).count()
     const batteries = await page.locator('article').getByText(/\d{1,3}%/).count()
-    const grades = await page.locator('article').getByText(/Grade [ABC]|Excellent|Very Good|\bGood\b/).count()
+    const grades = await page.locator('article').getByText(/Grade [ABC]|Excellent|Very Good|Good\b/).count()
     const sellerNames = await page
       .locator('article')
       .evaluateAll(
@@ -54,7 +54,7 @@ test.describe('C1 catalog browse and filters', () => {
     await page.waitForSelector('article', { timeout: 25_000 })
 
     const before = await page.locator('article').count()
-    await page.getByRole('radio', { name: /^Samsung/ }).first().click()
+    await page.locator('label').filter({ hasText: /^Samsung/ }).first().click()
     await page.waitForTimeout(900)
 
     expect(new URL(page.url()).searchParams.get('brand'), 'brand is in the URL').toBe('Samsung')
@@ -100,7 +100,7 @@ test.describe('C1 catalog browse and filters', () => {
     await page.goto('/phones')
     await page.waitForSelector('article', { timeout: 25_000 })
 
-    await page.getByRole('radio', { name: /^Apple/ }).first().click()
+    await page.locator('label').filter({ hasText: /^Apple/ }).first().click()
     await page.waitForTimeout(800)
     expect(new URL(page.url()).searchParams.get('brand')).toBe('Apple')
 
@@ -216,7 +216,9 @@ test.describe('C1 catalog browse and filters', () => {
     await page.goto('/')
     await page.waitForSelector('h1', { timeout: 25_000 })
 
-    const field = page.getByRole('combobox', { name: /Search refurbished phones/i }).first()
+    // The header search is a button that opens the search dialog.
+    await page.getByTestId('navbar-search').click()
+    const field = page.getByRole('dialog').getByRole('combobox').first()
     await field.click()
     await field.fill('iphone 13')
     await page.waitForTimeout(900)

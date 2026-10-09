@@ -62,7 +62,7 @@ test.describe('signed-in buyer', () => {
     await page.screenshot({ path: 'screenshots/C2-02-after-click.png' })
 
     const pressed = await page.locator('button[aria-pressed="true"]').count()
-    const after = await savedBadge(page)
+    const after = await savedBadge(page, before)
     console.log('C2_CLICK', JSON.stringify(result))
     console.log('C2_BADGE', before, '->', after, 'PRESSED', pressed)
 
@@ -99,7 +99,7 @@ test.describe('signed-in buyer', () => {
       attempts.push({ name, ...(await tryClickHeart(page, name)) })
     }
     await page.screenshot({ path: 'screenshots/C3-01-three-saved.png' })
-    const badgeAfter3 = await savedBadge(page)
+    const badgeAfter3 = await savedBadge(page, badgeStart)
     console.log('C3_ATTEMPTS', JSON.stringify(attempts))
     console.log('C3_BADGE', badgeStart, '->', badgeAfter3)
 
@@ -119,7 +119,7 @@ test.describe('signed-in buyer', () => {
     }
     await page.waitForTimeout(1300)
     await page.screenshot({ path: 'screenshots/C3-02-after-unsave.png' })
-    const badgeAfter2 = await savedBadge(page)
+    const badgeAfter2 = await savedBadge(page, badgeAfter3)
     console.log('C3_UNSAVED', removeLabel, 'error', unsaveError, 'badge', badgeAfter2)
 
     // Persistence is checked against /saved rather than the current results

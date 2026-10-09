@@ -117,11 +117,12 @@ export function ProductReviews({ reviews, summary, isLoading, error }) {
             </div>
 
             <h3 className="mt-6 text-sm font-bold text-ink">How reviews will work</h3>
-            <ul className="mt-2 grid gap-1.5 text-sm leading-relaxed text-muted">
-              <li>Only a buyer whose order was delivered can leave one.</li>
-              <li>Each review asks whether the phone matched its grade.</li>
-              <li>Reviews count toward the seller, shown on their storefront.</li>
-            </ul>
+            {/* Prose rather than a list, so nothing here reads as a review row. */}
+            <div className="mt-2 grid gap-1.5 text-sm leading-relaxed text-muted">
+              <p>Only a buyer whose order was delivered can leave one.</p>
+              <p>Each review asks whether the phone matched its grade.</p>
+              <p>Reviews count toward the seller, shown on their storefront.</p>
+            </div>
           </div>
         ) : (
           <>
