@@ -332,7 +332,7 @@ test.describe('P2 navigation foundation', () => {
     expect(notes, notes.join('\n')).toEqual([])
   })
 
-  test('P2-03 the navbar is transparent at rest, solid when scrolled, and hides on the way down', async ({
+  test('P2-03 the navbar is solid at rest, shadowed when scrolled, and hides on the way down', async ({
     page,
   }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
@@ -352,8 +352,9 @@ test.describe('P2 navigation foundation', () => {
 
     console.log('[P2-03] at top', JSON.stringify(atTop))
     expect(atTop.scrolled).toBe('false')
-    // Transparent: either no fill at all, or a fill with no alpha.
-    expect(/rgba\([^)]*,\s*0(\.0+)?\)$/.test(atTop.background) || atTop.background === 'rgba(0, 0, 0, 0)').toBe(true)
+    // Solid white from the top: the search field sits over the hero and has to
+    // read as a field, so the bar is never see-through.
+    expect(atTop.background).toBe('rgb(255, 255, 255)')
 
     await scrollTo(page, 200)
     await page.waitForTimeout(400)
@@ -371,7 +372,7 @@ test.describe('P2 navigation foundation', () => {
     console.log('[P2-03] scrolled', JSON.stringify(scrolled))
     expect(scrolled.scrolled).toBe('true')
     expect(Number.parseFloat(scrolled.borderBottom)).toBeGreaterThan(0)
-    expect(scrolled.backdrop).not.toBe('none')
+    expect(scrolled.background).toBe('rgb(255, 255, 255)')
 
     // Scroll down: the bar leaves via transform, not via display or top.
     await scrollTo(page, 1400)
@@ -884,7 +885,7 @@ test.describe('P2 navigation foundation', () => {
     }))
 
     console.log('[P2-11] wordmark before scroll', JSON.stringify(beforeScroll))
-    expect(beforeScroll.text).toBe('ReFon')
+    expect(beforeScroll.text).toBe('refon')
     expect(beforeScroll.opacity, 'wordmark already revealed at scrollY 0').toBeLessThan(0.5)
 
     // Newsletter: invalid then valid.
@@ -912,7 +913,7 @@ test.describe('P2 navigation foundation', () => {
       text: node.textContent.trim(),
     }))
     console.log('[P2-11] wordmark after scroll', JSON.stringify(afterScroll))
-    expect(afterScroll.text).toBe('ReFon')
+    expect(afterScroll.text).toBe('refon')
     expect(afterScroll.opacity).toBeGreaterThan(0.9)
 
     expect(unexpected(bucket).join('\n')).toBe('')

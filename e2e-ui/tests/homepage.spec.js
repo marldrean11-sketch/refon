@@ -38,9 +38,8 @@ test.describe('H1 homepage content and structure', () => {
     const heading = (await page.locator('h1').first().innerText()).replace(/\s+/g, ' ')
     console.log('H1_HERO', heading)
 
-    expect(heading).toMatch(/Premium Phones/i)
-    expect(heading).toMatch(/Smarter Prices/i)
-    expect(heading).toMatch(/Tested for You/i)
+    expect(heading).toMatch(/Know the phone/i)
+    expect(heading).toMatch(/before you buy it/i)
 
     const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
     expect(body).toMatch(/condition grades/i)

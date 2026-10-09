@@ -8,9 +8,9 @@
  * properties for hand-written CSS; the two files are mirrors and are edited
  * together.
  *
- * The palette is a warm off-white paper, one green that means "verified", and a
- * near-black that carries every heavy object. There is no second accent hue:
- * with one, nothing on screen is load-bearing.
+ * The palette is a cool paper, Night navy for every heavy object, ReFon Cobalt
+ * for the brand, and Tag Yellow for the ReFon Tag and the hero band. Green keeps
+ * one meaning: verified, inspected, or cleared.
  */
 
 /** @type {import('tailwindcss').Config} */
@@ -29,11 +29,11 @@ export default {
          * `panel` is deliberately narrow — 4% of luminance — because a wide step
          * makes a page look like a stack of unrelated documents.
          */
-        page: '#f6f5f1',
-        panel: '#eceae4',
+        page: '#f3f5f9',
+        panel: '#e9edf5',
         card: '#ffffff',
         /** A third step down, for wells inside a panel. */
-        well: '#e3e1da',
+        well: '#dfe4ee',
 
         /**
          * Text.
@@ -43,13 +43,13 @@ export default {
          * secondary text and `subtle` is the floor — it is never allowed on
          * anything a visitor has to act on.
          */
-        ink: '#111111',
-        muted: '#6b6b66',
-        subtle: '#94938c',
+        ink: '#0d1633',
+        muted: '#4d5672',
+        subtle: '#646c88',
 
         /** Hairlines. `line` is decorative; `line-2` is a border you can see. */
-        line: '#e6e4dd',
-        'line-2': '#d2cfc6',
+        line: '#e1e5ee',
+        'line-2': '#c8cfdd',
 
         /** The one signal colour. Verified, inspected, cleared. */
         accent: {
@@ -74,19 +74,44 @@ export default {
         },
 
         /** The heavy dark. Buttons, the footer, and the splash panel's mark. */
-        dark: '#0b0f0e',
+        dark: '#0d1633',
         primary: {
-          50: '#f2f3f2',
-          100: '#e6e8e6',
-          200: '#cbcecb',
-          300: '#a9aeaa',
-          400: '#828985',
-          500: '#5e6663',
-          600: '#464d4a',
-          700: '#333936',
-          800: '#232827',
-          900: '#151a1a',
-          950: '#0b0f0e',
+          50: '#f3f4f8',
+          100: '#e7e9f0',
+          200: '#cfd3df',
+          300: '#aeb4c7',
+          400: '#8a91aa',
+          500: '#6a7290',
+          600: '#4d5672',
+          700: '#333f6e',
+          800: '#222e5c',
+          900: '#16214a',
+          950: '#0d1633',
+        },
+
+        /**
+         * The brand.
+         *
+         * `night` is the navy that carries every heavy object: headings, the
+         * primary button, the footer. `brand` is ReFon Cobalt, for links and the
+         * one highlighted item in a row. `tag` is Tag Yellow, the colour of the
+         * ReFon Tag and of the hero band. It is a fill only: Night text sits on
+         * it at 11.6:1, and it is never used as text on a light surface.
+         */
+        night: {
+          DEFAULT: '#0d1633',
+          700: '#222e5c',
+          800: '#16214a',
+        },
+        brand: {
+          DEFAULT: '#1f3fd1',
+          hover: '#1a35b3',
+          tint: '#e3e8ff',
+        },
+        tag: {
+          DEFAULT: '#ffc933',
+          hover: '#f5b800',
+          soft: '#fff4cc',
         },
 
         /** Status. `red` is also the notification-badge colour. */
@@ -98,7 +123,7 @@ export default {
          * Neutral, not blue. The palette has one hue that carries meaning; an
          * informational message is set in ink rather than in a second accent.
          */
-        info: '#111111',
+        info: '#0d1633',
 
         /**
          * The amber family, used for value: discounts, savings, and the two
@@ -149,31 +174,30 @@ export default {
          * and the auth shell still say `bg-canvas`; without it that class matched
          * nothing and those surfaces were transparent.
          */
-        canvas: '#f6f5f1',
+        canvas: '#f3f5f9',
         surface: '#ffffff',
-        'surface-2': '#eceae4',
-        'surface-3': '#e3e1da',
+        'surface-2': '#e9edf5',
+        'surface-3': '#dfe4ee',
       },
 
       fontFamily: {
         /**
-         * One family, self-hosted.
+         * Three families, self-hosted, one job each.
          *
-         * Manrope is bundled through `@fontsource-variable`, so the site makes
-         * no request to a font CDN and renders identically offline. The variable
-         * build covers 200–800, which is the whole range the product uses.
+         * Archivo (display) is wide and loud like a printed shop tag; Instrument
+         * Sans (sans, body) is calm for reading; IBM Plex Mono (mono) makes every
+         * measured figure look measured. All three are bundled through
+         * `@fontsource`, so the site makes no request to a font CDN and renders
+         * identically offline.
          */
-        sans: ['Manrope Variable', 'Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        display: ['Manrope Variable', 'Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        body: ['Manrope Variable', 'Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['Instrument Sans Variable', 'Instrument Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Archivo Variable', 'Archivo', 'Arial Black', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['Instrument Sans Variable', 'Instrument Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         /**
-         * The former monospace role — eyebrow labels, prices, grades, spec values
-         * — is now the same variable family. A second face for the small caps
-         * labels was reading as a different product rather than as data, and the
-         * existing `tabular-nums` base rule already keeps digits aligned, which
-         * was the only reason the mono was there.
+         * The data face: eyebrow labels, grades, spec values, and the readings
+         * on the ReFon Tag.
          */
-        mono: ['Manrope Variable', 'Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        mono: ['IBM Plex Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
 
       /**

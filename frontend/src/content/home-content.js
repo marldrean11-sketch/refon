@@ -57,21 +57,42 @@ export const TRUST_STRIP = Object.freeze([
 ])
 
 /**
- * The hero carousel's headline.
+ * The hero's slides.
  *
- * Structured as lines of *runs* rather than plain strings, because each line is
- * masked and revealed on its own. The whole headline is set in Manrope: the site
- * bundles one family, and a single word in a second face was the commonest tell
- * of a templated hero.
+ * Each slide states one fact ReFon can back, names the action that follows from
+ * it, and puts one real listing's tag beside it (`pick`, resolved in
+ * `HomeHero`). The tone is plain on purpose: the tag beside the headline is the
+ * evidence, so the headline does not need to sell.
+ *
+ * Every link is a filter the shop already accepts, so a slide never sends a
+ * visitor to an empty page.
  */
-export const HERO_HEADLINE = Object.freeze([
-  Object.freeze([{ text: 'Premium phones.' }]),
-  Object.freeze([{ text: 'Smarter prices.' }]),
-  Object.freeze([{ text: 'Tested for you.' }]),
+export const HERO_SLIDES = Object.freeze([
+  Object.freeze({
+    key: 'tag',
+    pick: 'featured',
+    headline: Object.freeze(['Know the phone', 'before you buy it.']),
+    body: 'Every phone on ReFon has a tag with its grade, the battery health we measured, and the result of each check. A person reviews every listing before it goes live.',
+    primary: Object.freeze({ label: 'Shop phones', to: '/phones' }),
+    secondary: Object.freeze({ label: 'How we grade', to: '/quality-check' }),
+  }),
+  Object.freeze({
+    key: 'battery',
+    pick: 'battery',
+    headline: Object.freeze(['Battery health,', 'measured on every phone.']),
+    body: 'The percentage on each listing is the figure read from the phone, not a word like "good". Filter by it before you look at anything else.',
+    primary: Object.freeze({ label: 'Shop 90%+ battery', to: '/phones?minBattery=90' }),
+    secondary: Object.freeze({ label: 'How we test', to: '/quality-check' }),
+  }),
+  Object.freeze({
+    key: 'budget',
+    pick: 'budget',
+    headline: Object.freeze(['Under ₱10,000,', 'with the same checks.']),
+    body: 'Budget phones get the same 11-point checklist, written grade notes, and 7-day returns as flagships.',
+    primary: Object.freeze({ label: 'Shop under ₱10,000', to: '/phones?maxPrice=10000' }),
+    secondary: Object.freeze({ label: 'Returns policy', to: '/returns' }),
+  }),
 ])
-
-export const HERO_SUBTEXT =
-  'Every phone here has been inspected, graded, and measured before it is listed — the condition, the battery percentage, and the warranty term are on the listing itself, not in the small print.'
 
 export const WHY_REFURBISHED = Object.freeze([
   {
