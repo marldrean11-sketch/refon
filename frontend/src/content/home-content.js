@@ -22,39 +22,37 @@
  *     on every seeded listing and `InspectionPanel` says "11-point quality
  *     inspection". A 40-point test would be a test that does not happen.
  *
- * The warranty is likewise not printed as a flat "12 months" promise: only 4 of
- * the 28 approved listings carry a 12-month term (18 are 6-month, 6 are 3-month),
- * so the strip says "on eligible phones" and the exact term is read off the
- * listing itself.
+ * The strip now carries the four claims only ReFon's data backs. Returns and
+ * delivery, which any shop can match, moved to the announcement bar. IMEI is not
+ * printed: `imeiVerified` is ticked by the seller on the listing form, so it is
+ * the seller's statement, not a check ReFon runs. Inspection results are optional
+ * on a listing (`inspectionRecorded` can be false), so the copy promises the
+ * checklist and shows whatever was recorded rather than "every phone passed".
  */
 export const TRUST_STRIP = Object.freeze([
   {
-    id: 'tested',
-    label: '11-point inspection',
-    detail: 'Every phone tested before listing',
-    // `inspectionTotal` on every approved listing; "11-point quality
-    // inspection" in `InspectionPanel`.
+    id: 'battery',
+    label: 'Battery % on every listing',
+    detail: 'The measured figure, not "good condition"',
+    // `batteryPercent` is a required field in `listing.validator.js`.
   },
   {
-    id: 'warranty',
-    label: 'Warranty on eligible phones',
-    detail: 'Up to 12 months, handled by ReFon',
-    // `warrantyMonths` maxes at 12 across the catalog. "Up to", because 24 of 28
-    // listings carry a shorter term.
+    id: 'notes',
+    label: 'Grades come with written notes',
+    detail: 'What the marks are and where, not just a letter',
+    // `conditionNotes` is required, at least 10 characters.
   },
   {
-    id: 'returns',
-    label: '7-day returns',
-    detail: 'If it differs from the listing, send it back',
-    // The published return window in `policy-content.js`, `WarrantySection`, and
-    // the shipping page.
+    id: 'checks',
+    label: 'An 11-point checklist',
+    detail: 'Recorded results are itemised on each phone\'s page',
+    // `inspectionChecks` against `INSPECTION_CHECKS`, shown by `InspectionPanel`.
   },
   {
-    id: 'delivery',
-    label: 'Free delivery over ₱15,000',
-    detail: 'Standard shipping, nationwide',
-    // `FREE_STANDARD_DELIVERY_THRESHOLD` in `backend/src/config/checkout.config.js`,
-    // published on the shipping page.
+    id: 'moderated',
+    label: 'Reviewed by a person',
+    detail: 'Every seller and every listing, before it goes live',
+    // Seller verification and listing moderation in the admin queues.
   },
 ])
 

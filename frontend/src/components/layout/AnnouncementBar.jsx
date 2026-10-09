@@ -6,9 +6,10 @@ import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
 /**
  * Announcement bar.
  *
- * A utility strip, not a banner. It is one line of monospace text on Obsidian
- * with a jade tick marking it as a verified claim, and it links to the inspection
- * page rather than to a promotion. Dismissal is per browser session so it never
+ * A utility strip, not a banner. It carries the two terms any shop can match —
+ * the return window and the free-delivery threshold — so the trust strip under
+ * the hero can spend its space on what only ReFon's data backs. It links to the
+ * policy rather than to a promotion. Dismissal is per browser session so it never
  * nags on repeat visits.
  */
 export function AnnouncementBar() {
@@ -37,12 +38,12 @@ export function AnnouncementBar() {
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-2.5 py-2 pl-12 pr-12 text-center">
         <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] sm:text-xs">
           <span className="mr-2 inline-block size-1.5 rounded-full bg-accent-400 align-middle" aria-hidden="true" />
-          Every phone is tested and graded before it is listed.{' '}
+          7-day returns · Free standard delivery over ₱15,000.{' '}
           <Link
-            to={MARKETPLACE_ROUTES.qualityCheck}
+            to={MARKETPLACE_ROUTES.returns}
             className="text-white underline decoration-accent-400/60 underline-offset-4 transition hover:decoration-accent-300"
           >
-            See exactly how we test
+            Read the return policy
           </Link>
         </p>
       </div>

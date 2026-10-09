@@ -20,7 +20,7 @@ const ICONS = [Sparkles, PiggyBank, ShieldCheck, Leaf]
  */
 export function WhyRefurbishedSection() {
   return (
-    <Section tone="canvas">
+    <Section tone="muted">
       <SectionHeading
         eyebrow="Why refurbished"
         title="A better phone, without the new-phone price tag"
