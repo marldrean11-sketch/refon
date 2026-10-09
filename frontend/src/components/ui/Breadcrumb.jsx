@@ -19,7 +19,7 @@ export function Breadcrumb({ items = [], className = '' }) {
           return (
             <li key={`${item.label}-${index}`} className="flex items-center gap-1.5">
               {index > 0 && (
-                <ChevronRight className="size-3.5 shrink-0 text-slate-300" aria-hidden="true" />
+                <ChevronRight className="size-3.5 shrink-0 text-line-2" aria-hidden="true" />
               )}
               {item.to && !isLast ? (
                 <Link

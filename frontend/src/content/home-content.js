@@ -61,23 +61,15 @@ export const TRUST_STRIP = Object.freeze([
 /**
  * The hero carousel's headline.
  *
- * Structured as lines of *runs* rather than plain strings, because two things
- * need to be expressed per word: each line is masked and revealed on its own, and
- * exactly one word on the whole page is set in the italic serif.
- *
- * "you" is that word. It is the one place a serif earns its keep — it is the
- * promise the rest of the page spends 11 sections keeping — and it is set in the
- * serif *rather than* in green, because on this site green means "verified" and a
- * green adjective would claim a verification the headline has not got.
+ * Structured as lines of *runs* rather than plain strings, because each line is
+ * masked and revealed on its own. The whole headline is set in Manrope: the site
+ * bundles one family, and a single word in a second face was the commonest tell
+ * of a templated hero.
  */
 export const HERO_HEADLINE = Object.freeze([
-  Object.freeze([{ text: 'Premium phones.', accent: false }]),
-  Object.freeze([{ text: 'Smarter prices.', accent: false }]),
-  Object.freeze([
-    { text: 'Tested for ', accent: false },
-    { text: 'you', accent: true },
-    { text: '.', accent: false },
-  ]),
+  Object.freeze([{ text: 'Premium phones.' }]),
+  Object.freeze([{ text: 'Smarter prices.' }]),
+  Object.freeze([{ text: 'Tested for you.' }]),
 ])
 
 export const HERO_SUBTEXT =

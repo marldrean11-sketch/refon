@@ -25,9 +25,9 @@ export const CONDITION_GRADES = Object.freeze({
     summary: 'Minor cosmetic marks.',
     description:
       'Visible light wear from normal use. Small scratches on the frame or rear panel, clean display and camera glass, everything fully functional.',
-    accent: 'text-info',
-    chip: 'bg-sky-50 text-sky-800 ring-sky-200',
-    bar: 'bg-info',
+    accent: 'text-flare-700',
+    chip: 'bg-flare-50 text-flare-900 ring-flare-200',
+    bar: 'bg-grade-b',
     legacyLabels: ['Good', 'Very Good'],
   },
   C: {
@@ -37,9 +37,9 @@ export const CONDITION_GRADES = Object.freeze({
     summary: 'Visible signs of use, fully functional.',
     description:
       'Clear cosmetic wear such as scuffs or small marks on the back or frame. Nothing structural, no cracked glass, and every function passes testing.',
-    accent: 'text-warning',
-    chip: 'bg-amber-50 text-amber-900 ring-amber-200',
-    bar: 'bg-warning',
+    accent: 'text-orange-700',
+    chip: 'bg-orange-50 text-orange-900 ring-orange-200',
+    bar: 'bg-grade-c',
     legacyLabels: ['Fair', 'Good Condition', 'Used'],
   },
 })
@@ -100,8 +100,8 @@ export const BATTERY_BANDS = Object.freeze([
     id: 'good',
     label: '80% – 89%',
     min: 80,
-    tone: 'text-info',
-    bar: 'bg-info',
+    tone: 'text-ink',
+    bar: 'bg-primary-700',
     note: 'Healthy for daily use.',
   },
   {

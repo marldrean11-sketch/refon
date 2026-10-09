@@ -37,7 +37,7 @@ function OptionCard({ name, value, checked, onChange, title, description, meta, 
           here purely so the checked state reads clearly at a glance. */}
       <span
         className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 transition peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500 peer-focus-visible:ring-offset-2 ${
-          checked ? 'border-primary-500 bg-primary-500' : 'border-slate-300 bg-white'
+          checked ? 'border-primary-500 bg-primary-500' : 'border-line-2 bg-white'
         }`}
         aria-hidden="true"
       >
@@ -111,7 +111,7 @@ export function DeliveryMethodSelector({ options, value, onChange, error, loadin
       <div className="space-y-3" aria-busy="true">
         <span className="sr-only">Loading delivery methods…</span>
         {[0, 1].map((key) => (
-          <div key={key} className="h-24 animate-pulse rounded-2xl bg-slate-200/80 motion-reduce:animate-none" />
+          <div key={key} className="h-24 animate-pulse rounded-2xl bg-well motion-reduce:animate-none" />
         ))}
       </div>
     )
@@ -177,7 +177,7 @@ export function PaymentMethodSelector({ methods, value, onChange, error, notice 
     <>
       {notice && (
         <p
-          className="mb-4 flex gap-2.5 rounded-2xl border border-sky-200 bg-sky-50 p-3.5 text-xs leading-relaxed text-sky-900"
+          className="mb-4 flex gap-2.5 rounded-2xl border border-line-2 bg-panel p-3.5 text-xs leading-relaxed text-ink"
           data-testid="demo-payment-notice"
         >
           {notice}

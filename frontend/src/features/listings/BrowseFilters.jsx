@@ -3,7 +3,7 @@ import { RotateCcw, SlidersHorizontal } from 'lucide-react'
 const years = Array.from({ length: 10 }, (_, index) => 2015 + index)
 
 const controlClassName =
-  'h-12 w-full rounded-xl border border-line bg-white px-3.5 text-base font-semibold text-ink shadow-sm sm:text-sm transition duration-200 hover:border-slate-300 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100'
+  'h-12 w-full rounded-xl border border-line bg-white px-3.5 text-base font-semibold text-ink shadow-sm sm:text-sm transition duration-200 hover:border-line-2 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100'
 
 export function BrowseFilters({ filters, brands, onChange, onReset, activeCount }) {
   return (

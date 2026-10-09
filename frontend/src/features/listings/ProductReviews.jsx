@@ -32,9 +32,9 @@ export function ProductReviews({ reviews, summary, isLoading, error }) {
         <div className="mt-6 space-y-4" aria-hidden="true">
           {[0, 1].map((row) => (
             <div key={row} className="space-y-2">
-              <div className="h-3 w-40 animate-pulse rounded bg-slate-100" />
-              <div className="h-3 w-full animate-pulse rounded bg-slate-100" />
-              <div className="h-3 w-2/3 animate-pulse rounded bg-slate-100" />
+              <div className="h-3 w-40 animate-pulse rounded bg-well" />
+              <div className="h-3 w-full animate-pulse rounded bg-well" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-well" />
             </div>
           ))}
         </div>
