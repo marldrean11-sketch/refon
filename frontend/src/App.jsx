@@ -14,6 +14,7 @@ import { SellerListingsProvider } from './features/seller/SellerListingsProvider
 import { SellerInquiriesProvider } from './features/inquiries/SellerInquiriesProvider.jsx'
 import { SavedListingsProvider } from './features/favorites/SavedListingsProvider.jsx'
 import { CartProvider } from './features/cart/CartProvider.jsx'
+import { CompareProvider } from './features/compare/CompareProvider.jsx'
 import { PendingIntentReplay } from './features/cart/PendingIntentReplay.jsx'
 import { ToastProvider } from './components/ui/Toast.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
@@ -127,7 +128,7 @@ const HealthCheckPage = lazy(() =>
   import('./pages/HealthCheckPage.jsx').then((module) => ({ default: module.HealthCheckPage })),
 )
 const ComparePage = lazy(() =>
-  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.ComparePage })),
+  import('./pages/ComparePage.jsx').then((module) => ({ default: module.ComparePage })),
 )
 const SellerApplyPage = lazy(() =>
   import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.SellerApplyPage })),
@@ -162,6 +163,8 @@ function App() {
         {/* The header badge, the mobile tab bar, the product page's add button, the
             cart, and checkout all read one cart, so they cannot disagree. */}
         <CartProvider>
+        {/* The compare checkbox on every card and the tray read one list. */}
+        <CompareProvider>
         <ToastProvider>
         {/* Replays a visitor's deferred add-to-cart once they are a signed-in buyer.
             It must sit inside ToastProvider, which is itself inside CartProvider, so
@@ -284,6 +287,7 @@ function App() {
           </Routes>
         </Suspense>
         </ToastProvider>
+        </CompareProvider>
         </CartProvider>
         </SavedListingsProvider>
         </AuthProvider>

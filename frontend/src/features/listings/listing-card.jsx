@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { isImageReference } from './image-reference.js'
 import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { FavoriteButton } from '../favorites/FavoriteButton.jsx'
+import { CompareToggle } from '../compare/CompareToggle.jsx'
 import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import { ConditionBadge } from '../../components/ui/ConditionBadge.jsx'
 import { PriceDisplay } from '../../components/ui/PriceDisplay.jsx'
@@ -214,6 +215,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
                 Verified seller
               </span>
             )}
+            {!preview && <CompareToggle listing={listing} className="ml-auto -my-1" />}
           </div>
         </div>
       </div>
