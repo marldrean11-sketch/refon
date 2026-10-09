@@ -123,6 +123,9 @@ const CheckoutConfirmedPage = lazy(() =>
     default: module.CheckoutConfirmedPage,
   })),
 )
+const HealthCheckPage = lazy(() =>
+  import('./pages/HealthCheckPage.jsx').then((module) => ({ default: module.HealthCheckPage })),
+)
 const ComparePage = lazy(() =>
   import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.ComparePage })),
 )
@@ -194,6 +197,7 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.compare} element={<ComparePage />} />
                 <Route path={MARKETPLACE_ROUTES.howItWorks} element={<HowItWorksPage />} />
                 <Route path={MARKETPLACE_ROUTES.qualityCheck} element={<QualityCheckPage />} />
+                <Route path={MARKETPLACE_ROUTES.healthCheck} element={<HealthCheckPage />} />
                 <Route path={MARKETPLACE_ROUTES.about} element={<AboutPage />} />
                 <Route path={MARKETPLACE_ROUTES.faq} element={<FaqPage />} />
                 <Route path={MARKETPLACE_ROUTES.warranty} element={<WarrantyPage />} />

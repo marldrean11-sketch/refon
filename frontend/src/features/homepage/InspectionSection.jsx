@@ -71,9 +71,12 @@ export function InspectionSection() {
         ))}
       </ol>
 
-      <div className="mt-12">
+      <div className="mt-12 flex flex-wrap gap-3">
         <ButtonLink to={MARKETPLACE_ROUTES.qualityCheck} variant="primary" size="lg">
           How we test every phone
+        </ButtonLink>
+        <ButtonLink to={MARKETPLACE_ROUTES.healthCheck} variant="secondary" size="lg">
+          Test your own phone
         </ButtonLink>
       </div>
     </Section>

@@ -39,6 +39,8 @@ export const MARKETPLACE_ROUTES = Object.freeze({
   categories: '/categories',
   howItWorks: '/how-it-works',
   qualityCheck: '/quality-check',
+  /** The in-browser self-test a visitor runs on the phone in their hand. */
+  healthCheck: '/health-check',
   compare: '/compare',
   cart: '/cart',
   checkout: '/checkout',
