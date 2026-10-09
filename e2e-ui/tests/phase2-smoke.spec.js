@@ -90,3 +90,4 @@ test.describe('add to cart as a buyer', () => {
     expectNoFatalErrors(all, 'P2-smoke-cart')
   })
 })
+})
