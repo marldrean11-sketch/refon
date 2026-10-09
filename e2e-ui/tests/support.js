@@ -142,11 +142,32 @@ export async function heartIsTopmost(page, name) {
   }, name)
 }
 
-export async function savedBadge(page) {
-  const link = page.locator('a[href="/saved"]').first()
-  const text = await link.innerText().catch(() => '')
-  const match = text.match(/Saved\s*(\d+)/)
-  return match ? Number(match[1]) : 0
+/**
+ * The header's saved count. The link shows only a number and states the count in
+ * its accessible name ("Saved phones, 3 saved"); it is not rendered at all while
+ * nothing is saved, which reads as 0. The count can lag a click by a moment, so
+ * this polls briefly for a change from `previous` when one is given.
+ */
+export async function savedBadge(page, previous) {
+  const read = async () => {
+    const label = await page
+      .getByTestId('navbar-saved')
+      .getAttribute('aria-label', { timeout: 1_000 })
+      .catch(() => null)
+    const match = label?.match(/(\d+) saved/)
+    return match ? Number(match[1]) : 0
+  }
+
+  if (previous === undefined) {
+    return read()
+  }
+
+  let value = await read()
+  for (let attempt = 0; attempt < 10 && value === previous; attempt += 1) {
+    await page.waitForTimeout(300)
+    value = await read()
+  }
+  return value
 }
 
 export function expectVisibleCount(locator, count, message) {

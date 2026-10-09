@@ -64,7 +64,7 @@ export function LandingPage() {
     <>
       <HomeHero listings={listings} featured={featured} />
       <TrustStripSection />
-      <FeaturedCategoriesSection listings={listings} />
+      <FeaturedCategoriesSection />
       <NewArrivalsSection listings={listings} isLoading={isLoading} />
       <GradingSection />
       <InspectionSection />

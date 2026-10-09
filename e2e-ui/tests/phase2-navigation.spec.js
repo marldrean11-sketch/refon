@@ -750,6 +750,15 @@ test.describe('P2 navigation foundation', () => {
 
     const checkout = page.getByTestId('cart-checkout')
 
+    // Wait for the drawer to finish sliding in. Measured mid-slide, the button's
+    // centre can still be past the right edge of the viewport, where
+    // `elementsFromPoint` finds nothing and the check fails for no real reason.
+    await expect
+      .poll(() => checkout.evaluate((node) => node.getBoundingClientRect().right <= window.innerWidth), {
+        timeout: 5_000,
+      })
+      .toBe(true)
+
     // The toast region is bottom-centre, exactly where the drawer's footer is.
     const overlap = await checkout.evaluate((node) => {
       const box = node.getBoundingClientRect()

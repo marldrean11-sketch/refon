@@ -32,7 +32,7 @@ export const listingInclude = {
     },
   },
   reviews: {
-    where: { status: 'PUBLISHED' },
+    where: { status: 'PUBLISHED', isSample: false },
     select: { rating: true },
   },
 }
@@ -808,7 +808,7 @@ export async function getListingReviews(id) {
   }
 
   const rows = await prisma.review.findMany({
-    where: { listingId: id, status: 'PUBLISHED' },
+    where: { listingId: id, status: 'PUBLISHED', isSample: false },
     orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     select: {
       id: true,

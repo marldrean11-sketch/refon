@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Container } from '../design/Container.jsx'
 import { RefonTag } from '../../components/ui/RefonTag.jsx'
+import { isImageReference } from '../listings/image-reference.js'
 import { HERO_SLIDES } from '../../content/home-content.js'
 import { durations, easings, usePrefersReducedMotion } from '../../lib/motion.ts'
 
@@ -26,6 +27,13 @@ const PICKS = {
       .sort((a, b) => Number(a.price) - Number(b.price))[0],
 }
 
+/** The listing's photograph, when a seller has uploaded a real one. */
+function photoOf(listing) {
+  const photo = listing?.mainPhoto ?? listing?.photos?.[0]
+
+  return isImageReference(photo) ? photo : null
+}
+
 /**
  * The homepage hero.
  *
@@ -34,6 +42,10 @@ const PICKS = {
  * the tag of a real phone. Slides change only when the visitor asks, with the
  * dots on the left and the arrows on the right below the band. There is no timer:
  * a moving headline is something a reader has to chase.
+ *
+ * When the slide's phone has a real photograph, the photo sits in a 4:5 frame and
+ * the tag hangs over its lower edge. The seed listings carry no photos
+ * (`prisma/seed-data.js` explains why), so by default the tag stands alone.
  */
 export function HomeHero({ listings = [], featured = [] }) {
   const reduced = usePrefersReducedMotion()
@@ -111,7 +123,24 @@ export function HomeHero({ listings = [], featured = [] }) {
             <AnimatePresence mode="wait" initial={false}>
               {slide.listing ? (
                 <motion.div key={`${slide.key}-${slide.listing.id}`} {...fade} className="w-full max-w-[26rem]">
-                  <RefonTag listing={slide.listing} tone="night" className="[--tag-hole:theme(colors.tag.DEFAULT)]" />
+                  {photoOf(slide.listing) ? (
+                    <div className="mx-auto mb-[-5rem] aspect-[4/5] w-3/4 overflow-hidden rounded-card-lg bg-card">
+                      <img
+                        src={photoOf(slide.listing)}
+                        alt={`${slide.listing.brand} ${slide.listing.model} in ${slide.listing.color ?? 'as pictured'}`}
+                        width={800}
+                        height={1000}
+                        fetchPriority="high"
+                        decoding="async"
+                        className="size-full object-contain p-6"
+                      />
+                    </div>
+                  ) : null}
+                  <RefonTag
+                    listing={slide.listing}
+                    tone="night"
+                    className="relative [--tag-hole:theme(colors.tag.DEFAULT)]"
+                  />
                 </motion.div>
               ) : (
                 <div

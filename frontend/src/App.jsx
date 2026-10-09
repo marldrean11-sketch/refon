@@ -14,6 +14,7 @@ import { SellerListingsProvider } from './features/seller/SellerListingsProvider
 import { SellerInquiriesProvider } from './features/inquiries/SellerInquiriesProvider.jsx'
 import { SavedListingsProvider } from './features/favorites/SavedListingsProvider.jsx'
 import { CartProvider } from './features/cart/CartProvider.jsx'
+import { CompareProvider } from './features/compare/CompareProvider.jsx'
 import { PendingIntentReplay } from './features/cart/PendingIntentReplay.jsx'
 import { ToastProvider } from './components/ui/Toast.jsx'
 import { RouteEffects } from './components/layout/RouteEffects.jsx'
@@ -123,8 +124,11 @@ const CheckoutConfirmedPage = lazy(() =>
     default: module.CheckoutConfirmedPage,
   })),
 )
+const HealthCheckPage = lazy(() =>
+  import('./pages/HealthCheckPage.jsx').then((module) => ({ default: module.HealthCheckPage })),
+)
 const ComparePage = lazy(() =>
-  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.ComparePage })),
+  import('./pages/ComparePage.jsx').then((module) => ({ default: module.ComparePage })),
 )
 const SellerApplyPage = lazy(() =>
   import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.SellerApplyPage })),
@@ -159,6 +163,8 @@ function App() {
         {/* The header badge, the mobile tab bar, the product page's add button, the
             cart, and checkout all read one cart, so they cannot disagree. */}
         <CartProvider>
+        {/* The compare checkbox on every card and the tray read one list. */}
+        <CompareProvider>
         <ToastProvider>
         {/* Replays a visitor's deferred add-to-cart once they are a signed-in buyer.
             It must sit inside ToastProvider, which is itself inside CartProvider, so
@@ -194,6 +200,7 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.compare} element={<ComparePage />} />
                 <Route path={MARKETPLACE_ROUTES.howItWorks} element={<HowItWorksPage />} />
                 <Route path={MARKETPLACE_ROUTES.qualityCheck} element={<QualityCheckPage />} />
+                <Route path={MARKETPLACE_ROUTES.healthCheck} element={<HealthCheckPage />} />
                 <Route path={MARKETPLACE_ROUTES.about} element={<AboutPage />} />
                 <Route path={MARKETPLACE_ROUTES.faq} element={<FaqPage />} />
                 <Route path={MARKETPLACE_ROUTES.warranty} element={<WarrantyPage />} />
@@ -205,20 +212,20 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
                 <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
                 <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
-              </Route>
 
-              {/* Purchasing is buyer-only. The guard sits *inside* the marketplace
-                  shell rather than replacing it, so a buyer who follows a saved cart
-                  link sees the redesigned header, search overlay and drawer exactly
-                  as everywhere else. A visitor is sent to sign in; a seller or admin
-                  is sent to their own dashboard. */}
-              <Route element={<RequireBuyer />}>
-                <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
-                <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
-                <Route
-                  path={MARKETPLACE_ROUTES.checkoutConfirmed}
-                  element={<CheckoutConfirmedPage />}
-                />
+                {/* Purchasing is buyer-only. The guard sits *inside* the marketplace
+                    shell rather than replacing it, so a buyer who follows a saved cart
+                    link sees the redesigned header, search overlay and drawer exactly
+                    as everywhere else. A visitor is sent to sign in; a seller or admin
+                    is sent to their own dashboard. */}
+                <Route element={<RequireBuyer />}>
+                  <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
+                  <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
+                  <Route
+                    path={MARKETPLACE_ROUTES.checkoutConfirmed}
+                    element={<CheckoutConfirmedPage />}
+                  />
+                </Route>
               </Route>
 
               <Route element={<PublicOnlyRoute />}>
@@ -280,6 +287,7 @@ function App() {
           </Routes>
         </Suspense>
         </ToastProvider>
+        </CompareProvider>
         </CartProvider>
         </SavedListingsProvider>
         </AuthProvider>

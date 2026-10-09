@@ -115,39 +115,28 @@ test.describe('C9 seller storefront', () => {
     expectNoFatalErrors(all, 'S1-guest-storefront')
   })
 
-  test('S2 the trust panel shows the real rating, review count, and reviews', async ({
+  test('S2 the trust panel states an empty rating instead of sample reviews', async ({
     page,
     request,
   }) => {
     const all = watchErrors(page)
 
+    // The seed's demo reviews are stored as samples (`reviews.is_sample`), which
+    // the API never lists or averages, so a seeded seller has no public rating.
     const { summary, reviews } = await reviewsFixture(request)
-    expect(summary.count, 'the seeded seller has reviews').toBeGreaterThan(0)
+    expect(summary.count, 'sample reviews are not published').toBe(0)
+    expect(summary.average, 'no average is invented').toBeNull()
+    expect(reviews.length).toBe(0)
 
     await page.goto(`/sellers/${SELLER_ID}`)
     await waitForInventory(page)
 
     const panel = page.getByRole('complementary', { name: 'Seller trust history' })
     await expect(panel.getByText('Buyer feedback on this seller')).toBeVisible()
-
-    if (summary.average != null) {
-      await expect(panel.getByText(summary.average.toFixed(1), { exact: true })).toBeVisible()
-    }
-
-    // Scoped to the panel header: the same phrase also appears in the
-    // screen-reader summary the rating distribution carries.
-    await expect(
-      panel.locator('p', {
-        hasText: `${summary.count} published review${summary.count === 1 ? '' : 's'}`,
-      }).first(),
-    ).toBeVisible()
-
-    // Each loaded review names its device and never exposes a full author name.
-    const firstReview = reviews[0]
-    await expect(panel.getByText(firstReview.listing.name)).toBeVisible()
-    await expect(panel.getByText(firstReview.comment.slice(0, 30))).toBeVisible()
+    await expect(panel.getByText('No rating yet')).toBeVisible()
 
     const panelText = await panel.innerText()
+    expect(panelText, 'no 0.0 score is rendered').not.toMatch(/\b0\.0\b/)
     expect(panelText, 'no reviewer email on the page').not.toMatch(/@refon\.test|@example\.test/)
     expect(panelText, 'no seller contact detail on the page').not.toMatch(/\+63/)
 

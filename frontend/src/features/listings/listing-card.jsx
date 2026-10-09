@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { isImageReference } from './image-reference.js'
 import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { FavoriteButton } from '../favorites/FavoriteButton.jsx'
+import { CompareToggle } from '../compare/CompareToggle.jsx'
 import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import { ConditionBadge } from '../../components/ui/ConditionBadge.jsx'
 import { PriceDisplay } from '../../components/ui/PriceDisplay.jsx'
@@ -40,7 +41,7 @@ function coverLabel(months) {
 function MeasurementCell({ label, children }) {
   return (
     <div className="flex min-w-0 items-baseline justify-between gap-2 bg-surface px-2.5 py-2 sm:block">
-      <dt className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-subtle">
+      <dt className="font-mono text-[9px] font-semibold uppercase tracking-[0.1em] text-muted">
         {label}
       </dt>
       <dd className="truncate text-[13px] font-semibold text-ink sm:mt-1">{children}</dd>
@@ -152,7 +153,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
 
       {/* 2. Identity and price. */}
       <div className="flex flex-1 flex-col p-4">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-subtle">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
           {listing.brand}
         </p>
         <h3 className="mt-1.5 truncate font-display text-lg font-bold leading-tight tracking-tight text-ink">
@@ -214,6 +215,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
                 Verified seller
               </span>
             )}
+            {!preview && <CompareToggle listing={listing} className="ml-auto -my-1" />}
           </div>
         </div>
       </div>

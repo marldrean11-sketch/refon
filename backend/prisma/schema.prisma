@@ -195,6 +195,8 @@ model Review {
   userId           String       @map("user_id") @db.Uuid
   /// Only set when the reviewer bought this exact device.
   verifiedPurchase Boolean      @default(false) @map("verified_purchase")
+  /// Seeded demo data. Never listed publicly and never counted in an average.
+  isSample         Boolean      @default(false) @map("is_sample")
   rating           Int
   title            String?      @db.VarChar(160)
   comment          String       @db.Text

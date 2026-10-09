@@ -90,7 +90,7 @@ function Header() {
   const location = useLocation()
   const pathname = location.pathname
   const { user } = useAuth()
-  const savedIds = useSavedListings()
+  const { savedIds } = useSavedListings()
   const { itemCount } = useCartSummary()
   useOptionalSellerInquiries()
 
@@ -193,8 +193,13 @@ function Header() {
             </span>
           </button>
 
-          {/* Right: actions. */}
-          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1 md:ml-auto">
+          {/* Right: actions.
+
+              No gap below `sm`: a signed-in buyer gets several 44px targets
+              here, which with gaps between them overflowed a 375px screen and
+              scrolled every page sideways. The targets keep their full size;
+              only the spacing between them goes. */}
+          <div className="flex shrink-0 items-center gap-0 sm:gap-1 md:ml-auto">
             <Link
               to={MARKETPLACE_ROUTES.faq}
               className="hidden min-h-11 items-center rounded-lg px-3 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand xl:inline-flex"
@@ -405,7 +410,7 @@ function MobileMenuOverlay() {
   const pathname = location.pathname
   const { user } = useAuth()
   const { itemCount } = useCartSummary()
-  const savedIds = useSavedListings()
+  const { savedIds } = useSavedListings()
   const reducedMotion = usePrefersReducedMotion()
 
   const panelRef = useRef(null)

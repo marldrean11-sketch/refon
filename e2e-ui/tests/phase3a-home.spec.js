@@ -48,6 +48,13 @@ function watch(page) {
 
   page.on('console', (message) => {
     const type = message.type()
+    // Framer Motion prints this development-only notice whenever the OS asks for
+    // reduced motion, which is exactly what P3A-09 emulates. It is informational,
+    // never shipped in a production build, and not a fault in the page.
+    if (/You have Reduced Motion enabled on your device/.test(message.text())) {
+      return
+    }
+
     if (type === 'error' || type === 'warning') {
       console_.push({ type, text: message.text() })
     }
@@ -355,18 +362,21 @@ test.describe('P3A home page, top half', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(1500)
 
-    // Scoped to the hero's own dots: New Arrivals has tabs of its own.
-    const dots = page.locator('[role="tablist"][aria-label="Slides"] [role="tab"][aria-selected]')
+    // Scoped to the hero's own tablist: New Arrivals has tabs of its own further
+    // down the page, and counting page-wide read as "two dots selected".
+    const HERO_TABS = '[role="tablist"][aria-label="Slides"] [role="tab"]'
+    const dots = page.locator(`${HERO_TABS}[aria-selected]`)
     const dotCount = await dots.count()
 
     console.log('[P3A-04] dots', dotCount)
     expect(dotCount, 'the carousel has fewer than two slides').toBeGreaterThan(1)
 
     const selectedIndex = () =>
-      page.evaluate(() =>
-        [...document.querySelectorAll('[role="tablist"][aria-label="Slides"] [role="tab"]')].findIndex(
+      page.evaluate((selector) =>
+        [...document.querySelectorAll(selector)].findIndex(
           (node) => node.getAttribute('aria-selected') === 'true',
         ),
+        HERO_TABS,
       )
 
     const before = await selectedIndex()
@@ -378,9 +388,8 @@ test.describe('P3A home page, top half', () => {
     expect(await selectedIndex(), 'the carousel advanced on its own').toBe(before)
 
     // Exactly one dot is ever selected, and the arrows move it by one.
-    expect(
-      await page.locator('[role="tablist"][aria-label="Slides"] [role="tab"][aria-selected="true"]').count(),
-    ).toBe(1)
+    const selectedCount = await page.locator(`${HERO_TABS}[aria-selected="true"]`).count()
+    expect(selectedCount, 'more than one dot is selected at once').toBe(1)
 
     await page.getByTestId('hero-next').click()
     await page.waitForTimeout(500)
@@ -528,7 +537,7 @@ test.describe('P3A home page, top half', () => {
           '[data-testid="hero-panel"]',
           'section[aria-label="Why buyers trust ReFon"]',
           '[data-testid="category-rail"]',
-          '[data-testid="arrivals-panel"]',
+          '#arrivals-panel',
         ],
       },
     )
@@ -558,7 +567,10 @@ test.describe('P3A home page, top half', () => {
       const shown = Number(await tile.getAttribute('data-count'))
       const label = (await tile.innerText()).split('\n')[0].trim()
 
-      const response = await page.request.get(href)
+      // A tile links to the shop page (`/phones?...`), which is HTML. Its count is
+      // checked against the API with the same query the shop page sends.
+      const { search } = new URL(href, 'http://localhost')
+      const response = await page.request.get(`http://localhost:4000/api/listings${search}`)
       const body = await response.json()
       const real = body.pagination.total
 
@@ -607,7 +619,9 @@ test.describe('P3A home page, top half', () => {
     const selectedLabel = () =>
       page.evaluate(() => {
         const node = document.querySelector('[data-testid="arrivals-tab"][aria-selected="true"]')
-        return node ? node.textContent.trim().split(/\s+/)[0] : null
+        // The tab's text includes its count badge ("All8"), so the label is the
+        // leading letters only.
+        return node ? (node.textContent.trim().match(/^[^\d]+/)?.[0].trim() ?? null) : null
       })
 
     const gridSignature = () =>

@@ -299,6 +299,7 @@ export async function getPublicSellerReviews(id, query = {}) {
 
   const where = {
     status: 'PUBLISHED',
+    isSample: false,
     listing: { sellerId: seller.id, status: { in: ['APPROVED', 'SOLD'] } },
   }
 

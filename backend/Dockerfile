@@ -17,7 +17,10 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 
 # Lifecycle scripts stay enabled: Prisma downloads its engines in postinstall.
-RUN mkdir -p backend frontend && npm ci
+# npm workspaces hoist every package to the root `node_modules`, so
+# `backend/node_modules` is usually not created. It is made explicitly so the
+# later `COPY --from=deps` of it always has a source, hoisted or not.
+RUN mkdir -p backend frontend && npm ci && mkdir -p backend/node_modules
 
 # Stage 2 generates the Prisma client, which needs the dev-only prisma CLI.
 FROM node:22-bookworm-slim AS build
@@ -49,8 +52,10 @@ COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 
-# `npm ci` refuses to run without a directory for each workspace member.
-RUN mkdir -p backend frontend && npm ci --omit=dev
+# `npm ci` refuses to run without a directory for each workspace member. The
+# trailing mkdir has the same reason as in the deps stage: hoisting leaves no
+# `backend/node_modules` for the runtime stage to copy.
+RUN mkdir -p backend frontend && npm ci --omit=dev && mkdir -p backend/node_modules
 
 # The entrypoint applies migrations with `prisma migrate deploy`, but prisma is a
 # root devDependency and therefore absent from the pruned tree above. It is added
@@ -73,17 +78,25 @@ ENV NODE_ENV=production \
 
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/backend/node_modules ./backend/node_modules
+# The generated Prisma client lives in `node_modules/.prisma`, written by the
+# build stage. Without it the API stops at startup with "@prisma/client did not
+# initialize yet".
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY package.json package-lock.json ./
 COPY backend ./backend
 COPY docker/backend-entrypoint.sh /usr/local/bin/backend-entrypoint.sh
 
-# Seed illustrations are referenced by seeded listings and must exist in the image
-# under both storage drivers; only they are copied out of the uploads folder.
-RUN mkdir -p /app/backend/uploads/seed \
- && cp /app/backend/uploads/seed/*.svg /app/backend/uploads/seed/ \
+# Seed illustrations arrive with `COPY backend` (.dockerignore keeps only
+# `uploads/seed` from the uploads folder). They used to be copied onto themselves
+# here, which `cp` rejects as "the same file" and which failed the build.
+#
+# `backend/tmp` (the mail outbox) is created here, owned by `node`: the entrypoint
+# runs as `node` and cannot create it under the root-owned /app/backend, and a
+# compose volume mounted on a path missing from the image is created root-owned.
+RUN mkdir -p /app/backend/uploads/seed /app/backend/tmp \
  && touch /app/backend/uploads/.gitkeep \
  && chmod +x /usr/local/bin/backend-entrypoint.sh \
- && chown -R node:node /app/backend/uploads /usr/local/bin/backend-entrypoint.sh
+ && chown -R node:node /app/backend/uploads /app/backend/tmp /usr/local/bin/backend-entrypoint.sh
 
 USER node
 

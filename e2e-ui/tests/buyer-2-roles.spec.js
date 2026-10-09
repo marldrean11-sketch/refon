@@ -122,7 +122,7 @@ test.describe('seller C8', () => {
 
     // A buyer following the same link gets the page. That is the whole difference.
     expect(
-      await page.getByText(/buyer accounts|not available|access restricted/i).first().isVisible(),
+      await page.getByText(/belongs to another role|buyer accounts|not available|access restricted/i).first().isVisible(),
       'the refusal is explained rather than silent',
     ).toBe(true)
 

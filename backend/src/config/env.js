@@ -106,6 +106,12 @@ export const env = Object.freeze({
   smtpPass: process.env.SMTP_PASS ?? '',
   smtpSecure: process.env.SMTP_SECURE === 'true',
   storageDriver,
+  /**
+   * Optional. The built frontend (`frontend/dist`) for a single-service deploy, in
+   * which the API also serves the website so both share one origin and the
+   * SameSite=Lax auth cookie works without a separate web server.
+   */
+  staticDir: process.env.STATIC_DIR ?? '',
   s3: {
     bucket: s3Bucket,
     region: s3Region,

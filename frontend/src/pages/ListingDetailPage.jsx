@@ -50,6 +50,7 @@ import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { productPath } from '../lib/routes.js'
 import { explainBatteryHealth } from '../lib/listing-taxonomy.js'
 import { formatPeso } from '../lib/format.js'
+import { HealthCheckCallout } from '../features/health-check/HealthCheckCallout.jsx'
 
 function ListingUnavailableState({ error, onRetry }) {
   const isMissing =
@@ -438,6 +439,7 @@ export function ListingDetailPage() {
               <div className="space-y-5">
                 <GradeExplainer grade={listing.grade} conditionNotes={listing.conditionNotes} />
                 <InspectionPanel listing={listing} />
+                <HealthCheckCallout />
                 <SpecificationsGrid listing={listing} />
               </div>
 
