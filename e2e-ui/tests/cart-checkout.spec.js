@@ -538,14 +538,17 @@ test.describe('F5 checkout', () => {
     await openCheckout(page)
     await page.getByTestId('checkout-review-button').click()
 
+    // Name and email are prefilled from the signed-in buyer's account, so the
+    // first empty required field is the mobile number.
+    await expect(page.locator('#checkout-full-name')).not.toHaveValue('')
+    await expect(page.locator('#checkout-email')).not.toHaveValue('')
+
     // Per-field messages, not one blanket error.
-    await expect(page.getByText('Your full name is required.')).toBeVisible()
-    await expect(page.getByText('Your email address is required.')).toBeVisible()
     await expect(page.getByText('Your mobile number is required.')).toBeVisible()
     await expect(page.getByText('Select a delivery region.')).toBeVisible()
 
     // The first invalid field takes focus, so the shopper knows where to start.
-    await expect(page.locator('#checkout-full-name')).toBeFocused()
+    await expect(page.locator('#checkout-mobile')).toBeFocused()
 
     // Nothing was priced, so no review appeared.
     await expect(page.getByTestId('order-review')).toHaveCount(0)

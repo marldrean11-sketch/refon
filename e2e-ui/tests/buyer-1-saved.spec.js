@@ -271,7 +271,7 @@ test.describe('signed-in buyer', () => {
 
     await page.goto('/browse')
     await page.waitForLoadState('networkidle')
-    await page.getByRole('button', { name: /Open navigation menu/i }).click()
+    await page.getByRole('button', { name: /^Open (navigation )?menu$/i }).click()
     await page.waitForTimeout(800)
     await page.screenshot({ path: 'screenshots/C9-02-mobile-menu.png' })
 

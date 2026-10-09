@@ -212,20 +212,20 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
                 <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
                 <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
-              </Route>
 
-              {/* Purchasing is buyer-only. The guard sits *inside* the marketplace
-                  shell rather than replacing it, so a buyer who follows a saved cart
-                  link sees the redesigned header, search overlay and drawer exactly
-                  as everywhere else. A visitor is sent to sign in; a seller or admin
-                  is sent to their own dashboard. */}
-              <Route element={<RequireBuyer />}>
-                <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
-                <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
-                <Route
-                  path={MARKETPLACE_ROUTES.checkoutConfirmed}
-                  element={<CheckoutConfirmedPage />}
-                />
+                {/* Purchasing is buyer-only. The guard sits *inside* the marketplace
+                    shell rather than replacing it, so a buyer who follows a saved cart
+                    link sees the redesigned header, search overlay and drawer exactly
+                    as everywhere else. A visitor is sent to sign in; a seller or admin
+                    is sent to their own dashboard. */}
+                <Route element={<RequireBuyer />}>
+                  <Route path={MARKETPLACE_ROUTES.cart} element={<CartPage />} />
+                  <Route path={MARKETPLACE_ROUTES.checkout} element={<CheckoutPage />} />
+                  <Route
+                    path={MARKETPLACE_ROUTES.checkoutConfirmed}
+                    element={<CheckoutConfirmedPage />}
+                  />
+                </Route>
               </Route>
 
               <Route element={<PublicOnlyRoute />}>

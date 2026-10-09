@@ -80,7 +80,7 @@ function Header() {
   const location = useLocation()
   const pathname = location.pathname
   const { user } = useAuth()
-  const savedIds = useSavedListings()
+  const { savedIds } = useSavedListings()
   const { itemCount } = useCartSummary()
   useOptionalSellerInquiries()
 
@@ -400,7 +400,7 @@ function MobileMenuOverlay() {
   const pathname = location.pathname
   const { user } = useAuth()
   const { itemCount } = useCartSummary()
-  const savedIds = useSavedListings()
+  const { savedIds } = useSavedListings()
   const reducedMotion = usePrefersReducedMotion()
 
   const panelRef = useRef(null)
