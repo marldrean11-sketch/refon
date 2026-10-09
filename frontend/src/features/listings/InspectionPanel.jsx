@@ -143,7 +143,7 @@ export function InspectionPanel({ listing }) {
           {listing.imeiVerified ? (
             <span className="inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-ink ring-1 ring-inset ring-accent-300">
               <ShieldCheck className="size-3.5 text-accent-600" aria-hidden="true" />
-              IMEI verified
+              IMEI verified by seller
               {listing.imeiLast4 ? ` ····${listing.imeiLast4}` : ''}
             </span>
           ) : (

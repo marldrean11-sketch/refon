@@ -20,7 +20,7 @@ export function CountBadge({ count, tone = 'primary', srLabel }) {
     tone === 'accent'
       ? 'bg-accent-600 text-white'
       : tone === 'flare'
-        ? 'bg-flare-500 text-white'
+        ? 'bg-flare-500 text-dark'
         : 'bg-primary-950 text-white'
 
   return (

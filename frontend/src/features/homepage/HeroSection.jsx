@@ -4,21 +4,19 @@
  * A rounded panel on the warm page ground, holding a statement on the left and the
  * currently-featured phone's published measurements on the right.
  *
- * **There are no photographs.** Not a stylistic choice: all 28 approved listings
- * carry `photos: []` and `mainPhoto: null`, and `prisma/seed-data.js` explains why
- * the four seed SVGs are deliberately not attached ("Four shared SVGs across
- * twenty-eight phones would render twenty-eight visually identical cards, which is
- * worse than no photo at all"). So the right-hand side is a **typographic plate**
- * built from the listing's real fields — grade, battery, warranty, price, the
- * saving against the original — which is the same evidence the floating product
- * card used to show, set as type instead of rendered as invented art.
+ * **Two plates, chosen by the inventory.** The seed listings carry no
+ * photographs (`prisma/seed-data.js` explains why), so by default the right-hand
+ * side is a **typographic plate** built from the listing's real fields — grade,
+ * battery, warranty, price, the saving against the original.
  *
- * Because the plate reads from `listing`, a seller who uploads photographs changes
- * nothing here today, and the moment real photography exists this plate is the only
- * thing on the page that will look thin.
+ * Once at least `PHOTO_SLIDES_MIN` featured listings have a real photo, the
+ * carousel switches to a **photo plate** and shows only those listings: the phone
+ * in a 4:5 frame with a caption card holding model, grade and price. Mixing photo
+ * slides with text slides in one carousel reads as a broken page, so it is all of
+ * one or all of the other.
  *
  * The headline masks and reveals line by line; the plate parallaxes at two speeds
- * on scroll and leans with the pointer; three chips drift on a 4s loop. All of it
+ * on scroll and leans with the pointer; two chips drift on a 4s loop. All of it
  * is transform and opacity only, and all of it is inert under reduced motion.
  */
 import { useEffect, useMemo, useState } from 'react'
@@ -28,6 +26,7 @@ import { ArrowLeft, ArrowRight, BatteryFull, ShieldCheck } from 'lucide-react'
 import { Container } from '../design/Container.jsx'
 import { ConditionBadge } from '../../components/ui/ConditionBadge.jsx'
 import { PriceDisplay } from '../../components/ui/PriceDisplay.jsx'
+import { isImageReference } from '../listings/image-reference.js'
 import { MARKETPLACE_ROUTES, productPath } from '../../lib/routes.js'
 import { getConditionGrade } from '../../lib/listing-taxonomy.js'
 import {
@@ -48,6 +47,15 @@ const CHIP_TRAVEL = 6
 /** At most five plates; past that the panel stops being a hero and starts a grid. */
 const MAX_SLIDES = 5
 
+/** Featured listings with a real photo needed before the hero shows photographs. */
+const PHOTO_SLIDES_MIN = 3
+
+function photoOf(listing) {
+  const photo = listing?.mainPhoto ?? listing?.photos?.[0]
+
+  return isImageReference(photo) ? photo : null
+}
+
 export function HeroSection({ featured = [] }) {
   const reducedMotion = usePrefersReducedMotion()
   const [isWide, setIsWide] = useState(false)
@@ -65,7 +73,13 @@ export function HeroSection({ featured = [] }) {
     return () => query.removeEventListener('change', apply)
   }, [])
 
-  const slides = useMemo(() => featured.slice(0, MAX_SLIDES), [featured])
+  const { slides, withPhotos } = useMemo(() => {
+    const photographed = featured.filter(photoOf)
+
+    return photographed.length >= PHOTO_SLIDES_MIN
+      ? { slides: photographed.slice(0, MAX_SLIDES), withPhotos: true }
+      : { slides: featured.slice(0, MAX_SLIDES), withPhotos: false }
+  }, [featured])
   const carousel = useHeroCarousel(slides.length)
   const current = slides[carousel.index] ?? null
 
@@ -74,6 +88,7 @@ export function HeroSection({ featured = [] }) {
       <Container size="full" className="px-4 sm:px-6 lg:px-8">
         <HeroPanel
           current={current}
+          withPhotos={withPhotos}
           carousel={carousel}
           reduced={reducedMotion}
           parallax={isWide && !reducedMotion}
@@ -95,7 +110,7 @@ export function HeroSection({ featured = [] }) {
  * that tabbing into the panel anywhere — including onto the price link — stops the
  * carousel rather than only stopping it while a dot happens to be focused.
  */
-function HeroPanel({ current, carousel, reduced, parallax }) {
+function HeroPanel({ current, withPhotos, carousel, reduced, parallax }) {
   const { setLayer } = useHeroParallax({ enabled: parallax })
 
   return (
@@ -148,7 +163,11 @@ function HeroPanel({ current, carousel, reduced, parallax }) {
                     ease: easings.ui,
                   }}
                 >
-                  <HeroPlate listing={current} reduced={reduced} />
+                  {withPhotos ? (
+                    <HeroPhotoPlate listing={current} reduced={reduced} />
+                  ) : (
+                    <HeroPlate listing={current} reduced={reduced} />
+                  )}
                 </motion.div>
               ) : (
                 <HeroPlatePlaceholder key="placeholder" />
@@ -328,7 +347,9 @@ function HeroPlate({ listing, reduced }) {
     Number(listing.originalPrice) > Number(listing.price) && Number(listing.discountPercent) > 0
 
   return (
-    <div className="relative">
+    // Extra top margin below `lg`, where the plate stacks under the actions and the
+    // battery chip above its edge would otherwise drift into the Shop button.
+    <div className="relative mt-6 lg:mt-0">
       <Link
         to={productPath(listing)}
         data-testid="hero-plate-link"
@@ -362,31 +383,107 @@ function HeroPlate({ listing, reduced }) {
           {grade.label} condition · {listing.inspectionTotal ?? 11}-point inspection ·{' '}
           {listing.warrantyMonths}-month warranty
         </p>
-      </Link>
 
-      {/* Two chips, drifting out of phase with each other. */}
+        <HeroChips listing={listing} reduced={reduced} placement={TEXT_PLATE_CHIPS} />
+      </Link>
+    </div>
+  )
+}
+
+/**
+ * The featured listing with its photograph.
+ *
+ * The phone sits in a 4:5 frame, contained rather than cropped so the device is
+ * never cut off, and the evidence moves to a caption card overlapping the frame's
+ * lower edge: model, grade and price, the three things the slide argues.
+ */
+function HeroPhotoPlate({ listing, reduced }) {
+  const photo = photoOf(listing)
+
+  return (
+    <div className="relative mx-auto w-full max-w-sm pb-16">
+      <Link
+        to={productPath(listing)}
+        data-testid="hero-plate-link"
+        className="group block rounded-card-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
+      >
+        <div className="aspect-[4/5] overflow-hidden rounded-card-lg border border-line bg-well">
+          <img
+            src={photo}
+            alt={`${listing.brand} ${listing.model} in ${listing.color ?? 'as pictured'}`}
+            width={800}
+            height={1000}
+            fetchPriority="high"
+            decoding="async"
+            className="size-full object-contain p-6 transition-transform duration-500 ease-entrance motion-safe:group-hover:scale-[1.03]"
+          />
+        </div>
+
+        <div className="absolute inset-x-4 bottom-0 rounded-card border border-line bg-card p-5 shadow-card sm:inset-x-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-lg font-bold leading-tight tracking-[-0.02em] text-ink">
+                {listing.brand} {listing.model}
+              </p>
+              <p className="mt-1 truncate text-sm text-muted">
+                {[listing.storage, listing.color].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+            <ConditionBadge grade={listing.grade} />
+          </div>
+          <div className="mt-3">
+            <PriceDisplay price={listing.price} originalPrice={listing.originalPrice} size="sm" />
+          </div>
+        </div>
+
+        <HeroChips listing={listing} reduced={reduced} placement={PHOTO_PLATE_CHIPS} />
+      </Link>
+    </div>
+  )
+}
+
+/**
+ * Two measurement chips, drifting out of phase with each other.
+ *
+ * On the text plate they sit astride its top-left and bottom-right edges and stay
+ * inside the card's 28px padding even at the far end of their drift. They used
+ * to hang over the card's left side at the height of the model name, which
+ * covered "iPhone" on a desktop viewport. On the photo plate they sit over the
+ * photograph, clear of the caption card.
+ *
+ * They render inside the plate's link, so a tap on a chip opens the phone like the
+ * rest of the plate, and hit-testing finds the chip rather than the card under it.
+ */
+const TEXT_PLATE_CHIPS = { battery: '-top-6 left-5 sm:left-7', warranty: '-bottom-7 right-5 sm:right-7' }
+const PHOTO_PLATE_CHIPS = { battery: '-top-6 left-5 sm:-left-4', warranty: 'top-1/3 right-0 sm:-right-5' }
+
+function HeroChips({ listing, reduced, placement }) {
+  return (
+    <>
       <HeroChip
         lean="left"
         travel={CHIP_TRAVEL * 2}
         reduced={reduced}
-        className="-left-2 top-16 sm:-left-6"
+        className={placement.battery}
       >
         <BatteryFull className="size-4 text-accent-strong" strokeWidth={1.5} aria-hidden="true" />
         <span className="font-semibold tabular-nums text-ink">{listing.batteryPercent}%</span>
         <span className="text-muted">battery</span>
       </HeroChip>
 
-      <HeroChip
-        lean="right"
-        travel={CHIP_TRAVEL * 3}
-        reduced={reduced}
-        className="-right-2 bottom-16 sm:-right-7"
-      >
-        <ShieldCheck className="size-4 text-accent-strong" strokeWidth={1.5} aria-hidden="true" />
-        <span className="font-semibold text-ink">{listing.warrantyMonths} months</span>
-        <span className="text-muted">warranty</span>
-      </HeroChip>
-    </div>
+      {Number(listing.warrantyMonths) > 0 && (
+        <HeroChip
+          lean="right"
+          travel={CHIP_TRAVEL}
+          reduced={reduced}
+          className={placement.warranty}
+        >
+          <ShieldCheck className="size-4 text-accent-strong" strokeWidth={1.5} aria-hidden="true" />
+          <span className="font-semibold text-ink">{listing.warrantyMonths} months</span>
+          <span className="text-muted">warranty</span>
+        </HeroChip>
+      )}
+    </>
   )
 }
 
@@ -407,8 +504,8 @@ function HeroChip({ lean, travel, reduced, className = '', children }) {
           ? undefined
           : { duration: 4, repeat: Infinity, ease: 'easeInOut', repeatType: 'reverse' }
       }
-      className={`pointer-events-none absolute inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2 text-[13px] shadow-card ${
-        lean === 'left' ? 'rotate-[-2deg]' : 'rotate-[2deg]'
+      className={`absolute z-raised inline-flex items-center gap-2 rounded-control border border-line bg-card px-3.5 py-2 text-[13px] shadow-card ${
+        reduced ? '' : lean === 'left' ? 'rotate-[-2deg]' : 'rotate-[2deg]'
       } ${className}`}
     >
       {children}

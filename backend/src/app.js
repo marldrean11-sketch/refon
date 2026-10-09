@@ -1,5 +1,6 @@
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import path from 'node:path'
 import express from 'express'
 import helmet from 'helmet'
 import { uploadsDirectory } from './config/uploads.js'
@@ -95,6 +96,23 @@ app.use('/api/favorites', favoriteRoutes)
 app.use('/api/my-inquiries', myInquiryRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/checkout', checkoutRoutes)
+
+if (env.staticDir) {
+  // Single-service deploy: serve the built frontend from the same origin as the API.
+  // Vite fingerprints everything under /assets, so it can be cached for a year; the
+  // entry HTML must never be cached, or a deploy leaves stale asset references.
+  app.use(
+    '/assets',
+    express.static(path.join(env.staticDir, 'assets'), { immutable: true, maxAge: '1y', index: false }),
+  )
+  app.use(express.static(env.staticDir, { index: false, maxAge: '1h' }))
+  // Client-side routing: any other GET outside /api and /uploads is a React route.
+  app.get(/^\/(?!api\/|uploads\/).*/, (_req, res) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.sendFile(path.join(env.staticDir, 'index.html'))
+  })
+}
+
 app.use(notFoundHandler)
 app.use(errorHandler)
 

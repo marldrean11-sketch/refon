@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { CompareTray } from '../../features/compare/CompareTray.jsx'
+import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
 import { SiteFooter } from '../../features/design/SiteFooter.jsx'
 import { SiteHeader } from '../../features/design/SiteHeader.jsx'
 import { EmailVerificationBanner } from '../auth/EmailVerificationBanner.jsx'
@@ -19,6 +21,8 @@ import { LoadingScreen } from '../ui/LoadingScreen.jsx'
  * short page instead of floating halfway up it.
  */
 export function MarketplaceLayout() {
+  const { pathname } = useLocation()
+
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       <SiteHeader />
@@ -45,6 +49,7 @@ export function MarketplaceLayout() {
       </main>
 
       <SiteFooter />
+      <CompareTray hidden={pathname === MARKETPLACE_ROUTES.compare} />
     </div>
   )
 }

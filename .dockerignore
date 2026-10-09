@@ -16,6 +16,9 @@ backend/uploads/*
 !backend/uploads/seed/
 !backend/uploads/seed/**
 
+# A local frontend build; the images build their own.
+frontend/dist/
+
 # Local development mail outbox and logs.
 backend/tmp/
 *.log

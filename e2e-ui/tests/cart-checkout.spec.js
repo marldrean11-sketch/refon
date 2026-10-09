@@ -227,10 +227,8 @@ test.describe('F2 add and remove', () => {
     await expect(item).toContainText(/1 device/i)
 
     // The header badge and the cart agree.
-    await expect(page.locator('a[href="/cart"]').first()).toHaveAttribute(
-      'aria-label',
-      /cart, 1 items/i,
-    )
+    // The header cart is a button that opens the drawer, labelled "Cart, 1 item".
+    await expect(page.getByTestId('navbar-cart')).toHaveAttribute('aria-label', /cart, 1 item\b/i)
 
     expectNoFatalErrors(all, 'F2-add')
   })
@@ -540,14 +538,17 @@ test.describe('F5 checkout', () => {
     await openCheckout(page)
     await page.getByTestId('checkout-review-button').click()
 
+    // Name and email are prefilled from the signed-in buyer's account, so the
+    // first empty required field is the mobile number.
+    await expect(page.locator('#checkout-full-name')).not.toHaveValue('')
+    await expect(page.locator('#checkout-email')).not.toHaveValue('')
+
     // Per-field messages, not one blanket error.
-    await expect(page.getByText('Your full name is required.')).toBeVisible()
-    await expect(page.getByText('Your email address is required.')).toBeVisible()
     await expect(page.getByText('Your mobile number is required.')).toBeVisible()
     await expect(page.getByText('Select a delivery region.')).toBeVisible()
 
     // The first invalid field takes focus, so the shopper knows where to start.
-    await expect(page.locator('#checkout-full-name')).toBeFocused()
+    await expect(page.locator('#checkout-mobile')).toBeFocused()
 
     // Nothing was priced, so no review appeared.
     await expect(page.getByTestId('order-review')).toHaveCount(0)
@@ -870,9 +871,6 @@ test.describe('F7 navigation', () => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
 
-    await expect(page.locator('a[href="/cart"]').first()).toHaveAttribute(
-      'aria-label',
-      /cart, empty/i,
-    )
+    await expect(page.getByTestId('navbar-cart')).toHaveAttribute('aria-label', /cart, 0 items/i)
   })
 })

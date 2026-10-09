@@ -53,6 +53,7 @@ const COLUMNS = [
     title: "Support",
     links: [
       { label: "How we test", to: MARKETPLACE_ROUTES.qualityCheck },
+      { label: "Phone health check", to: MARKETPLACE_ROUTES.healthCheck },
       { label: "Warranty", to: MARKETPLACE_ROUTES.warranty },
       { label: "Shipping", to: MARKETPLACE_ROUTES.shipping },
       { label: "Returns", to: MARKETPLACE_ROUTES.returns },

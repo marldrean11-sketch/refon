@@ -80,7 +80,7 @@ function Header() {
   const location = useLocation()
   const pathname = location.pathname
   const { user } = useAuth()
-  const savedIds = useSavedListings()
+  const { savedIds } = useSavedListings()
   const { itemCount } = useCartSummary()
   useOptionalSellerInquiries()
 
@@ -204,8 +204,13 @@ function Header() {
             </ul>
           </nav>
 
-          {/* Right: actions. */}
-          <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+          {/* Right: actions.
+
+              No gap below `sm`: a signed-in buyer gets five 44px targets here
+              (menu, bell, search, cart, drawer), which with 4px gaps overflowed a
+              375px screen by 10px and scrolled every page sideways. The targets
+              keep their full size; only the spacing between them goes. */}
+          <div className="ml-auto flex items-center gap-0 sm:gap-1.5">
             {user ? (
               <>
                 <Link
@@ -395,7 +400,7 @@ function MobileMenuOverlay() {
   const pathname = location.pathname
   const { user } = useAuth()
   const { itemCount } = useCartSummary()
-  const savedIds = useSavedListings()
+  const { savedIds } = useSavedListings()
   const reducedMotion = usePrefersReducedMotion()
 
   const panelRef = useRef(null)

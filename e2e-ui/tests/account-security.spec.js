@@ -130,7 +130,8 @@ test.describe('E1 · Account security (signed in)', () => {
     const all = watchErrors(page)
 
     await page.goto('/account')
-    await expect(page.locator('nav a[href="/account"]').first()).toBeVisible()
+    // The account link sits in the header's action cluster, not inside <nav>.
+    await expect(page.getByTestId('navbar-account')).toBeVisible()
 
     expectNoFatalErrors(all, 'E1.3 account link')
   })
@@ -246,14 +247,14 @@ test.describe('E1 · Password and session', () => {
 
     await page.goto('/account')
     await page.getByLabel('Current password').fill('NotMyPassword1!')
-    await page.getByLabel('New password', { exact: true }).fill(ROTATED_PASSWORD)
+    await page.getByLabel(/^New password/).fill(ROTATED_PASSWORD)
     await page.getByLabel('Confirm new password').fill(ROTATED_PASSWORD)
     await page.getByRole('button', { name: 'Change password' }).click()
 
     await expect(page.getByText('Your current password is incorrect.')).toBeVisible()
 
     await page.getByLabel('Current password').fill(BUYER_PASSWORD)
-    await page.getByLabel('New password', { exact: true }).fill(ROTATED_PASSWORD)
+    await page.getByLabel(/^New password/).fill(ROTATED_PASSWORD)
     await page.getByLabel('Confirm new password').fill(ROTATED_PASSWORD)
     await page.getByRole('button', { name: 'Change password' }).click()
 
@@ -298,7 +299,7 @@ test.describe('E1 · Password and session', () => {
     expect(token, 'a reset link is written to the outbox').toBeTruthy()
 
     await page.goto(`/reset-password?token=${token}`)
-    await page.getByLabel('New password', { exact: true }).fill(RESET_PASSWORD)
+    await page.getByLabel(/^New password/).fill(RESET_PASSWORD)
     await page.getByLabel('Confirm new password').fill(RESET_PASSWORD)
     await page.getByRole('button', { name: 'Save new password' }).click()
 

@@ -569,6 +569,56 @@ Publish `frontend/dist` as a static site with a catch-all rewrite to `index.html
 
 4. Set `SMTP_HOST` (required in production), `MAIL_FROM`, `APP_URL`, `CLIENT_URL`, and a 32+ character `JWT_SECRET`.
 
+### Option C: one service on Render (the hosted demo)
+
+The simplest hosted setup, and the one used for the Techno Fair demo: a single
+Docker web service built from the root `Dockerfile`, in which the API also serves
+the website, plus a managed PostgreSQL database. One origin keeps the session
+cookie working, and the host's HTTPS is what lets the phone health check use the
+camera, microphone and motion sensors on visitors' phones.
+
+1. Push the branch you want to deploy to GitHub.
+2. In Render, choose **New → Blueprint**, pick this repository, and confirm. It
+   reads `render.yaml` and creates the `refon` web service and the `refon-db`
+   database. Check Render's current free-tier limits when you do; they change.
+3. Render asks for the values the blueprint leaves blank:
+   - `APP_URL` and `CLIENT_URL`: the service's public address, for example
+     `https://refon.onrender.com`. If you don't know it yet, enter a placeholder,
+     deploy once, then set both to the real address and redeploy.
+   - `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`: any SMTP relay (see the
+     email example below). The API refuses to start in production without one.
+4. Load the demo phones once the first deploy is live. The seed runs against the
+   hosted database from your own computer, using the database's **External
+   Database URL** from Render, and only with two passwords you choose (12+
+   characters each), so the public demo never has the passwords published in this
+   repository. In PowerShell, from the `backend` folder:
+
+   ```powershell
+   $env:NODE_ENV = "production"
+   $env:DATABASE_URL = "<External Database URL from Render>"
+   $env:SEED_ADMIN_PASSWORD = "<a new admin password>"
+   $env:SEED_DEMO_PASSWORD = "<a new password for the demo sellers and buyers>"
+   npx prisma migrate deploy
+   npx prisma db seed
+   ```
+
+   Close that PowerShell window afterwards so the variables don't linger.
+5. Open the address, then `/health-check`. Put that URL in a QR code for the booth;
+   the health check page also shows its own QR code on a laptop screen.
+
+Free web services usually go to sleep when idle and take a little while to wake,
+so open the site a few minutes before visitors arrive.
+
+To try the same image locally (Docker required):
+
+```bash
+docker build -t refon .
+docker run --rm -p 4000:4000 \
+  -e DATABASE_URL="postgresql://..." -e JWT_SECRET="<32+ characters>" \
+  -e APP_URL=http://localhost:4000 -e CLIENT_URL=http://localhost:4000 \
+  -e SMTP_HOST=<relay> -e MAIL_FROM="ReFon <no-reply@example.com>" refon
+```
+
 ### Email provider example
 
 Any SMTP relay works. For a transactional provider:
@@ -611,6 +661,9 @@ Backend (`backend/.env`, or the compose/host environment):
 | `S3_FORCE_PATH_STYLE` | no | `false` | `true` for MinIO and some B2 setups |
 | `S3_PREFIX` | no | `uploads/` | Key prefix inside the bucket |
 | `UPLOAD_DIR` | no | `uploads` | Local uploads folder |
+| `STATIC_DIR` | no | none | Built frontend for a one-service deploy; set by the root `Dockerfile` |
+| `SEED_ADMIN_PASSWORD` | to seed with `NODE_ENV=production` | none | Seeded admin password, 12+ characters |
+| `SEED_DEMO_PASSWORD` | to seed with `NODE_ENV=production` | none | Seeded demo seller and buyer password, 12+ characters |
 | `ADMIN_EMAIL` | for `admin:create` | none | Administrator to create or promote |
 | `ADMIN_PASSWORD` | for `admin:create` | none | 12+ characters, never logged |
 | `ADMIN_NAME` | no | `ReFon Administrator` | Administrator display name |
@@ -622,7 +675,7 @@ Compose only (`/.env`): `POSTGRES_PASSWORD`, `JWT_SECRET`, `APP_URL`, `CLIENT_UR
 
 ### Never do this in production
 
-- **Run `npm run prisma:seed`.** It creates fixed demo accounts with published passwords and refuses to run when `NODE_ENV=production`. Those demo accounts must never exist in production: admin `admin@refon.test` / `AdminTest123!`, seller `seller@refon.test` / `SellerTest123!`, plus `circuit@`, `metro@`, and `signal@`. If any of them reach a live database, treat it as a breach and reset those passwords.
+- **Seed a production database with the published passwords.** In development the seed creates demo accounts with fixed, published passwords. With `NODE_ENV=production` it refuses to run unless `SEED_ADMIN_PASSWORD` and `SEED_DEMO_PASSWORD` are set (12+ characters, not the defaults), which is how the hosted demo in Option C is seeded. A real marketplace should not be seeded at all. The published passwords must never reach a live database: admin `admin@refon.test` / `AdminTest123!`, seller `seller@refon.test` / `SellerTest123!`, plus `circuit@`, `metro@`, and `signal@`. If any of them reach a live database, treat it as a breach and reset those passwords.
 - **Run `prisma migrate reset`.** It drops every table and all data. Production containers only ever run `prisma migrate deploy`.
 - **Commit `.env`.** It holds database passwords, `JWT_SECRET`, and SMTP credentials. Only `.env.example` belongs in git.
 - **Serve the frontend and API from different sites.** The session cookie is `SameSite=Lax`; one origin is required.

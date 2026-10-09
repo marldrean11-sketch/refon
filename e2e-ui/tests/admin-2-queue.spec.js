@@ -51,7 +51,8 @@ test.describe('D15 reports queue', () => {
     expect(body.includes('Reports & safety'), 'old "Reports & safety" placeholder removed').toBe(false)
 
     const stats = await page.evaluate(() => {
-      const wanted = ['Total sellers', 'Pending applications', 'Total listings', 'Pending listings', 'Total sold', 'Open reports']
+      // The overview's six metric labels since the dashboard redesign.
+      const wanted = ['Pending sellers', 'Pending listings', 'Open reports', 'Sellers', 'Listings', 'Sold']
       return wanted.map((label) => {
         const el = [...document.querySelectorAll('p')].find((p) => p.textContent?.trim() === label)
         if (!el) return { label, found: false }
@@ -171,7 +172,8 @@ test.describe('D15 reports queue', () => {
     const s21Exists = (await s21.count()) > 0
     console.log('D17_S21_CARD_FOR_RESOLVE', s21Exists)
     if (s21Exists) {
-      await s21.getByRole('button', { name: /^Resolve$/i }).click()
+      // Accessible names carry the phone ("Resolve Samsung Galaxy S21").
+      await s21.getByRole('button', { name: /^Resolve\b/i }).click()
       await page.waitForTimeout(2400)
       await page.screenshot({ path: 'screenshots/D17-01-resolved.png' })
       const gone = (await page.locator('article').filter({ hasText: /Samsung\s*Galaxy\s*S21/i }).count()) === 0
@@ -234,7 +236,8 @@ test.describe('D16 notifications and dashboard', () => {
     await page.waitForTimeout(1800)
     await page.screenshot({ path: 'screenshots/D16-07-seller-dashboard.png' })
     const dash = await page.locator('body').innerText()
-    const rejected = /Rejected/.test(dash)
+    // innerText follows the uppercase styling, so the match ignores case.
+    const rejected = /Rejected/i.test(dash)
     const feedback = /off-platform deposit scam/i.test(dash)
     console.log('D16_DASH_REJECTED', rejected, 'FEEDBACK_SHOWN', feedback)
 
@@ -297,7 +300,7 @@ test.describe('D18 seller rejection reason', () => {
       if (hasTextarea) {
         await textarea.fill('Business registration number could not be verified.')
       }
-      await card.getByRole('button', { name: /^Reject$/i }).click()
+      await card.getByRole('button', { name: /^Reject\b/i }).click()
       await page.waitForTimeout(2200)
       await page.screenshot({ path: 'screenshots/D18-03-after-reject.png' })
     }

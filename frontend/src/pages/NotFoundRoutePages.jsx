@@ -48,17 +48,6 @@ function PendingPage({ title, phase, description, links = [] }) {
   )
 }
 
-export function ComparePage() {
-  return (
-    <PendingPage
-      phase="Phase 8 — Comparison"
-      title="Phone comparison is coming"
-      description="Select up to four phones and compare price, grade, battery health, camera, display, processor, and warranty side by side."
-      links={[{ label: 'Browse phones', to: MARKETPLACE_ROUTES.shop }]}
-    />
-  )
-}
-
 export function SellerApplyPage() {
   return (
     <PendingPage
@@ -73,5 +62,5 @@ export function SellerApplyPage() {
 /**
  * `/sellers/:sellerId` moved out in Phase 10 and now has a real page in
  * `pages/SellerStorefrontPage.jsx`, backed by the public seller storefront API.
- * What remains here is comparison and seller application.
+ * Comparison moved to `pages/ComparePage.jsx`. What remains here is seller application.
  */

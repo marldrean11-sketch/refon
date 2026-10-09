@@ -50,9 +50,11 @@ export function TrustSummary({ listing }) {
     },
     {
       icon: ScanLine,
-      title: listing.imeiVerified ? 'IMEI verified' : 'IMEI verification not recorded',
+      // `imeiVerified` is the seller's own statement on the listing, not a check
+      // ReFon runs, so the copy says who checked and how a buyer can confirm it.
+      title: listing.imeiVerified ? 'IMEI verified by the seller' : 'IMEI verification not recorded',
       body: listing.imeiVerified
-        ? `The device identifier was checked against GSMA records. Only the last four digits (···${listing.imeiLast4 ?? '—'}) are retained, which is enough to confirm the phone is not blacklisted.`
+        ? `The seller reports that this phone's IMEI is clean, meaning not reported lost or stolen. ReFon keeps only the last four digits (···${listing.imeiLast4 ?? '—'}). Ask the seller for the full number and check it with your network before you pay.`
         : 'No IMEI check has been recorded for this unit. Ask the seller to confirm the device is not blacklisted or stolen.',
     },
     {

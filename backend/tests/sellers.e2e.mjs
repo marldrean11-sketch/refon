@@ -329,9 +329,9 @@ async function main() {
   assert.equal(seededProfile.body.seller.location, 'Cebu City, Visayas')
   assert.equal(seededProfile.body.seller.memberSince, '2020', 'member since is the year')
   assert.ok(seededProfile.body.seller.approvedListings > 0, 'seeded seller has inventory')
-  assert.ok(seededProfile.body.seller.ratingCount > 0, 'seeded seller has a rating')
-  assert.equal(typeof seededProfile.body.seller.ratingAverage, 'number')
-  assert.equal(seededProfile.body.seller.ratingAverage > 0, true)
+  // Seeded reviews are samples and never count toward a public rating.
+  assert.equal(seededProfile.body.seller.ratingCount, 0, 'sample reviews are not counted')
+  assert.equal(seededProfile.body.seller.ratingAverage, null)
 
   // ------------------------------------------------------- profile: fixture
   const profile = await json(`/api/sellers/${fixtureSellerId}`)
@@ -634,15 +634,13 @@ async function main() {
     data: { status: 'PUBLISHED' },
   })
 
-  // ------------------------------------------------------- seeded reviews too
+  // -------------------------------------------- seeded reviews stay private
+  // The seed's demo reviews are stored with `isSample: true`. They are sample
+  // data, not buyer feedback, so a storefront never lists or averages them.
   const seededReviews = await json(`/api/sellers/${SEEDED_SELLER_ID}/reviews`)
-  assert.equal(seededReviews.status, 200, 'the seeded seller has a trust history')
-  assert.ok(seededReviews.body.summary.count > 0, 'seeded reviews exist')
-  assert.ok(seededReviews.body.summary.average > 0, 'seeded reviews have an average')
-  assert.ok(
-    seededReviews.body.reviews.every((entry) => entry.listing && entry.listing.name),
-    'every seeded review names its device',
-  )
+  assert.equal(seededReviews.status, 200, 'the seeded seller has a review endpoint')
+  assert.equal(seededReviews.body.summary.count, 0, 'sample reviews are not listed')
+  assert.equal(seededReviews.body.summary.average, null, 'sample reviews are not averaged')
   assert.equal(
     findForbiddenKeys(seededReviews.body).length,
     0,

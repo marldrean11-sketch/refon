@@ -14,10 +14,10 @@ const VIEWPORTS = [
   { name: 'desktop 1440x900', width: 1440, height: 900 },
 ]
 
+// Phase 3A replaced the Featured and Best value grids with one New Arrivals grid.
 const SECTIONS = [
-  { id: 'featured', label: 'Featured phones' },
+  { id: 'arrivals-panel', label: 'New arrivals' },
   { id: 'grading', label: 'Condition grading' },
-  { id: 'best-value', label: 'Best value' },
   { id: 'testing', label: 'Quality tested' },
   { id: 'how-it-works', label: 'How it works' },
   { id: 'sellers', label: 'Verified sellers' },
@@ -77,18 +77,21 @@ test.describe('H1 homepage content and structure', () => {
   test('H3 homepage product cards render live listings with trust data', async ({ page }) => {
     const all = watchErrors(page)
     await page.goto('/')
-    await page.waitForSelector('#featured article', { timeout: 20_000 })
+    const card = page.getByTestId('arrivals-card')
+    await card.first().waitFor({ timeout: 20_000 })
 
-    const cards = await page.locator('#featured article').count()
-    const prices = await page.locator('#featured article').getByText(/₱[\d,]+/).count()
-    const batteries = await page.locator('#featured article').getByText(/\d{1,3}%/).count()
-    const verified = await page.locator('#featured article').getByText(/Verified Seller/i).count()
-    console.log('H3_CARDS', cards, 'PRICES', prices, 'BATTERY', batteries, 'VERIFIED', verified)
+    // The New Arrivals cards carry price, measured battery and grade. Seller trust
+    // is stated on the shop cards and the product page rather than here.
+    const cards = await card.count()
+    const prices = await card.getByText(/₱[\d,]+/).count()
+    const batteries = await card.getByText(/\d{1,3}%/).count()
+    const grades = await card.getByText(/Excellent|Very Good|Good/).count()
+    console.log('H3_CARDS', cards, 'PRICES', prices, 'BATTERY', batteries, 'GRADES', grades)
 
-    expect(cards, 'featured cards rendered').toBeGreaterThanOrEqual(4)
-    expect(prices, 'every card shows a peso price').toBeGreaterThanOrEqual(4)
-    expect(batteries, 'every card shows a battery percentage').toBeGreaterThanOrEqual(4)
-    expect(verified, 'every card shows a verified seller chip').toBeGreaterThanOrEqual(4)
+    expect(cards, 'new arrival cards rendered').toBeGreaterThanOrEqual(4)
+    expect(prices, 'every card shows a peso price').toBeGreaterThanOrEqual(cards)
+    expect(batteries, 'every card shows a battery percentage').toBeGreaterThanOrEqual(cards)
+    expect(grades, 'every card shows its grade').toBeGreaterThanOrEqual(cards)
 
     await page.screenshot({ path: 'screenshots/H3-homepage-featured.png', fullPage: false })
     expectNoFatalErrors(all, 'H3-cards')
@@ -101,7 +104,8 @@ test.describe('H1 homepage content and structure', () => {
 
     const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
 
-    for (const grade of ['Grade A', 'Grade B', 'Grade C']) {
+    // Each grade is set as its letter plus its name ("A", "Excellent").
+    for (const grade of ['Excellent', 'Very Good', 'Good']) {
       expect(body, `${grade} is explained`).toContain(grade)
     }
 
@@ -254,7 +258,7 @@ test.describe('H9 homepage accessibility basics', () => {
 
     await page.goto('/')
     await page.locator('h1').first().waitFor()
-    await page.waitForSelector('#featured article', { timeout: 20_000 })
+    await page.getByTestId('hero-plate').waitFor({ timeout: 20_000 })
 
     const heroPanel = await page.locator('section').first().innerText()
 

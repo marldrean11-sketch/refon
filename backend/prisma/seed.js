@@ -15,10 +15,37 @@ const ADMIN_EMAIL = 'admin@refon.test'
 const ADMIN_PASSWORD = 'AdminTest123!'
 const PASSWORD_HASH_ROUNDS = 12
 
-function assertDevelopmentEnvironment() {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Fixed development seed accounts cannot run in production.')
+/**
+ * Passwords for the seeded admin, seller and demo buyer accounts.
+ *
+ * Development keeps the fixed passwords above, which are published in this
+ * repository. A production database — a public demo deployment — is seeded only
+ * when both passwords are supplied through the environment, so a live site never
+ * carries an admin login anyone could read on GitHub.
+ */
+const MIN_SEED_PASSWORD_LENGTH = 12
+
+function resolveSeedPasswords() {
+  if (process.env.NODE_ENV !== 'production') {
+    return { admin: ADMIN_PASSWORD, demo: DEMO_SELLER_PASSWORD }
   }
+
+  const admin = process.env.SEED_ADMIN_PASSWORD ?? ''
+  const demo = process.env.SEED_DEMO_PASSWORD ?? ''
+  const published = [ADMIN_PASSWORD, DEMO_SELLER_PASSWORD]
+
+  if (
+    admin.length < MIN_SEED_PASSWORD_LENGTH ||
+    demo.length < MIN_SEED_PASSWORD_LENGTH ||
+    published.includes(admin) ||
+    published.includes(demo)
+  ) {
+    throw new Error(
+      `In production the seed needs SEED_ADMIN_PASSWORD and SEED_DEMO_PASSWORD, each at least ${MIN_SEED_PASSWORD_LENGTH} characters and not the development defaults.`,
+    )
+  }
+
+  return { admin, demo }
 }
 
 async function seedAdmin(passwordHash) {
@@ -186,8 +213,13 @@ async function seedDemoBuyers(passwordHash) {
 /**
  * Demo reviews.
  *
- * Aggregated into `sellers.rating_average` / `rating_count` afterwards, because
- * the catalog sorts and filters on those denormalised columns.
+ * Stored with `isSample: true`, which keeps them out of every public review list
+ * and rating. ReFon has no delivered orders, so there is no real buyer feedback,
+ * and a star average built from seed rows would be invented social proof. The
+ * rows stay in the database so the review UI can be developed against them.
+ *
+ * `sellers.rating_average` / `rating_count` are then aggregated from real
+ * reviews only, which for a fresh seed means none.
  */
 async function seedDemoReviews() {
   for (const review of DEMO_REVIEWS) {
@@ -205,9 +237,10 @@ async function seedDemoReviews() {
         conditionRating: review.conditionRating,
         sellerRating: review.sellerRating,
         verifiedPurchase: review.verifiedPurchase,
+        isSample: true,
         status: 'PUBLISHED',
       },
-      create: review,
+      create: { ...review, isSample: true },
     })
   }
 
@@ -220,7 +253,11 @@ async function seedDemoReviews() {
     })
 
     const reviews = await prisma.review.findMany({
-      where: { listingId: { in: listingIds.map((entry) => entry.id) }, status: 'PUBLISHED' },
+      where: {
+        listingId: { in: listingIds.map((entry) => entry.id) },
+        status: 'PUBLISHED',
+        isSample: false,
+      },
       select: { sellerRating: true },
     })
 
@@ -249,11 +286,11 @@ async function seedDemoReviews() {
 }
 
 async function seed() {
-  assertDevelopmentEnvironment()
+  const passwords = resolveSeedPasswords()
 
   const [adminPasswordHash, sellerPasswordHash] = await Promise.all([
-    bcrypt.hash(ADMIN_PASSWORD, PASSWORD_HASH_ROUNDS),
-    bcrypt.hash(DEMO_SELLER_PASSWORD, PASSWORD_HASH_ROUNDS),
+    bcrypt.hash(passwords.admin, PASSWORD_HASH_ROUNDS),
+    bcrypt.hash(passwords.demo, PASSWORD_HASH_ROUNDS),
   ])
 
   const admin = await seedAdmin(adminPasswordHash)
@@ -268,7 +305,7 @@ async function seed() {
     prisma.review.count(),
   ])
 
-  console.log('ReFon development seed completed.')
+  console.log('ReFon seed completed.')
   console.table({
     adminEmail: admin.email,
     sellerCount,

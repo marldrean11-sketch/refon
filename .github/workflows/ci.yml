@@ -115,6 +115,12 @@ jobs:
       - name: Install Chromium and its system dependencies
         run: npx --prefix e2e-ui playwright install --with-deps chromium
 
+      # The seed, the API and the suite's own database helpers all import the
+      # generated client; without this step the seed stops at "@prisma/client did
+      # not initialize yet".
+      - name: Generate Prisma client
+        run: npx prisma generate --schema backend/prisma/schema.prisma
+
       - name: Apply migrations
         run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
 
@@ -138,7 +144,8 @@ jobs:
 
       - name: Remove UI test data
         if: always()
-        run: node e2e-ui/cleanup-ui-test-data.mjs
+        # Relative to `working-directory`, which is backend/.
+        run: node ../e2e-ui/cleanup-ui-test-data.mjs
         working-directory: backend
 
       - name: Upload the Playwright report
