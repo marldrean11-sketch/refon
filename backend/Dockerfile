@@ -29,7 +29,6 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/backend/node_modules ./backend/node_modules
 COPY package.json package-lock.json ./
 COPY backend ./backend
 
@@ -72,7 +71,12 @@ ENV NODE_ENV=production \
     NODE_OPTIONS=--enable-source-maps
 
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/backend/node_modules ./backend/node_modules
+# The generated Prisma client. `prod-deps` installs @prisma/client but deliberately
+# never runs `prisma generate`, so it holds only the stub that throws on construction,
+# and the entrypoint's `migrate deploy` does not generate it either. The `build`
+# stage's output is the real client; copying it over keeps the runtime image free of
+# devDependencies without shipping a client that cannot boot.
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY package.json package-lock.json ./
 COPY backend ./backend
 COPY docker/backend-entrypoint.sh /usr/local/bin/backend-entrypoint.sh
