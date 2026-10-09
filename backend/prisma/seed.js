@@ -186,8 +186,13 @@ async function seedDemoBuyers(passwordHash) {
 /**
  * Demo reviews.
  *
- * Aggregated into `sellers.rating_average` / `rating_count` afterwards, because
- * the catalog sorts and filters on those denormalised columns.
+ * Stored with `isSample: true`, which keeps them out of every public review list
+ * and rating. ReFon has no delivered orders, so there is no real buyer feedback,
+ * and a star average built from seed rows would be invented social proof. The
+ * rows stay in the database so the review UI can be developed against them.
+ *
+ * `sellers.rating_average` / `rating_count` are then aggregated from real
+ * reviews only, which for a fresh seed means none.
  */
 async function seedDemoReviews() {
   for (const review of DEMO_REVIEWS) {
@@ -205,9 +210,10 @@ async function seedDemoReviews() {
         conditionRating: review.conditionRating,
         sellerRating: review.sellerRating,
         verifiedPurchase: review.verifiedPurchase,
+        isSample: true,
         status: 'PUBLISHED',
       },
-      create: review,
+      create: { ...review, isSample: true },
     })
   }
 
@@ -220,7 +226,11 @@ async function seedDemoReviews() {
     })
 
     const reviews = await prisma.review.findMany({
-      where: { listingId: { in: listingIds.map((entry) => entry.id) }, status: 'PUBLISHED' },
+      where: {
+        listingId: { in: listingIds.map((entry) => entry.id) },
+        status: 'PUBLISHED',
+        isSample: false,
+      },
       select: { sellerRating: true },
     })
 

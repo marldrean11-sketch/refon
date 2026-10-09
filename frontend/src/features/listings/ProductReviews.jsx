@@ -7,7 +7,9 @@ import { formatDate } from '../../lib/format.js'
  * Published reviews for a listing.
  *
  * Read-only, and honest about being empty: a listing with no published reviews
- * says so instead of showing a 0.0 average or a placeholder quote. Nothing here
+ * says so, explains how reviews will be collected, and shows no 0.0 average or
+ * placeholder quote. Seeded sample reviews never reach this component: the API
+ * filters `isSample` rows out of the list and every average. Nothing here
  * offers a way to write a review, because a verified purchase cannot be claimed
  * until an order has been delivered.
  *
@@ -102,15 +104,24 @@ export function ProductReviews({ reviews, summary, isLoading, error }) {
         </div>
 
         {count === 0 ? (
-          <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-canvas px-6 py-10 text-center">
-            <MessageSquareOff className="size-7 text-muted" aria-hidden="true" />
-            <div>
-              <p className="font-display text-lg font-semibold text-ink">No reviews yet</p>
-              <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-muted">
-                ReFon is a working prototype with no delivered orders yet, so there is no
-                genuine buyer feedback to show here. Nothing is invented to fill the gap.
-              </p>
+          <div className="mt-6 rounded-2xl border border-dashed border-line bg-canvas px-6 py-8">
+            <div className="flex items-start gap-3">
+              <MessageSquareOff className="mt-0.5 size-6 shrink-0 text-muted" aria-hidden="true" />
+              <div>
+                <p className="font-display text-lg font-semibold text-ink">No reviews yet</p>
+                <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted">
+                  ReFon has no delivered orders yet, so there is no buyer feedback to show.
+                  Nothing is invented to fill the gap.
+                </p>
+              </div>
             </div>
+
+            <h3 className="mt-6 text-sm font-bold text-ink">How reviews will work</h3>
+            <ul className="mt-2 grid gap-1.5 text-sm leading-relaxed text-muted">
+              <li>Only a buyer whose order was delivered can leave one.</li>
+              <li>Each review asks whether the phone matched its grade.</li>
+              <li>Reviews count toward the seller, shown on their storefront.</li>
+            </ul>
           </div>
         ) : (
           <>
@@ -188,15 +199,6 @@ export function ProductReviews({ reviews, summary, isLoading, error }) {
           </>
         )}
 
-        <p className="mt-7 flex gap-2 border-t border-line pt-5 text-xs leading-relaxed text-muted">
-          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary-600" aria-hidden="true" />
-          <span>
-            Reviews shown are sample data seeded for this prototype. ReFon has not yet
-            delivered a customer order, so a "Verified purchase" label here means the record
-            was seeded that way — not that a real buyer has received this phone. Buyer
-            reviews open once orders are delivered.
-          </span>
-        </p>
       </div>
     </section>
   )
