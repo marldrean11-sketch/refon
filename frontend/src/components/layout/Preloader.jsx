@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { easings, usePrefersReducedMotion } from '../../lib/motion.ts'
-import { LogoGlyph } from '../ui/BrandMark.jsx'
+import { LogoGlyph, Wordmark } from '../ui/BrandMark.jsx'
 
 const STORAGE_KEY = 'refon:preloader-seen'
 
@@ -155,12 +155,10 @@ export function Preloader() {
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: LOGO_IN_MS / 1000, ease: easings.entrance }}
-          className="flex items-center gap-3 text-ink"
+          className="flex items-center gap-2 text-ink"
         >
-          <span className="grid size-11 place-items-center rounded-card bg-dark text-white">
-            <LogoGlyph className="size-6" />
-          </span>
-          <span className="text-2xl font-bold tracking-[-0.03em]">ReFon</span>
+          <LogoGlyph className="size-12" />
+          <Wordmark className="text-[2rem]" />
         </motion.div>
       </motion.div>
     </div>

@@ -1,0 +1,291 @@
+<title>ReFon Reference Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column; references grouped into three shelves, each card = what it is / borrow / avoid. */
+:root {
+  --cobalt: #1f3fd1; --night: #0d1633; --tag: #ffc933; --pass: #0f7a4a;
+  --paper: #f1f3f7; --card: #ffffff; --well: #e4e8f0; --ink: #0d1633; --muted: #4d5672; --line: #d5dae6;
+  --warn: #b5470f; --on-tag: #0d1633;
+  --f-display: 'Archivo', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --f-body: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-data: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cobalt: #8da0ff; --night: #060b1c; --tag: #ffcf47; --pass: #3ccf8e;
+    --paper: #0b1228; --card: #121b38; --well: #1a2447; --ink: #eef1fa; --muted: #a9b2cc; --line: #26315a;
+    --warn: #ff9a63; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --cobalt: #8da0ff; --night: #060b1c; --tag: #ffcf47; --pass: #3ccf8e;
+  --paper: #0b1228; --card: #121b38; --well: #1a2447; --ink: #eef1fa; --muted: #a9b2cc; --line: #26315a;
+  --warn: #ff9a63; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.6; padding-inline: 16px; padding-block: 0 64px; }
+.wrap { max-width: 72rem; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); font-stretch: 112%; margin: 0; line-height: 1.05; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--cobalt); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; border-radius: 4px; }
+.label { font-family: var(--f-data); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.prose { max-width: 65ch; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+
+.mast { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.word { font-family: var(--f-display); font-stretch: 125%; font-weight: 900; font-size: 24px; letter-spacing: -0.03em; }
+.word b { color: var(--cobalt); }
+
+.intro { padding-block: 48px 40px; display: grid; gap: 18px; }
+.intro h1 { font-size: clamp(2.3rem, 5.6vw, 4rem); font-weight: 900; font-stretch: 118%; letter-spacing: -0.035em; line-height: .96; }
+.intro h1 span { background: var(--tag); color: var(--on-tag); padding: 0 .12em; border-radius: 6px; }
+.intro .prose { font-size: 1.1rem; }
+
+.shelf { padding-block: 44px; border-top: 1px solid var(--line); display: grid; gap: 24px; }
+.shelf-head { display: grid; gap: 10px; }
+.shelf-head h2 { font-size: clamp(1.6rem, 3.4vw, 2.3rem); font-weight: 800; letter-spacing: -0.02em; }
+
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ref { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.ref-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ref h3 { font-size: 1.3rem; font-weight: 800; }
+.ref .what { font-size: 15px; color: var(--muted); }
+.kv { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 15px; }
+.kv li { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); gap: 10px; }
+.kv .k { font-family: var(--f-data); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; padding-top: 3px; }
+.kv .k.b { color: var(--pass); }
+.kv .k.a { color: var(--warn); }
+.kv .k.r { color: var(--cobalt); }
+.ref .link { font-family: var(--f-data); font-size: 12.5px; overflow-wrap: anywhere; border-top: 1px dashed var(--line); padding-top: 10px; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; min-width: 46rem; font-size: 15px; }
+th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-data); font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); background: var(--well); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 700; white-space: nowrap; }
+tr.us td { background: color-mix(in srgb, var(--tag) 22%, var(--card)); }
+.mono { font-family: var(--f-data); font-size: 13.5px; }
+.takeaway { background: var(--night); color: #fff; border-radius: 16px; padding: 22px 24px; display: grid; gap: 8px; }
+.takeaway h3 { color: var(--tag); font-size: 1.15rem; }
+.takeaway p { color: #c9d0e6; font-size: 15.5px; max-width: 75ch; }
+
+.howto { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.box { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; display: grid; gap: 10px; min-width: 0; }
+.box ul { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 15.5px; display: grid; gap: 6px; }
+.box code, .ref code { font-family: var(--f-data); font-size: 13px; background: var(--well); padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+
+.sources { font-size: 14px; color: var(--muted); display: grid; gap: 6px; }
+.sources ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 4px; }
+.sources a { overflow-wrap: anywhere; }
+
+@media (max-width: 960px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .grid, .howto { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <span class="word">re<b>fon</b></span>
+    <span class="label">Reference board · Oct 2026</span>
+  </header>
+
+  <section class="intro">
+    <p class="label">Inspiration for the ReFon Tag identity</p>
+    <h1>Borrow the idea, <span>not the look.</span></h1>
+    <p class="prose">Nine sites worth studying, in three groups: the refurbished-phone shops ReFon competes with, sites that turn an inspection into something people trust, and brands with a strong identity built from a few ideas. Each card says what to take, what to leave, and where it fits in ReFon.</p>
+  </section>
+
+  <!-- Shelf 1 -->
+  <section class="shelf">
+    <div class="shelf-head">
+      <p class="label">Shelf 1 · Direct competitors</p>
+      <h2>Refurbished-phone shops</h2>
+      <p class="prose">Study these to see what buyers already expect, and where ReFon can stand out.</p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Shop</th><th>Inspection</th><th>Battery shown to buyer</th><th>Grade names</th><th>Region</th></tr></thead>
+        <tbody>
+          <tr><td>Back Market</td><td>"Up to 100-point" (US guide) · 25-point (AU guide, 2025)</td><td>90% minimum promised only on Premium</td><td>Premium · Excellent · Good · Fair</td><td>US, EU, AU</td></tr>
+          <tr><td>Swappie</td><td>52-step test, in-house technicians</td><td>Never below 86%; Premium 95%+</td><td>Premium · Excellent · Very Good · Fair</td><td>17 EU countries</td></tr>
+          <tr><td>CompAsia</td><td>32-step check</td><td>Kept above 80%</td><td>As-new · Excellent · Good · Fair</td><td>MY, SG, <strong>PH</strong>, more</td></tr>
+          <tr class="us"><td>ReFon</td><td>11-point checklist, each result listed</td><td class="num"><strong>The measured % on every listing</strong></td><td>A · B · C, with written notes on the marks</td><td>PH</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="takeaway">
+      <h3>What this means for ReFon</h3>
+      <p>Everyone grades on looks only, and most promise a battery minimum instead of the real figure. ReFon's edge is the exact battery % and written notes on every phone, so put those first. Don't lead with "11-point": next to 32, 52 and 100 it looks small. Lead with "every result listed" instead. And CompAsia already sells in the Philippines, so ReFon needs a look that can't be confused with it.</p>
+    </div>
+
+    <div class="grid">
+      <article class="ref">
+        <div class="ref-top"><h3>Back Market</h3><span class="label">Market leader</span></div>
+        <p class="what">The largest refurbished marketplace: about 1,500–2,700 vetted refurbishers, a 12-month warranty, and a trade-in service.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>The grade guide uses a physical yardstick: wear "invisible at 20 cm" for Excellent and at 50 cm for Good. ReFon's A/B/C notes should be just as concrete.</span></li>
+          <li><span class="k a">Avoid</span><span>Black, white and mint, and calm "premium" minimalism. ReFon's current site is already too close to this.</span></li>
+          <li><span class="k r">ReFon</span><span><code>GradingSection.jsx</code>, <code>QualityCheckPage.jsx</code></span></li>
+        </ul>
+        <a class="link" href="https://www.backmarket.com/en-us/c/smartphones/what-are-back-market-phone-grades">backmarket.com · phone grades guide</a>
+      </article>
+
+      <article class="ref">
+        <div class="ref-top"><h3>Swappie</h3><span class="label">iPhone specialist</span></div>
+        <p class="what">Refurbishes iPhones in-house. Publishes a battery floor and offers a "100% Brand New Battery" upgrade at checkout.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>Treat battery as a product feature: a clear threshold, an upgrade at checkout, and a blog post explaining how to read battery health in Settings.</span></li>
+          <li><span class="k a">Avoid</span><span>Using two different sets of grade names on different pages. Pick A/B/C and use them everywhere.</span></li>
+          <li><span class="k r">ReFon</span><span>Battery 85%+ filter, battery explainer on the FAQ</span></li>
+        </ul>
+        <a class="link" href="https://swappie.com/en/blog/should-you-replace-your-iphone-battery-or-trade-it-in/">swappie.com · battery article</a>
+      </article>
+
+      <article class="ref">
+        <div class="ref-top"><h3>CompAsia</h3><span class="label">Local rival</span></div>
+        <p class="what">A Southeast Asian refurbisher operating in 9 countries, including the Philippines, with trade-in partners such as AndroidZone.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>Trade-in as a second front door. A "Sell your phone" path gives sellers on ReFon a reason to visit.</span></li>
+          <li><span class="k a">Avoid</span><span>Copying its colours or grade names. Local buyers will compare the two side by side.</span></li>
+          <li><span class="k r">ReFon</span><span>Seller onboarding, the "Sell" item in the main menu</span></li>
+        </ul>
+        <a class="link" href="https://unbox.ph/gadget/androidzone-partners-with-compasia-for-better-trade-in-services/amp/">unbox.ph · CompAsia trade-in in PH</a>
+      </article>
+    </div>
+  </section>
+
+  <!-- Shelf 2 -->
+  <section class="shelf">
+    <div class="shelf-head">
+      <p class="label">Shelf 2 · Proof made visible</p>
+      <h2>Inspection and verification patterns</h2>
+      <p class="prose">These aren't phone shops. Each one turns an inspection or a check into something buyers can see and trust, which is the job of the ReFon Tag.</p>
+    </div>
+    <div class="grid">
+      <article class="ref">
+        <div class="ref-top"><h3>StockX</h3><span class="label">The physical tag</span></div>
+        <p class="what">Puts a green tag on every verified item. Buyers know the tag by sight, and it has even been counterfeited.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>One object that means "checked", used on the product page, in the box and in buyers' photos. A QR code on the back links to the record.</span></li>
+          <li><span class="k a">Avoid</span><span>Over-claiming. StockX dropped "100% Authentic" for "StockX Verified" during the Nike lawsuit. Say "reviewed" and "measured", not "guaranteed".</span></li>
+          <li><span class="k r">ReFon</span><span>A printed tag in the box with a QR code to the listing's checklist</span></li>
+        </ul>
+        <a class="link" href="https://www.retaildive.com/news/stockx-removes-verified-authentic-sneaker-tags/636472">retaildive.com · StockX tag change</a>
+      </article>
+
+      <article class="ref">
+        <div class="ref-top"><h3>Carvana</h3><span class="label">Inspection report</span></div>
+        <p class="what">Attaches a 150-point inspection to each certified car's listing page, along with its "top imperfections" and a 360° photo.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>The inspection lives on the listing, and imperfections get their own photos. ReFon's "Marks" row should open photos of the actual marks.</span></li>
+          <li><span class="k a">Avoid</span><span>An inspection you have to request by email. ReFon shows its checks openly.</span></li>
+          <li><span class="k r">ReFon</span><span><code>ListingDetailPage.jsx</code>: the Marks row links to photos</span></li>
+        </ul>
+        <a class="link" href="https://www.carvana.com/info/certifiedprogram">carvana.com · certified program</a>
+      </article>
+
+      <article class="ref">
+        <div class="ref-top"><h3>iFixit</h3><span class="label">One-number score</span></div>
+        <p class="what">Scores how repairable each phone is from 0 to 10, from a 100-point rubric, and shows the reasoning in each teardown.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>A simple headline (the stamp) with the full working underneath (the checklist). Show the summary first and the detail one tap away.</span></li>
+          <li><span class="k a">Avoid</span><span>Changing the rubric without saying so. Put a version and date on the grading guide.</span></li>
+          <li><span class="k r">ReFon</span><span>Grade stamp → expandable checklist</span></li>
+        </ul>
+        <a class="link" href="https://www.ifixit.com/smartphone-repairability">ifixit.com · smartphone repairability</a>
+      </article>
+    </div>
+  </section>
+
+  <!-- Shelf 3 -->
+  <section class="shelf">
+    <div class="shelf-head">
+      <p class="label">Shelf 3 · Identity</p>
+      <h2>Brands built from a few strong ideas</h2>
+      <p class="prose">These show how a small brand becomes recognisable through one typeface idea, one colour rule, or one blunt sentence.</p>
+    </div>
+    <div class="grid">
+      <article class="ref">
+        <div class="ref-top"><h3>Nothing</h3><span class="label">Type as identity</span></div>
+        <p class="what">A custom dot-matrix typeface (Ndot) used for the wordmark, product names and the phone's software, inspired by 1980s IBM computers.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>A typeface that looks like a machine readout, used for data only. That's IBM Plex Mono's job in ReFon: battery %, checks, prices.</span></li>
+          <li><span class="k a">Avoid</span><span>Dot-matrix lettering and the black, white and red palette. They are Nothing's trademarks.</span></li>
+          <li><span class="k r">ReFon</span><span>Mono for every number, Archivo for headlines</span></li>
+        </ul>
+        <a class="link" href="https://www.fontsinuse.com/uses/59510/nothing-phone">fontsinuse.com · Nothing Phone</a>
+      </article>
+
+      <article class="ref">
+        <div class="ref-top"><h3>Framework</h3><span class="label">Mission in one line</span></div>
+        <p class="what">Repairable laptops. The homepage leads with "Let's fix Consumer Electronics." Brand orange is used only for actions, with mono type for specs and a parts shop filtered by compatibility.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>A blunt mission headline, an accent colour used only for actions, and filters that match how buyers think ("fits my budget", "battery above 85%").</span></li>
+          <li><span class="k a">Avoid</span><span>Warm off-white with orange. It's another version of the template ReFon is leaving.</span></li>
+          <li><span class="k r">ReFon</span><span>"Know the phone before you buy it.", the finder chips</span></li>
+        </ul>
+        <a class="link" href="https://ecomm.design/site/framework/">ecomm.design · Framework teardown</a>
+      </article>
+
+      <article class="ref">
+        <div class="ref-top"><h3>Gumroad</h3><span class="label">Colour with nerve</span></div>
+        <p class="what">A loud 2021 redesign: cream, bubblegum pink, hard black outlines and a yellow close to #FFC900. Some people loved it, some found it distracting.</p>
+        <ul class="kv">
+          <li><span class="k b">Borrow</span><span>The confidence to use a saturated colour as a signature. Its yellow is close to Tag Yellow, which shows how well yellow on dark navy stands out.</span></li>
+          <li><span class="k a">Avoid</span><span>Hard offset shadows and pink. Keep yellow on the tag only, or ReFon will read as neo-brutalist instead of trustworthy.</span></li>
+          <li><span class="k r">ReFon</span><span>Tag Yellow used on roughly 4% of a page</span></li>
+        </ul>
+        <a class="link" href="https://madegooddesigns.com/neobrutalism-web-design/">madegooddesigns.com · neobrutalism</a>
+      </article>
+    </div>
+  </section>
+
+  <!-- How to use -->
+  <section class="shelf">
+    <div class="shelf-head">
+      <p class="label">Using this board</p>
+      <h2>How to look at these sites</h2>
+    </div>
+    <div class="howto">
+      <div class="box">
+        <h3>On each competitor's site, check</h3>
+        <ul>
+          <li>How many taps it takes to see battery health on a product page</li>
+          <li>Where the grade is explained, and whether it uses photos</li>
+          <li>The mobile product page on a mid-range Android phone</li>
+          <li>What the checkout says about warranty and returns</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>Where to find more</h3>
+        <ul>
+          <li><a href="https://ecomm.design/">ecomm.design</a>: storefront teardowns, filterable by industry</li>
+          <li>Search on Dribbble or Behance for <code>inspection report UI</code>, <code>luggage tag label design</code>, <code>spec sheet typography</code></li>
+          <li>Avoid searching "refurbished phone UI", which mostly returns copies of Back Market</li>
+        </ul>
+      </div>
+    </div>
+    <p class="prose" style="font-size:15px">Grading figures come from each company's published guides and from press coverage, and some sources disagree (noted in the table). Check the live sites before quoting any figure publicly.</p>
+  </section>
+
+  <section class="shelf sources">
+    <p class="label">Sources</p>
+    <ol>
+      <li><a href="https://www.backmarket.com/en-us/c/smartphones/what-are-back-market-phone-grades">Back Market: what are phone grades (US)</a> · <a href="https://www.backmarket.com.au/en-au/c/smartphones/what-are-back-market-phone-grades">AU version</a></li>
+      <li><a href="https://sacra.com/research/back-market">Sacra: Back Market</a></li>
+      <li><a href="https://help.swappie.com/article/before-buying-faqs/">Swappie help centre: before buying</a> · <a href="https://swappie.com/en/premium/">Swappie Premium</a></li>
+      <li><a href="https://lowyat.net/2022/287712/changing-the-phone-resale-scene-with-compasia">Lowyat: CompAsia (2022)</a> · <a href="https://unbox.ph/gadget/androidzone-partners-with-compasia-for-better-trade-in-services/amp/">Unbox PH: CompAsia trade-in</a></li>
+      <li><a href="https://www.retaildive.com/news/stockx-removes-verified-authentic-sneaker-tags/636472">Retail Dive: StockX tag change</a></li>
+      <li><a href="https://www.carvana.com/info/certifiedprogram">Carvana certified program</a> · <a href="https://www.motor1.com/news/802342/carvana-ford/">Motor1</a></li>
+      <li><a href="https://www.ifixit.com/Wiki/Phone_Repairability">iFixit: phone repairability</a></li>
+      <li><a href="https://www.fontsinuse.com/uses/59510/nothing-phone">Fonts In Use: Nothing Phone</a> · <a href="https://madegooddesigns.com/nothing-brand-guidelines/">Nothing brand guidelines</a></li>
+      <li><a href="https://ecomm.design/site/framework/">ecomm.design: Framework</a></li>
+      <li><a href="https://madegooddesigns.com/neobrutalism-web-design/">Made Good Designs: neobrutalism</a> · <a href="https://www.webdesignhot.com/design.md/gumroad/">Gumroad design notes</a></li>
+    </ol>
+  </section>
+</div>

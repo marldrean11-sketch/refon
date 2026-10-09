@@ -18,6 +18,7 @@ import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
+import { BrandMark } from "../../components/ui/BrandMark.jsx";
 import { useAuth } from "../auth/useAuth.js";
 import { AUTH_ROUTES, MARKETPLACE_ROUTES } from "../../lib/routes.js";
 import { canSeeBuyerDestinations } from "./navigation-config.js";
@@ -73,16 +74,15 @@ const COLUMNS = [
 /**
  * Contrast on the dark panel.
  *
- * White on `#0B0F0E` is 19.4:1. The muted step used for supporting text is
- * `#A9AEAA`, which is 8.9:1 — comfortably past the 4.5:1 AA threshold for body
- * text, which is why the footer uses a lighter grey than the old `primary-300`.
- * The green is `#34D399`, 11.2:1, so it is safe for text and not only for icons.
+ * White on Night `#0D1633` is 17.8:1. The muted step used for supporting text
+ * is `#A3ACC8`, a navy-tinted grey at 7.9:1 — comfortably past the 4.5:1 AA
+ * threshold for body text. The green is `#34D399`, safe for text as well as icons.
  */
-const MUTED_ON_DARK = "#a9aeaa";
+const MUTED_ON_DARK = "#a3acc8";
 const ACCENT_ON_DARK = "#34d399";
 
-/** The wordmark's tone: 3.2:1 on `#0B0F0E`, which is the 3:1 large-text floor. */
-const WORDMARK_ON_DARK = "#5f6462";
+/** The wordmark's tone: 3.3:1 on Night, which clears the 3:1 large-text floor. */
+const WORDMARK_ON_DARK = "#5d6890";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -131,30 +131,7 @@ export function SiteFooter() {
       <div className="mx-auto w-full max-w-7xl px-4 pb-32 pt-14 sm:px-6 lg:px-8 lg:pb-10">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(5,1fr)] lg:gap-8">
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link
-              to="/"
-              aria-label="ReFon home"
-              className="inline-flex items-center gap-2.5 rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-dark"
-            >
-              <span className="grid size-9 place-items-center rounded-control bg-white text-dark">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="size-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.9}
-                  strokeLinecap="square"
-                  aria-hidden="true"
-                >
-                  <rect x="6.5" y="2.5" width="11" height="19" rx="1.5" />
-                  <path d="M10.5 18.2h3" />
-                  <path d="m8.6 12.4 2.1 2.2 4.5-4.9" className="text-accent" />
-                </svg>
-              </span>
-              <span className="text-xl font-bold tracking-[-0.03em]">
-                ReFon
-              </span>
-            </Link>
+            <BrandMark inverse className="focus-visible:ring-offset-dark" />
 
             <p
               className="mt-5 max-w-sm text-sm leading-relaxed"
@@ -385,8 +362,8 @@ function NewsletterForm({ reduced }) {
  *     the `e` and `o` off flat, so the wordmark read as a slab of broken
  *     letterforms. The line box is now tall enough for the glyphs.
  *   - **A real tone.** At 23vw this is large text, so AA asks for 3:1. The
- *     original 7%-white fill measured 1.17:1 and axe flagged it. `#5F6462` is
- *     3.20:1 on `#0B0F0E` — quiet against a near-black panel, and readable,
+ *     original 7%-white fill measured 1.17:1 and axe flagged it. `#5D6890` is
+ *     3.26:1 on Night — quiet against the navy panel, and readable,
  *     which a wordmark should be.
  */
 function GiantWordmark({ reduced }) {
@@ -403,18 +380,18 @@ function GiantWordmark({ reduced }) {
       className="pointer-events-none mt-8 select-none"
     >
       <span
-        className="block whitespace-nowrap text-center font-bold leading-none tracking-[-0.05em]"
+        className="block whitespace-nowrap text-center font-display font-black leading-none tracking-[-0.04em] [font-stretch:125%]"
         style={{
           // Sized in viewport units so it spans the width at every breakpoint
           // without a media query, capped at 20rem so it cannot outgrow the
           // footer on a very wide display, and stepped *up* from plain `vw` on
           // narrow screens — at 23vw a 390px phone got a 90px wordmark, which
           // reads as a heading rather than the closing signature it is.
-          fontSize: "min(30vw, 20rem)",
+          fontSize: "min(24vw, 17rem)",
           color: WORDMARK_ON_DARK,
         }}
       >
-        ReFon
+        refon
       </span>
     </motion.div>
   );

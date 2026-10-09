@@ -34,9 +34,7 @@ const AXE = path.join(HERE, '..', 'node_modules', 'axe-core', 'axe.min.js')
 const DESKTOP = { width: 1440, height: 900 }
 const MOBILE = { width: 390, height: 844 }
 
-const PARALLAX_MIN_WIDTH = 1024
-
-/** The carousel's hold time, mirrored from `use-hero-motion.js`. */
+/** How long the carousel tests wait to prove nothing advances on its own. */
 const SLIDE_INTERVAL = 5000
 
 /* ------------------------------------------------------------------ helpers */
@@ -171,23 +169,6 @@ async function scrollTo(page, y) {
   )
 }
 
-/** Reads a computed transform as its components, in-page. */
-function readTransform(page, selector) {
-  return page.locator(selector).evaluate((node) => {
-    const style = getComputedStyle(node)
-    if (style.transform === 'none') {
-      return { x: 0, y: 0, scaleX: 1, scaleY: 1 }
-    }
-    const matrix = new DOMMatrixReadOnly(style.transform)
-    return {
-      x: Math.round(matrix.m41 * 100) / 100,
-      y: Math.round(matrix.m42 * 100) / 100,
-      scaleX: Math.round(matrix.a * 1000) / 1000,
-      scaleY: Math.round(matrix.d * 1000) / 1000,
-    }
-  })
-}
-
 /** Injects axe-core and returns its serious/critical violations. */
 async function runAxe(page, selector) {
   const source = fs.readFileSync(AXE, 'utf8')
@@ -320,14 +301,14 @@ test.describe('P3A home page, top half', () => {
     expect(notes, notes.join('\n')).toEqual([])
   })
 
-  test('P3A-03 the hero headline reveals line by line', async ({ page }) => {
+  test('P3A-03 the hero headline is complete from the first frame', async ({ page }) => {
     await page.setViewportSize(DESKTOP)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     /*
-     * Sampled from inside the page from the first frame, because the reveal is a
-     * ~0.9s animation that has already finished by the time a locator resolves
-     * and a screenshot is taken.
+     * Sampled from inside the page from the first frame. The redesigned hero has
+     * no entrance animation on the headline: a page is complete at rest, so a
+     * thumbnail, a screenshot, and a skimming reader all see the whole sentence.
      */
     const samples = await page.evaluate(async () => {
       const seen = []
@@ -337,21 +318,15 @@ test.describe('P3A home page, top half', () => {
         const tick = () => {
           const heading = document.querySelector('h1')
           if (heading) {
-            // The line wrappers are the `overflow-hidden` spans inside the h1.
             const lines = [...heading.children].map((line) => {
-              const inner = line.firstElementChild
-              const style = getComputedStyle(inner ?? line)
-              const matrix =
-                style.transform === 'none' ? null : new DOMMatrixReadOnly(style.transform)
-              return {
-                opacity: Number(Number(style.opacity).toFixed(2)),
-                y: matrix ? Math.round(matrix.m42) : 0,
-              }
+              const style = getComputedStyle(line)
+              const matrix = style.transform === 'none' ? null : new DOMMatrixReadOnly(style.transform)
+              return { opacity: Number(Number(style.opacity).toFixed(2)), y: matrix ? Math.round(matrix.m42) : 0 }
             })
             seen.push(lines)
           }
 
-          if (performance.now() - started > 1800) {
+          if (performance.now() - started > 1200) {
             resolve(seen)
             return
           }
@@ -363,52 +338,33 @@ test.describe('P3A home page, top half', () => {
     })
 
     const flat = samples.flat()
-    const peakOffset = Math.max(...flat.map((line) => Math.abs(line.y)), 0)
-    const minOpacity = Math.min(...flat.map((line) => line.opacity), 1)
+    console.log('[P3A-03] frames', samples.length, 'lines', flat.length)
 
-    console.log(
-      '[P3A-03] frames',
-      samples.length,
-      'peak line offset',
-      peakOffset,
-      'min line opacity',
-      minOpacity,
+    expect(samples.length, 'the headline was never sampled').toBeGreaterThan(10)
+    for (const line of flat) {
+      expect(Math.abs(line.y), 'a headline line moved').toBeLessThan(2)
+    }
+
+    const settled = await page.locator('h1').evaluate((heading) =>
+      [...heading.children].map((line) => Number(Number(getComputedStyle(line).opacity).toFixed(2))),
     )
-
-    // Each line started below its own box and faded up.
-    expect(samples.length, 'the reveal was never sampled').toBeGreaterThan(10)
-    expect(peakOffset, 'no headline line ever moved — maskReveal did not run').toBeGreaterThan(20)
-    expect(minOpacity, 'a headline line never faded — maskReveal did not run').toBeLessThan(0.9)
-
-    // And it finished: every line is at rest and fully opaque.
-    const settled = await page.locator('h1').evaluate((heading) => {
-      const lines = [...heading.children].map((line) => {
-        const inner = line.firstElementChild
-        const style = getComputedStyle(inner ?? line)
-        const matrix = style.transform === 'none' ? null : new DOMMatrixReadOnly(style.transform)
-        return { opacity: Number(Number(style.opacity).toFixed(2)), y: matrix ? Math.round(matrix.m42) : 0 }
-      })
-      return lines
-    })
-
     console.log('[P3A-03] settled', JSON.stringify(settled))
-    for (const line of settled) {
-      expect(line.opacity, 'a headline line did not finish revealing').toBe(1)
-      expect(Math.abs(line.y), 'a headline line did not return to rest').toBeLessThan(2)
+    expect(settled.length, 'the headline has no lines').toBeGreaterThan(1)
+    for (const opacity of settled) {
+      expect(opacity, 'a headline line is not fully visible').toBe(1)
     }
   })
 
-  test('P3A-04 the carousel advances on a timer, pauses on hover, and moves its dot', async ({
+  test('P3A-04 the carousel stays put until asked, and its dots and arrows move it', async ({
     page,
   }) => {
     await page.setViewportSize(DESKTOP)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(1500)
 
-    const panel = page.getByTestId('hero-panel')
     // Scoped to the hero's own tablist: New Arrivals has tabs of its own further
     // down the page, and counting page-wide read as "two dots selected".
-    const HERO_TABS = '[role="tablist"][aria-label="Featured phones"] [role="tab"]'
+    const HERO_TABS = '[role="tablist"][aria-label="Slides"] [role="tab"]'
     const dots = page.locator(`${HERO_TABS}[aria-selected]`)
     const dotCount = await dots.count()
 
@@ -424,24 +380,12 @@ test.describe('P3A home page, top half', () => {
       )
 
     const before = await selectedIndex()
-    expect(before, 'no dot is selected on load').toBeGreaterThanOrEqual(0)
+    expect(before, 'no dot is selected on load').toBe(0)
 
-    // Hovering the panel must stop it. The pointer stays over the panel for the
-    // whole wait, which is what a visitor's cursor resting there looks like.
-    await panel.hover()
+    // No timer: the pointer is away from the hero and the slide does not change.
+    await page.mouse.move(20, 880)
     await page.waitForTimeout(SLIDE_INTERVAL + 1800)
-
-    const whileHovering = await selectedIndex()
-    console.log('[P3A-04] index before', before, 'after hovering', whileHovering)
-    expect(whileHovering, 'the carousel advanced while the pointer was over it').toBe(before)
-
-    // Move the pointer away and it resumes.
-    await page.mouse.move(20, 700)
-    await page.waitForTimeout(SLIDE_INTERVAL + 1800)
-
-    const afterLeaving = await selectedIndex()
-    console.log('[P3A-04] index after leaving', afterLeaving)
-    expect(afterLeaving, 'the carousel did not resume after the pointer left').not.toBe(whileHovering)
+    expect(await selectedIndex(), 'the carousel advanced on its own').toBe(before)
 
     // Exactly one dot is ever selected, and the arrows move it by one.
     const selectedCount = await page.locator(`${HERO_TABS}[aria-selected="true"]`).count()
@@ -449,90 +393,46 @@ test.describe('P3A home page, top half', () => {
 
     await page.getByTestId('hero-next').click()
     await page.waitForTimeout(500)
-    const afterNext = await selectedIndex()
-    expect(afterNext, 'the next arrow did not advance').toBe((afterLeaving + 1) % dotCount)
+    expect(await selectedIndex(), 'the next arrow did not advance').toBe((before + 1) % dotCount)
 
     await page.getByTestId('hero-prev').click()
     await page.waitForTimeout(500)
-    expect(await selectedIndex(), 'the previous arrow did not go back').toBe(afterLeaving)
+    expect(await selectedIndex(), 'the previous arrow did not go back').toBe(before)
+
+    // A dot jumps straight to its slide.
+    await dots.nth(dotCount - 1).click()
+    await page.waitForTimeout(500)
+    expect(await selectedIndex(), 'a dot did not select its slide').toBe(dotCount - 1)
   })
 
-  test('P3A-05 the hero chips drift on a loop and the parallax runs only on wide viewports', async ({
-    page,
-  }) => {
-    // Desktop: both the chip loop and the parallax must be live.
-    await page.setViewportSize(DESKTOP)
-    await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(1600)
+  test('P3A-05 the hero does not move on scroll at any width', async ({ page }) => {
+    for (const viewport of [DESKTOP, MOBILE]) {
+      await page.setViewportSize(viewport)
+      await page.goto('/', { waitUntil: 'domcontentloaded' })
+      await page.waitForTimeout(1200)
 
-    const chipOffsets = await page.evaluate(async () => {
-      const seen = []
-      const started = performance.now()
+      // The tag's offset inside the yellow band. Parallax would change it; the
+      // page scrolling on its own moves both boxes together and does not.
+      const offset = () =>
+        page.evaluate(() => {
+          const panel = document.querySelector('[data-testid="hero-panel"]')
+          const tag = panel?.querySelector('[data-testid="refon-tag"]')
+          if (!panel || !tag) return null
+          return { y: Math.round(tag.getBoundingClientRect().top - panel.getBoundingClientRect().top) }
+        })
 
-      return await new Promise((resolve) => {
-        const tick = () => {
-          const chip = document.querySelector('[data-testid="hero-chip"]')
-          if (chip) {
-            const style = getComputedStyle(chip)
-            const matrix =
-              style.transform === 'none' ? null : new DOMMatrixReadOnly(style.transform)
-            seen.push(matrix ? Math.round(matrix.m42 * 100) / 100 : 0)
-          }
+      await scrollTo(page, 0)
+      await page.waitForTimeout(300)
+      const atTop = await offset()
 
-          if (performance.now() - started > 2000) {
-            resolve(seen)
-            return
-          }
+      await scrollTo(page, 500)
+      await page.waitForTimeout(500)
+      const scrolled = await offset()
 
-          window.requestAnimationFrame(tick)
-        }
-        window.requestAnimationFrame(tick)
-      })
-    })
-
-    const chipRange = Math.max(...chipOffsets, 0) - Math.min(...chipOffsets, 0)
-    console.log('[P3A-05] chip samples', chipOffsets.length, 'range', chipRange)
-
-    expect(chipOffsets.length, 'no chip frames were sampled').toBeGreaterThan(10)
-    expect(chipRange, 'the chip never drifted — its 4s loop is not running').toBeGreaterThan(4)
-
-    // Parallax: at rest the layer sits at 0, then scroll moves it.
-    await scrollTo(page, 0)
-    await page.waitForTimeout(500)
-    const atTop = await readTransform(page, '[data-testid="hero-panel"] > div > div:last-child')
-
-    await scrollTo(page, 700)
-    await page.waitForTimeout(700)
-    const scrolled = await readTransform(page, '[data-testid="hero-panel"] > div > div:last-child')
-
-    console.log('[P3A-05] far layer at top', JSON.stringify(atTop), 'scrolled', JSON.stringify(scrolled))
-    expect(
-      Math.abs(scrolled.y - atTop.y),
-      'the far parallax layer did not move on scroll at 1440px',
-    ).toBeGreaterThan(5)
-
-    // Mobile: the same layer must not move at all.
-    await page.setViewportSize(MOBILE)
-    await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(1600)
-
-    const panelFlag = await page.getByTestId('hero-panel').getAttribute('data-parallax')
-    expect(panelFlag, 'parallax should be reported off at 390px').toBe('off')
-
-    await scrollTo(page, 0)
-    await page.waitForTimeout(400)
-    const mobileTop = await readTransform(page, '[data-testid="hero-panel"] > div > div:last-child')
-
-    await scrollTo(page, 700)
-    await page.waitForTimeout(700)
-    const mobileScrolled = await readTransform(page, '[data-testid="hero-panel"] > div > div:last-child')
-
-    console.log('[P3A-05] 390px at top', JSON.stringify(mobileTop), 'scrolled', JSON.stringify(mobileScrolled))
-    expect(
-      Math.abs(mobileScrolled.y - mobileTop.y),
-      'parallax moved at 390px — it must be off below 1024px',
-    ).toBeLessThan(1)
-    expect(Math.abs(mobileScrolled.y), 'the parallax layer was left offset at 390px').toBeLessThan(1)
+      console.log(`[P3A-05] ${viewport.width}px tag offset at top`, JSON.stringify(atTop), 'scrolled', JSON.stringify(scrolled))
+      expect(atTop, 'the hero has no tag').not.toBeNull()
+      expect(Math.abs(scrolled.y - atTop.y), `the hero tag moved on scroll at ${viewport.width}px`).toBeLessThan(1)
+    }
   })
 
   test('P3A-06 every text and background pair in 3A meets AA', async ({ page }) => {
@@ -571,7 +471,7 @@ test.describe('P3A home page, top half', () => {
             }
             current = current.parentElement
           }
-          return [246, 245, 241]
+          return [243, 245, 249]
         }
 
         const results = []
@@ -864,7 +764,7 @@ test.describe('P3A home page, top half', () => {
     // The carousel must not advance on its own. Nothing hovers the panel here.
     const selectedIndex = () =>
       page.evaluate(() =>
-        [...document.querySelectorAll('[role="tab"]')].findIndex(
+        [...document.querySelectorAll('[role="tablist"][aria-label="Slides"] [role="tab"]')].findIndex(
           (node) => node.getAttribute('aria-selected') === 'true',
         ),
       )
@@ -889,12 +789,12 @@ test.describe('P3A home page, top half', () => {
 
   test('P3A-10 no new code animates a property other than transform or opacity', () => {
     const files = [
-      'src/features/homepage/HeroSection.jsx',
+      'src/features/homepage/HomeHero.jsx',
+      'src/components/ui/RefonTag.jsx',
       'src/features/homepage/TrustStripSection.jsx',
       'src/features/homepage/FeaturedCategoriesSection.jsx',
       'src/features/homepage/NewArrivalsSection.jsx',
       'src/features/homepage/HomeListingCard.jsx',
-      'src/features/homepage/use-hero-motion.js',
       'src/content/home-content.js',
     ]
 

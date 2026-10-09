@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useApprovedListings } from '../features/listings/useApprovedListings.js'
-import { HeroSection } from '../features/homepage/HeroSection.jsx'
+import { HomeHero } from '../features/homepage/HomeHero.jsx'
 import { TrustStripSection } from '../features/homepage/TrustStripSection.jsx'
 import { FeaturedCategoriesSection } from '../features/homepage/FeaturedCategoriesSection.jsx'
 import { NewArrivalsSection } from '../features/homepage/NewArrivalsSection.jsx'
@@ -41,7 +41,7 @@ export function LandingPage() {
   const { listings, isLoading } = useApprovedListings()
 
   /*
-   * The hero carousel's slides.
+   * The phones the hero's first slide can put on its tag.
    *
    * `isFeatured` first, because the flag exists to say exactly this. When nothing
    * is flagged the hero falls back to the newest approved listings rather than
@@ -62,7 +62,7 @@ export function LandingPage() {
 
   return (
     <>
-      <HeroSection featured={featured} />
+      <HomeHero listings={listings} featured={featured} />
       <TrustStripSection />
       <FeaturedCategoriesSection />
       <NewArrivalsSection listings={listings} isLoading={isLoading} />

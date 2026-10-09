@@ -106,9 +106,15 @@ export function FeaturedCategoriesSection() {
   })).filter((tile) => tile.count === null || tile.count > 0)
 
   return (
-    <section aria-labelledby="category-heading" className="bg-page pb-4 pt-10 lg:pb-6 lg:pt-14">
+    <section aria-labelledby="category-heading" className="bg-page pb-4 pt-12 lg:pb-6 lg:pt-20">
       <Container size="full" className="px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        {/* The statement line: the one sentence the whole homepage stands on,
+            set big enough to read as the page's second headline. */}
+        <p className="max-w-5xl font-display text-[clamp(2rem,5vw,4rem)] font-black leading-[1.02] tracking-[-0.035em] text-night [font-stretch:104%] [text-wrap:balance]">
+          Secondhand phones, checked before they&rsquo;re listed.
+        </p>
+
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-xl">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
               Shop by brand

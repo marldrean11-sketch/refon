@@ -1,0 +1,626 @@
+<title>ReFon Tag Identity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one long reading column (max 72rem) of numbered proposal chapters; the ReFon Tag is the recurring object. */
+:root {
+  /* Brand palette */
+  --cobalt: #1f3fd1;        /* ReFon Cobalt: primary brand, links, buttons */
+  --night: #0d1633;         /* Night: headings, footer, dark surfaces */
+  --tag: #ffc933;           /* Tag Yellow: the tag itself and value. Fill only, never text on light */
+  --pass: #0f7a4a;          /* Pass Green: a check that passed. Nothing else */
+  --paper: #f1f3f7;         /* Paper: cool page ground, biased toward cobalt */
+  --card: #ffffff;
+  --well: #e4e8f0;
+  --ink: #0d1633;
+  --muted: #4d5672;
+  --line: #d5dae6;
+  --grade-b: #c98400;
+  --grade-c: #d4561b;
+  --cobalt-tint: #e3e8ff;
+  --on-cobalt: #ffffff;
+  --on-tag: #0d1633;
+
+  --f-display: 'Archivo', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --f-body: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-data: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --r-tag: 14px;
+  --r-pill: 999px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cobalt: #7d93ff; --night: #060b1c; --tag: #ffcf47; --pass: #3ccf8e;
+    --paper: #0b1228; --card: #121b38; --well: #1a2447; --ink: #eef1fa; --muted: #a3acc8;
+    --line: #26315a; --grade-b: #f2b134; --grade-c: #ff8a52; --cobalt-tint: #1c2a66;
+    --on-cobalt: #060b1c; --on-tag: #0d1633;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --cobalt: #7d93ff; --night: #060b1c; --tag: #ffcf47; --pass: #3ccf8e;
+  --paper: #0b1228; --card: #121b38; --well: #1a2447; --ink: #eef1fa; --muted: #a3acc8;
+  --line: #26315a; --grade-b: #f2b134; --grade-c: #ff8a52; --cobalt-tint: #1c2a66;
+  --on-cobalt: #060b1c; --on-tag: #0d1633;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.6;
+  padding-inline: 16px; padding-block: 0 64px;
+}
+.wrap { max-width: 72rem; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); font-stretch: 112%; text-wrap: balance; margin: 0; line-height: 1.05; }
+h2 { font-size: clamp(1.75rem, 3.6vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; }
+h3 { font-size: 1.15rem; font-weight: 750; letter-spacing: -0.005em; }
+p { margin: 0; }
+.prose { max-width: 65ch; color: var(--muted); }
+.label { font-family: var(--f-data); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+a { color: var(--cobalt); }
+
+/* Masthead */
+.mast { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 20px; border-bottom: 1px solid var(--line); }
+.lockup { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); }
+.lockup .word { font-family: var(--f-display); font-stretch: 125%; font-weight: 900; font-size: 26px; letter-spacing: -0.03em; line-height: 1; }
+.lockup .word b { color: var(--cobalt); font-weight: 900; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 48px; align-items: center; padding-block: 56px 64px; }
+.hero h1 { font-size: clamp(2.6rem, 6.4vw, 5rem); font-weight: 900; font-stretch: 118%; letter-spacing: -0.035em; line-height: 0.95; }
+.hero h1 .hl { background: var(--tag); color: var(--on-tag); padding: 0 0.12em; border-radius: 6px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.hero .lede { margin-top: 24px; font-size: 1.15rem; max-width: 52ch; color: var(--muted); }
+.hero .meta { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--f-data); font-size: 12px; padding: 6px 12px; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+
+/* The ReFon Tag */
+.tag {
+  position: relative; background: var(--tag); color: var(--on-tag);
+  border-radius: var(--r-tag);
+  clip-path: polygon(34px 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 0 100%, 0 34px);
+  padding: 34px 24px 22px; max-width: 26rem; width: 100%;
+  transform: rotate(-2.5deg); transform-origin: 50% 0;
+  transition: transform 500ms cubic-bezier(.22,1,.36,1);
+  font-family: var(--f-body);
+}
+.tag:hover { transform: rotate(0deg); }
+.tag::before { /* punch hole */
+  content: ""; position: absolute; top: 12px; left: 50%; width: 16px; height: 16px; margin-left: -8px;
+  border-radius: 50%; background: var(--paper); box-shadow: inset 0 0 0 2px rgb(13 22 51 / .25);
+}
+.tag .t-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.tag .t-model { font-family: var(--f-display); font-stretch: 112%; font-weight: 850; font-size: 1.6rem; line-height: 1; letter-spacing: -0.02em; }
+.tag .t-sub { font-family: var(--f-data); font-size: 12.5px; margin-top: 6px; opacity: .8; }
+.stamp {
+  flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%;
+  border: 3px solid currentColor; font-family: var(--f-display); font-stretch: 125%; font-weight: 900; font-size: 1.9rem; line-height: 1;
+  transform: rotate(8deg);
+}
+.stamp > span { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.stamp small { display: block; font-family: var(--f-data); font-size: 7px; letter-spacing: .1em; font-weight: 600; line-height: 1; }
+.gr .stamp small { display: none; }
+.t-rows { margin-top: 18px; border-top: 2px dashed rgb(13 22 51 / .35); padding-top: 14px; display: grid; gap: 10px; }
+.t-row { display: grid; grid-template-columns: 6.5rem 1fr auto; align-items: center; gap: 10px; font-family: var(--f-data); font-size: 13px; }
+.bar { height: 10px; border-radius: 3px; background: rgb(13 22 51 / .15); overflow: hidden; display: flex; gap: 2px; }
+.bar i { display: block; height: 100%; background: var(--on-tag); }
+.ticks { display: flex; gap: 3px; }
+.ticks i { width: 9px; height: 10px; border-radius: 2px; background: var(--on-tag); }
+.ticks i.off { background: rgb(13 22 51 / .18); }
+.t-price { margin-top: 16px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-top: 2px solid var(--on-tag); padding-top: 12px; }
+.t-price .amt { font-family: var(--f-display); font-stretch: 112%; font-weight: 900; font-size: 1.9rem; letter-spacing: -0.02em; }
+.t-price .save { font-family: var(--f-data); font-size: 12px; }
+.t-foot { margin-top: 10px; font-family: var(--f-data); font-size: 10.5px; letter-spacing: .06em; opacity: .7; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+
+/* Chapters */
+section.ch { padding-block: 56px; border-top: 1px solid var(--line); display: grid; gap: 28px; }
+.ch-head { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 16px; align-items: baseline; }
+.ch-no { font-family: var(--f-data); font-size: 14px; color: var(--cobalt); font-weight: 600; }
+.ch-head .prose { margin-top: 12px; }
+.ch-body { margin-left: calc(4.5rem + 16px); display: grid; gap: 24px; min-width: 0; }
+
+/* Diagnosis */
+.diag { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; min-width: 0; }
+.panel h3 { margin-bottom: 12px; }
+.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.list li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; color: var(--muted); font-size: 15.5px; }
+.list li strong { color: var(--ink); font-weight: 600; }
+.mk { font-family: var(--f-data); font-weight: 600; font-size: 14px; line-height: 1.6; }
+.mk.keep { color: var(--pass); }
+.mk.fix { color: var(--grade-c); }
+
+/* Brand core */
+.core { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.core .panel p { color: var(--muted); font-size: 15.5px; }
+.core .big { font-family: var(--f-display); font-stretch: 112%; font-weight: 800; font-size: 1.35rem; line-height: 1.15; color: var(--ink); margin-bottom: 10px; letter-spacing: -0.01em; }
+.voice { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--card); }
+.voice div { padding: 16px 20px; border-bottom: 1px solid var(--line); font-size: 15.5px; min-width: 0; }
+.voice div:nth-child(odd) { border-right: 1px solid var(--line); color: var(--muted); text-decoration: line-through; text-decoration-color: var(--grade-c); }
+.voice div.h { text-decoration: none; font-family: var(--f-data); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; background: var(--well); color: var(--muted); }
+.voice div:nth-last-child(-n+2) { border-bottom: 0; }
+
+/* Logo */
+.logos { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 20px; }
+.logo-tile { border-radius: 16px; border: 1px solid var(--line); min-height: 190px; display: grid; place-items: center; padding: 24px; position: relative; min-width: 0; }
+.logo-tile .cap { position: absolute; left: 16px; bottom: 12px; font-family: var(--f-data); font-size: 11px; letter-spacing: .06em; }
+.lt-light { background: var(--card); color: #0d1633; }
+.lt-light .cap { color: var(--muted); }
+.lt-night { background: #0d1633; color: #fff; border-color: #0d1633; }
+.lt-night .cap { color: #a3acc8; }
+.lt-tag { background: #ffc933; color: #0d1633; border-color: #ffc933; }
+.lt-tag .cap { color: #0d1633; opacity: .7; }
+.lt-light .word b { color: #1f3fd1; }
+.lt-night .word b { color: #ffc933; }
+.appicons { display: flex; gap: 14px; align-items: end; }
+.anatomy { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.anatomy .panel p { font-size: 15px; color: var(--muted); }
+
+/* Colour */
+.swatches { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.sw { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--card); min-width: 0; }
+.sw .chipc { height: 92px; }
+.sw .info { padding: 10px 12px 12px; }
+.sw .nm { font-weight: 600; font-size: 14.5px; }
+.sw .hx { font-family: var(--f-data); font-size: 12px; color: var(--muted); }
+.sw .rl { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+.ratio { display: flex; height: 18px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.ratio span { display: block; height: 100%; }
+
+/* Type */
+.type { display: grid; gap: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.type .row { display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 20px; padding: 22px 24px; border-bottom: 1px solid var(--line); align-items: center; }
+.type .row:last-child { border-bottom: 0; }
+.type .spec { font-family: var(--f-data); font-size: 12px; color: var(--muted); line-height: 1.5; }
+.type .s-display { font-family: var(--f-display); font-stretch: 125%; font-weight: 900; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 0.95; letter-spacing: -0.035em; overflow-wrap: anywhere; }
+.type .s-body { font-size: 17px; max-width: 60ch; }
+.type .s-data { font-family: var(--f-data); font-size: 15px; }
+
+/* Mockups */
+.mock { background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.m-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 22px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.m-bar nav { display: flex; gap: 18px; font-size: 14.5px; color: var(--muted); flex-wrap: wrap; }
+.m-search { flex: 1 1 14rem; max-width: 22rem; font-family: var(--f-data); font-size: 12.5px; color: var(--muted); border: 1.5px solid var(--line); border-radius: var(--r-pill); padding: 8px 14px; }
+.m-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 28px; padding: 36px 32px; background: var(--night); color: #fff; align-items: center; }
+.m-hero h3 { font-size: clamp(1.8rem, 4vw, 2.9rem); font-weight: 900; font-stretch: 120%; letter-spacing: -0.03em; line-height: 0.98; color: #fff; }
+.m-hero h3 em { font-style: normal; color: #ffc933; }
+.m-hero p { color: #c3cae2; margin-top: 14px; font-size: 15.5px; max-width: 44ch; }
+.btns { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.btn { font-weight: 600; font-size: 15px; border-radius: var(--r-pill); padding: 11px 20px; border: 0; font-family: var(--f-body); }
+.btn.pri { background: #ffc933; color: #0d1633; }
+.btn.sec { background: transparent; color: #fff; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / .4); }
+.m-hero .tag { transform: rotate(3deg); max-width: 21rem; justify-self: center; }
+.m-hero .tag::before { background: var(--night); }
+.finder { padding: 22px 32px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--line); }
+.finder .q { font-family: var(--f-display); font-stretch: 112%; font-weight: 750; margin-right: 6px; }
+.pill { font-size: 14px; padding: 7px 14px; border-radius: var(--r-pill); border: 1.5px solid var(--line); color: var(--ink); background: var(--paper); }
+.pill.on { background: var(--cobalt); border-color: var(--cobalt); color: var(--on-cobalt); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 24px 32px 32px; }
+.lc { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--card); min-width: 0; }
+.lc .ph { height: 120px; background: var(--well); display: grid; place-items: center; position: relative; }
+.lc .ph svg { width: 44px; height: 76px; color: var(--muted); }
+.lc .mini { position: absolute; left: 12px; top: 12px; background: var(--tag); color: var(--on-tag); font-family: var(--f-data); font-size: 11.5px; font-weight: 600; padding: 4px 10px 4px 8px; border-radius: 4px 999px 999px 4px; display: inline-flex; gap: 6px; align-items: center; }
+.lc .mini .g { font-family: var(--f-display); font-stretch: 125%; font-weight: 900; font-size: 13px; }
+.lc .bd { padding: 14px 16px 16px; display: grid; gap: 8px; }
+.lc .md { font-weight: 700; font-size: 16px; line-height: 1.2; }
+.lc .sp { font-family: var(--f-data); font-size: 12px; color: var(--muted); }
+.lc .batt { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-family: var(--f-data); font-size: 12px; }
+.lc .batt .bar { background: var(--well); }
+.lc .batt .bar i { background: var(--pass); }
+.lc .pr { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.lc .pr b { font-family: var(--f-display); font-stretch: 112%; font-weight: 850; font-size: 1.25rem; }
+.lc .pr span { font-size: 12.5px; color: var(--muted); }
+.lc .who { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
+.lc .who strong { color: var(--pass); font-weight: 600; }
+.note { font-size: 13px; color: var(--muted); padding: 0 32px 20px; font-family: var(--f-data); }
+
+/* Grade scale */
+.scale { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.gr { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; }
+.gr .stamp { width: 54px; height: 54px; font-size: 1.6rem; transform: rotate(-6deg); }
+.gr.a .stamp { color: var(--pass); }
+.gr.b .stamp { color: var(--grade-b); }
+.gr.c .stamp { color: var(--grade-c); }
+.gr p { font-size: 14.5px; color: var(--muted); margin-top: 4px; }
+
+/* Recs */
+.recs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.rec { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; display: grid; gap: 8px; min-width: 0; }
+.rec .where { font-family: var(--f-data); font-size: 11.5px; color: var(--cobalt); overflow-wrap: anywhere; }
+.rec p { font-size: 15px; color: var(--muted); }
+
+/* Rollout */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 2px solid var(--line); }
+.steps li { position: relative; padding: 0 0 26px 26px; }
+.steps li:last-child { padding-bottom: 0; }
+.steps li::before { content: ""; position: absolute; left: -8px; top: 6px; width: 14px; height: 14px; border-radius: 50%; background: var(--paper); border: 3px solid var(--cobalt); }
+.steps .when { font-family: var(--f-data); font-size: 12px; color: var(--cobalt); letter-spacing: .06em; text-transform: uppercase; }
+.steps h3 { margin-top: 4px; }
+.steps p { color: var(--muted); font-size: 15.5px; margin-top: 6px; max-width: 70ch; }
+.steps code { font-family: var(--f-data); font-size: 13px; background: var(--well); padding: 1px 6px; border-radius: 4px; color: var(--ink); overflow-wrap: anywhere; }
+
+footer { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+
+@media (max-width: 900px) {
+  .hero, .m-hero { grid-template-columns: 1fr; }
+  .hero { padding-block: 36px 44px; gap: 36px; }
+  .hero .tag { justify-self: center; }
+  .ch-body { margin-left: 0; }
+  .ch-head { grid-template-columns: 1fr; gap: 6px; }
+  .diag, .recs, .voice { grid-template-columns: 1fr; }
+  .voice div:nth-child(odd) { border-right: 0; }
+  .voice div.h:nth-child(2) { display: none; }
+  .voice div.h:first-child { text-decoration: none; }
+  .voice div:nth-last-child(2) { border-bottom: 1px solid var(--line); }
+  .core, .scale, .anatomy { grid-template-columns: 1fr; }
+  .logos { grid-template-columns: 1fr 1fr; }
+  .logos .logo-tile:first-child { grid-column: 1 / -1; }
+  .swatches { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cards { grid-template-columns: 1fr 1fr; }
+  .type .row { grid-template-columns: 1fr; gap: 10px; }
+}
+@media (max-width: 560px) {
+  .cards { grid-template-columns: 1fr; padding: 20px; }
+  .finder, .m-hero { padding: 24px 20px; }
+  .note { padding: 0 20px 20px; }
+  .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .logos { grid-template-columns: 1fr; }
+  .m-bar nav { display: none; }
+  .t-row { grid-template-columns: 5.5rem 1fr auto; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tag, .tag:hover { transition: none; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- The ReFon mark: a phone cut as a luggage tag. The earpiece is the punch hole; the screen is a battery reading. -->
+    <symbol id="mark" viewBox="0 0 32 44">
+      <path d="M8 1.5h16L30.5 8v30.5a4 4 0 0 1-4 4h-21a4 4 0 0 1-4-4V8Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="16" cy="8.5" r="2.4" fill="currentColor"/>
+      <rect x="8" y="31" width="16" height="4.5" rx="1" fill="currentColor"/>
+      <rect x="8" y="24.5" width="16" height="4.5" rx="1" fill="currentColor"/>
+      <rect x="8" y="18" width="16" height="4.5" rx="1" fill="currentColor" opacity=".28"/>
+    </symbol>
+    <symbol id="phone" viewBox="0 0 44 76">
+      <rect x="2" y="2" width="40" height="72" rx="8" fill="none" stroke="currentColor" stroke-width="2.5"/>
+      <rect x="17" y="7" width="10" height="3" rx="1.5" fill="currentColor"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+  <header class="mast">
+    <span class="lockup">
+      <svg width="24" height="33" style="color:var(--ink)"><use href="#mark"/></svg>
+      <span class="word">re<b>fon</b></span>
+    </span>
+    <span class="label">Identity &amp; UI proposal · Oct 2026</span>
+  </header>
+
+  <!-- Hero: the thesis is the tag -->
+  <section class="hero">
+    <div>
+      <p class="label">The idea in one line</p>
+      <h1 style="margin-top:14px">Every phone gets a <span class="hl">tag.</span></h1>
+      <p class="lede">ReFon's real advantage is already in the database: a measured battery %, an 11-point checklist, a grade with written notes, and a person who reviewed the listing. Today that proof is scattered across badges that look like any other shop. This proposal turns it into one recognisable object, the ReFon Tag, and builds the identity around it.</p>
+      <div class="meta">
+        <span class="chip">Logo</span><span class="chip">Colour</span><span class="chip">Type</span><span class="chip">Voice</span><span class="chip">UI patterns</span><span class="chip">Rollout</span>
+      </div>
+    </div>
+
+    <article class="tag" aria-label="Example ReFon Tag for an iPhone 13">
+      <div class="t-top">
+        <div>
+          <div class="t-model">iPhone 13</div>
+          <div class="t-sub">128 GB · Midnight · 2021</div>
+        </div>
+        <div class="stamp" aria-label="Grade A"><span>A<small>GRADE</small></span></div>
+      </div>
+      <div class="t-rows">
+        <div class="t-row"><span>Battery</span><span class="bar"><i style="width:89%"></i></span><span class="num">89%</span></div>
+        <div class="t-row"><span>Checks</span><span class="ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="num">11/11</span></div>
+        <div class="t-row"><span>Marks</span><span style="grid-column: span 2">Faint scuff, lower-left frame</span></div>
+      </div>
+      <div class="t-price">
+        <span class="amt num">₱24,990</span>
+        <span class="save num">₱13,000 under new</span>
+      </div>
+      <div class="t-foot"><span>REVIEWED BY REFON · 7-DAY RETURNS</span><span class="num">#RF-04182</span></div>
+    </article>
+  </section>
+
+  <!-- 01 Diagnosis -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">01</span>
+      <div>
+        <h2>Where the current site stands</h2>
+        <p class="prose">The foundations are good. The copy is honest, every claim is tied to real data, and the motion and accessibility work is careful. What's missing is anything a visitor would remember after closing the tab.</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <div class="diag">
+        <div class="panel">
+          <h3>Keep</h3>
+          <ul class="list">
+            <li><span class="mk keep">✓</span><span><strong>Evidence-first copy.</strong> "Battery % on every listing" and "the measured figure, not good condition" is already a brand voice. It just has no look yet.</span></li>
+            <li><span class="mk keep">✓</span><span><strong>Real trust data.</strong> Battery %, written condition notes, the 11-point checklist and human moderation are differentiators most marketplaces can't show.</span></li>
+            <li><span class="mk keep">✓</span><span><strong>Token discipline.</strong> One <code>tailwind.config.js</code> plus mirrored CSS variables makes a rebrand a contained change.</span></li>
+            <li><span class="mk keep">✓</span><span><strong>Motion and a11y care.</strong> Reduced-motion support, focus rings and tabular numbers all carry over.</span></li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Change</h3>
+          <ul class="list">
+            <li><span class="mk fix">✕</span><span><strong>Two logos.</strong> The favicon is a navy tile with a green check circle. The header is a black pill with an outline phone. Neither is the brand.</span></li>
+            <li><span class="mk fix">✕</span><span><strong>A borrowed look.</strong> Warm off-white, near-black, one emerald and pill buttons is the default "premium" template. It reads close to Back Market and to every Apple-inspired shop.</span></li>
+            <li><span class="mk fix">✕</span><span><strong>One typeface for everything.</strong> Manrope for headlines, body, prices and labels gives no hierarchy of voice. Prices and specs should look measured.</span></li>
+            <li><span class="mk fix">✕</span><span><strong>A generic hero line.</strong> "Premium phones. Smarter prices. Tested for you." could sit on any phone shop. It doesn't say what ReFon proves.</span></li>
+            <li><span class="mk fix">✕</span><span><strong>Trust as small badges.</strong> Grade, battery and checks appear as separate chips and icons. They should read as one verdict.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 Brand core -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">02</span>
+      <div>
+        <h2>Brand core</h2>
+        <p class="prose">A student-founded Philippine marketplace for 2015–2024 phones, for buyers who want a flagship without paying flagship prices and without gambling on a stranger's "good condition".</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <div class="core">
+        <div class="panel"><div class="big">Promise</div><p>You see the phone's real record before you pay: grade, battery, checks and marks, in the same format on every listing.</p></div>
+        <div class="panel"><div class="big">Personality</div><p>The friend who works at the repair shop. Plain-spoken, a bit nerdy about specs, on your side about price. Never hype, never luxury.</p></div>
+        <div class="panel"><div class="big">Tagline</div><p><strong style="color:var(--ink)">"Know the phone before you buy it."</strong><br>Alternates: "Sulit, and we can prove it." · "Every phone, on the record."</p></div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:10px">Voice: instead of this, say this</p>
+        <div class="voice">
+          <div class="h">Generic</div><div class="h">ReFon</div>
+          <div>Premium phones. Smarter prices.</div><div>Know the phone before you buy it.</div>
+          <div>Excellent condition</div><div>Grade A: faint scuff on the lower-left frame</div>
+          <div>Great battery life</div><div>Battery measured at 89%</div>
+          <div>Quality guaranteed</div><div>11 checks, each one listed on the tag</div>
+          <div>Huge savings!</div><div>₱13,000 under the price of a new one</div>
+          <div>Shop now</div><div>See the tag</div>
+        </div>
+        <p class="prose" style="margin-top:14px;font-size:15px">Light Taglish is welcome where Filipino buyers already use it ("sulit", "legit"), in campaigns and empty states. Keep transactional copy (checkout, policies, errors) in plain English.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 Logo -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">03</span>
+      <div>
+        <h2>Logo: the tag-phone</h2>
+        <p class="prose">One mark replaces both current logos. It's a phone cut like a luggage tag: the earpiece becomes the punch hole, and the screen shows a battery reading. The wordmark sets "re" in the base colour and "fon" in the brand colour, so the name reads as <em>re + phone</em>.</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <div class="logos">
+        <div class="logo-tile lt-light">
+          <span class="lockup" style="color:#0d1633;gap:16px">
+            <svg width="46" height="63"><use href="#mark"/></svg>
+            <span class="word" style="font-size:56px">re<b>fon</b></span>
+          </span>
+          <span class="cap">PRIMARY · ON PAPER</span>
+        </div>
+        <div class="logo-tile lt-night">
+          <span class="lockup" style="color:#fff">
+            <svg width="30" height="41"><use href="#mark"/></svg>
+            <span class="word" style="font-size:34px">re<b>fon</b></span>
+          </span>
+          <span class="cap">REVERSED · NIGHT</span>
+        </div>
+        <div class="logo-tile lt-tag">
+          <div class="appicons">
+            <svg viewBox="0 0 64 64" width="64" height="64" aria-label="App icon">
+              <rect width="64" height="64" rx="15" fill="#0d1633"/>
+              <svg x="18" y="10" width="28" height="44" viewBox="0 0 32 44" style="color:#ffc933"><use href="#mark"/></svg>
+            </svg>
+            <svg viewBox="0 0 64 64" width="40" height="40" aria-label="Favicon">
+              <rect width="64" height="64" rx="15" fill="#0d1633"/>
+              <svg x="18" y="10" width="28" height="44" viewBox="0 0 32 44" style="color:#ffc933"><use href="#mark"/></svg>
+            </svg>
+            <svg viewBox="0 0 64 64" width="20" height="20" aria-label="Favicon small">
+              <rect width="64" height="64" rx="15" fill="#0d1633"/>
+              <svg x="18" y="10" width="28" height="44" viewBox="0 0 32 44" style="color:#ffc933"><use href="#mark"/></svg>
+            </svg>
+          </div>
+          <span class="cap">APP ICON · FAVICON 40 / 20</span>
+        </div>
+      </div>
+      <div class="anatomy">
+        <div class="panel"><h3>The cut corners</h3><p>The chamfered top is the tag silhouette. It repeats on the Tag component, the hero panel and packaging stickers, so the shape alone says ReFon.</p></div>
+        <div class="panel"><h3>The battery bars</h3><p>Two solid bars and one faded bar. It reads as a phone at a glance and as a measurement up close. Never animate it to "full".</p></div>
+        <div class="panel"><h3>Wordmark</h3><p>Archivo at its widest setting, weight 900, lowercase. Lowercase is friendlier and keeps "fon" from reading as an acronym.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 Colour -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">04</span>
+      <div>
+        <h2>Colour</h2>
+        <p class="prose">Cobalt for the brand, Tag Yellow for the proof. It's distinct from Back Market's black and mint, Shopee's orange and Lazada's blue-pink. Green goes back to one job: a check that passed.</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <div class="swatches">
+        <div class="sw"><div class="chipc" style="background:#1f3fd1"></div><div class="info"><div class="nm">Cobalt</div><div class="hx">#1F3FD1</div><div class="rl">Brand, links, primary buttons</div></div></div>
+        <div class="sw"><div class="chipc" style="background:#0d1633"></div><div class="info"><div class="nm">Night</div><div class="hx">#0D1633</div><div class="rl">Text, hero, footer</div></div></div>
+        <div class="sw"><div class="chipc" style="background:#ffc933"></div><div class="info"><div class="nm">Tag Yellow</div><div class="hx">#FFC933</div><div class="rl">The tag and savings. Fill only, Night text on top</div></div></div>
+        <div class="sw"><div class="chipc" style="background:#f1f3f7"></div><div class="info"><div class="nm">Paper</div><div class="hx">#F1F3F7</div><div class="rl">Page ground, cool-tinted</div></div></div>
+        <div class="sw"><div class="chipc" style="background:#0f7a4a"></div><div class="info"><div class="nm">Pass</div><div class="hx">#0F7A4A</div><div class="rl">Passed checks, Grade A</div></div></div>
+        <div class="sw"><div class="chipc" style="background:linear-gradient(90deg,#c98400 50%,#d4561b 50%)"></div><div class="info"><div class="nm">Grade B / C</div><div class="hx">#C98400 · #D4561B</div><div class="rl">Grade stamps only</div></div></div>
+      </div>
+      <div>
+        <p class="label" style="margin-bottom:8px">Approximate share of a typical page</p>
+        <div class="ratio" aria-label="Paper 62%, white cards 18%, Night 10%, Cobalt 5%, Tag Yellow 4%, Pass 1%">
+          <span style="width:62%;background:#f1f3f7"></span><span style="width:18%;background:#ffffff"></span><span style="width:10%;background:#0d1633"></span><span style="width:5%;background:#1f3fd1"></span><span style="width:4%;background:#ffc933"></span><span style="width:1%;background:#0f7a4a"></span>
+        </div>
+        <p class="prose" style="margin-top:12px;font-size:15px">Yellow stays rare so the tag always pops. Cobalt on white is 7.8:1 and Night on Tag Yellow is 11.6:1, both well past WCAG AA. Never set yellow text on a light surface.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 Type -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">05</span>
+      <div>
+        <h2>Type: three voices</h2>
+        <p class="prose">Each face has one job. Archivo is loud and wide like a printed shop tag. Instrument Sans is calm for reading. IBM Plex Mono makes every number look measured. All three are open-source and can be self-hosted through <code>@fontsource</code>, like Manrope is today.</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <div class="type">
+        <div class="row"><div class="spec">DISPLAY<br>Archivo Expanded<br>800–900 · −3.5%</div><div class="s-display">Sulit, and we can prove it.</div></div>
+        <div class="row"><div class="spec">BODY<br>Instrument Sans<br>400 / 600 · 17px / 1.6</div><div class="s-body">Each listing shows the battery health we measured, the grade with notes on where the marks are, and the result of every check. If the phone isn't what the tag says, you have 7 days to return it.</div></div>
+        <div class="row"><div class="spec">DATA<br>IBM Plex Mono<br>400–600 · tabular</div><div class="s-data num">BATTERY 89% · 11/11 CHECKS · ₱24,990 · #RF-04182</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 Signature + UI -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">06</span>
+      <div>
+        <h2>The tag in the interface</h2>
+        <p class="prose">The tag works at three sizes: full on the product page and hero, a mini tag on listing cards, and the stamp alone in the cart and orders. Below is the homepage reworked around it. Listings are example data.</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <div class="mock" aria-label="Homepage mockup">
+        <div class="m-bar">
+          <span class="lockup"><svg width="18" height="25" style="color:var(--ink)"><use href="#mark"/></svg><span class="word" style="font-size:20px">re<b>fon</b></span></span>
+          <span class="m-search">Search "iPhone 13, 85%+ battery"</span>
+          <nav><span>Phones</span><span>How grading works</span><span>Sell</span><span>Cart (1)</span></nav>
+        </div>
+        <div class="m-hero">
+          <div>
+            <h3>Know the phone<br>before you <em>buy it.</em></h3>
+            <p>Every ReFon phone carries a tag with its grade, measured battery and checklist. A person reviews each one before it's listed.</p>
+            <div class="btns"><button class="btn pri" type="button">Browse tagged phones</button><button class="btn sec" type="button">How we grade</button></div>
+          </div>
+          <article class="tag" aria-label="Example tag for a Galaxy S22">
+            <div class="t-top">
+              <div><div class="t-model">Galaxy S22</div><div class="t-sub">256 GB · Phantom Black</div></div>
+              <div class="stamp"><span>B<small>GRADE</small></span></div>
+            </div>
+            <div class="t-rows">
+              <div class="t-row"><span>Battery</span><span class="bar"><i style="width:84%"></i></span><span class="num">84%</span></div>
+              <div class="t-row"><span>Checks</span><span class="ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="num">11/11</span></div>
+            </div>
+            <div class="t-price"><span class="amt num">₱18,490</span><span class="save num">₱21,500 under new</span></div>
+          </article>
+        </div>
+        <div class="finder">
+          <span class="q">Find yours:</span>
+          <span class="pill on">Under ₱20,000</span><span class="pill">Battery 85%+</span><span class="pill">Grade A only</span><span class="pill">iPhone</span><span class="pill">Samsung</span><span class="pill">Pixel</span>
+        </div>
+        <div class="cards">
+          <div class="lc">
+            <div class="ph"><svg><use href="#phone"/></svg><span class="mini"><span class="g">A</span> 11/11 checks</span></div>
+            <div class="bd">
+              <div class="md">iPhone 13</div><div class="sp">128 GB · Midnight</div>
+              <div class="batt"><span>BATT</span><span class="bar"><i style="width:89%"></i></span><span class="num">89%</span></div>
+              <div class="pr"><b class="num">₱24,990</b><span class="num">−₱13,000 vs new</span></div>
+              <div class="who"><strong>✓ Reviewed</strong> · TechHub Cebu</div>
+            </div>
+          </div>
+          <div class="lc">
+            <div class="ph"><svg><use href="#phone"/></svg><span class="mini"><span class="g">B</span> 10/11 checks</span></div>
+            <div class="bd">
+              <div class="md">Pixel 7</div><div class="sp">128 GB · Snow</div>
+              <div class="batt"><span>BATT</span><span class="bar"><i style="width:91%"></i></span><span class="num">91%</span></div>
+              <div class="pr"><b class="num">₱14,200</b><span class="num">−₱9,800 vs new</span></div>
+              <div class="who"><strong>✓ Reviewed</strong> · Kuya Ben's Gadgets</div>
+            </div>
+          </div>
+          <div class="lc">
+            <div class="ph"><svg><use href="#phone"/></svg><span class="mini"><span class="g">C</span> 11/11 checks</span></div>
+            <div class="bd">
+              <div class="md">iPhone 11</div><div class="sp">64 GB · Purple</div>
+              <div class="batt"><span>BATT</span><span class="bar"><i style="width:80%"></i></span><span class="num">80%</span></div>
+              <div class="pr"><b class="num">₱9,850</b><span class="num">−₱6,150 vs new</span></div>
+              <div class="who"><strong>✓ Reviewed</strong> · ReFon QC</div>
+            </div>
+          </div>
+        </div>
+        <p class="note">Mini tag top-left on the photo, battery as a bar plus a number, price with the saving next to it, seller on the last line.</p>
+      </div>
+
+      <div>
+        <p class="label" style="margin-bottom:10px">Grades as stamps, with the reason written underneath</p>
+        <div class="scale">
+          <div class="gr a"><div class="stamp"><span>A<small>GRADE</small></span></div><div><h3>Looks almost new</h3><p>No marks visible at arm's length. Screen flawless.</p></div></div>
+          <div class="gr b"><div class="stamp"><span>B<small>GRADE</small></span></div><div><h3>Light, honest wear</h3><p>Small scuffs on the frame or back. Screen has no marks you'd notice in use.</p></div></div>
+          <div class="gr c"><div class="stamp"><span>C<small>GRADE</small></span></div><div><h3>Visible wear, best price</h3><p>Scratches or dents, all listed in the notes. Works like the others.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 UX recommendations -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">07</span>
+      <div>
+        <h2>UX changes that make the brand useful</h2>
+        <p class="prose">An identity only sticks if it helps people decide faster. These changes use data the API already returns.</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <div class="recs">
+        <div class="rec"><h3>Lead with a finder, not a carousel</h3><p>Replace the auto-rotating hero carousel with one static tag and a row of budget, battery and grade chips right under it. Most buyers arrive with a budget, so let them act on it in one tap.</p><span class="where">HeroSection.jsx · FeaturedCategoriesSection.jsx</span></div>
+        <div class="rec"><h3>Make battery a filter, not just a label</h3><p>Add a "Battery 85%+" filter and sort. It's ReFon's most distinctive field and nobody else lets you filter on it.</p><span class="where">CatalogFilters.jsx · catalog-filters.js</span></div>
+        <div class="rec"><h3>Put the full tag above the fold on the product page</h3><p>Show the full tag next to the photos, before the description. Tapping a row expands it: Checks opens the 11 results, Marks opens the photos of those marks.</p><span class="where">ListingDetailPage.jsx</span></div>
+        <div class="rec"><h3>Compare tags side by side</h3><p>Let buyers pin up to three listings and see the tags next to each other. Two iPhone 13s at different prices only make sense when grade and battery sit side by side.</p><span class="where">New: features/compare</span></div>
+        <div class="rec"><h3>Explain grading once, link it everywhere</h3><p>Each stamp links to a short "How we grade" page with real photos of A, B and C wear. It answers the most common doubt about secondhand phones before checkout.</p><span class="where">QualityCheckPage.jsx · GradingSection.jsx</span></div>
+        <div class="rec"><h3>Give sellers a tag of their own</h3><p>Seller storefronts get a small tag too: reviewed since, phones sold, return rate. Trust in the seller and trust in the phone then look the same.</p><span class="where">StorefrontHeader.jsx · TrustPanel.jsx</span></div>
+        <div class="rec"><h3>Use one loud moment, not scattered motion</h3><p>Drop the smooth-scroll library, scroll progress bar and magnetic buttons. Keep a single animation: the tag swinging in when it first appears. It's lighter on low-end Android phones, which many buyers use.</p><span class="where">SmoothScroll.jsx · ScrollProgress.jsx · use-hero-motion.js</span></div>
+        <div class="rec"><h3>Mobile first for real</h3><p>Pin a bottom bar on the product page with the price and Add to cart, and keep the mini tag on the card visible at 360px width. Check every screen on a mid-range Android, not only on desktop.</p><span class="where">MobileTabBar.jsx · ListingDetailPage.jsx</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 Rollout -->
+  <section class="ch">
+    <div class="ch-head">
+      <span class="ch-no">08</span>
+      <div>
+        <h2>Rollout in the codebase</h2>
+        <p class="prose">Because the tokens are centralised, most of the visual change happens in a few files. Ship it in four pull requests so each one is easy to review.</p>
+      </div>
+    </div>
+    <div class="ch-body">
+      <ol class="steps">
+        <li><span class="when">PR 1 · Tokens and type</span><h3>Swap the palette and fonts</h3><p>Replace <code>accent</code>, <code>page</code>, <code>panel</code> and <code>dark</code> in <code>tailwind.config.js</code> and the mirrored <code>--rf-*</code> variables in <code>index.css</code>. Add <code>cobalt</code>, <code>tag</code> and <code>pass</code>. Install <code>@fontsource-variable/archivo</code>, <code>instrument-sans</code> and <code>@fontsource/ibm-plex-mono</code>, then point the existing <code>display</code>, <code>body</code> and <code>mono</code> families at them. Most components pick this up without edits.</p></li>
+        <li><span class="when">PR 2 · Logo</span><h3>One mark everywhere</h3><p>Redraw <code>LogoGlyph</code> and <code>BrandMark</code> in <code>components/ui/BrandMark.jsx</code> with the tag-phone and the two-tone wordmark. Replace <code>public/favicon.svg</code> and the manifest icons, and update <code>theme-color</code> and the meta copy in <code>index.html</code>.</p></li>
+        <li><span class="when">PR 3 · The Tag component</span><h3>Build <code>&lt;ReFonTag size="full | mini | stamp"&gt;</code></h3><p>Merge <code>ConditionBadge</code>, <code>GradeBadge</code>, <code>BatteryHealth</code> and <code>PriceDisplay</code> into one component fed by the listing object. Use it in <code>HomeListingCard</code>, the hero, <code>ListingDetailPage</code>, the cart and orders.</p></li>
+        <li><span class="when">PR 4 · Homepage and UX</span><h3>Finder hero, battery filter, copy</h3><p>Rework <code>HeroSection</code> and update <code>HERO_HEADLINE</code> in <code>content/home-content.js</code>. Add the battery filter, trim the motion stack, and run the Playwright suite in <code>e2e-ui/</code>, since some tests select hero and card elements by <code>data-testid</code>.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    <span class="lockup"><svg width="16" height="22" style="color:var(--muted)"><use href="#mark"/></svg><span>ReFon identity proposal. Listings, prices and seller names shown are examples.</span></span>
+    <span class="label">v1 · for review</span>
+  </footer>
+</div>

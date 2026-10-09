@@ -1,29 +1,32 @@
 /**
  * The navbar.
  *
- * Rebuilt for the redesign, on top of the Phase 1 tokens and motion vocabulary.
- * Three things changed materially and everything else is the same shell it was:
+ * Laid out the way large marketplaces lay out a header, in three rows:
  *
- *   - **Typography.** The old links were 12px monospace, uppercase, and
- *     letter-spaced. That style belongs to a spec sheet, not to navigation, and
- *     at four links wide it made the bar read as a toolbar. Links are now
- *     Manrope at 15px, medium weight, sentence case.
+ *   1. A utility strip (`AnnouncementBar`): company and policy links, not sticky.
+ *   2. The bar itself: the logo, a search field as wide as the page allows, and
+ *      the account, help, and cart actions on the right.
+ *   3. A shopping row: the destinations people browse by, led by the one only
+ *      ReFon can offer, phones filtered by measured battery health.
  *
- *   - **Scroll behaviour.** The bar is transparent at the top, becomes solid
- *     after 40px, and hides on the way down. See `useNavbarScrollState`.
+ * Rows 2 and 3 are one sticky header. It is solid white from the top of the page,
+ * because a search field over the hero must read as a field, and it slides away
+ * on the way down and back on the way up (`useNavbarScrollState`).
  *
- *   - **Actions.** Search is an icon that opens a full-screen overlay, and the
- *     cart is a button that opens a drawer. Both used to be an inline field and a
- *     link, which meant the cart cost a whole page load to read.
+ * The search field is a button that opens the existing search overlay rather
+ * than an inline input. One search surface keeps suggestions, recent searches,
+ * and keyboard handling in one place, and it is the same control at every width:
+ * a full field from `md` up and an icon below it.
  *
  * What has deliberately not changed: the routes, `navigation-config.js` as the
  * source of truth for role-aware links, the `MOBILE_NAV_ID` that an existing test
- * locates, the announcement bar above it, and the mobile tab bar below it.
+ * locates, and the mobile tab bar below the page.
  */
 import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  BatteryFull,
   Menu,
   Search,
   ShoppingBag,
@@ -31,6 +34,7 @@ import {
   X,
 } from 'lucide-react'
 import { AnnouncementBar } from '../../components/layout/AnnouncementBar.jsx'
+import { BrandMark, Wordmark } from '../../components/ui/BrandMark.jsx'
 import { Container } from './Container.jsx'
 import { CountBadge } from './CountBadge.jsx'
 import { MobileTabBar } from './MobileTabBar.jsx'
@@ -46,7 +50,13 @@ import {
   canSeeBuyerDestinations,
   canUseBuyerDestinations,
 } from './navigation-config.js'
-import { NAVBAR_LINKS, isNavbarLinkActive, underlineLayoutId } from './navbar-links.js'
+import {
+  BATTERY_SHORTCUT,
+  NAVBAR_LINKS,
+  SHOPPING_SHORTCUTS,
+  isNavbarLinkActive,
+  underlineLayoutId,
+} from './navbar-links.js'
 import { NavbarUiProvider, SURFACE, useNavbarUi } from './navbar-ui-context.jsx'
 import { SearchOverlay } from './SearchOverlay.jsx'
 import { CartDrawer } from './CartDrawer.jsx'
@@ -66,7 +76,7 @@ const MOBILE_NAV_ID = 'marketplace-mobile-navigation'
 
 /** Icon button, shared by search, cart, and the menu toggle. */
 const ICON_BUTTON =
-  'grid size-11 shrink-0 place-items-center rounded-control text-ink transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2'
+  'grid size-11 shrink-0 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2'
 
 export function SiteHeader() {
   return (
@@ -152,65 +162,51 @@ function Header() {
         aria-label="Site"
         animate={{ y: isHidden ? '-100%' : '0%' }}
         transition={reducedMotion ? { duration: 0 } : { duration: 0.28, ease: easings.ui }}
-        className={`sticky top-0 z-header transition-colors duration-300 ${
-          isScrolled
-            ? 'border-b border-line bg-white/85 backdrop-blur-md'
-            : 'border-b border-transparent bg-transparent'
+        className={`sticky top-0 z-header border-b bg-card transition-shadow duration-300 ${
+          isScrolled ? 'border-line shadow-sm' : 'border-line'
         }`}
       >
-        <Container className="flex h-16 items-center gap-2 lg:h-[4.5rem]">
-          {/* Left: identity. */}
-          <div className="flex shrink-0 items-center">
-            <Link
-              to="/"
-              aria-label="ReFon home"
-              className="inline-flex items-center gap-2.5 rounded-control focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            >
-              <span
-                className={`grid size-9 shrink-0 place-items-center rounded-control ${
-                  isScrolled ? 'bg-dark text-white' : 'bg-dark text-white'
-                }`}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="size-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.9}
-                  strokeLinecap="square"
-                  aria-hidden="true"
-                >
-                  <rect x="6.5" y="2.5" width="11" height="19" rx="1.5" />
-                  <path d="M10.5 18.2h3" />
-                  <path d="m8.6 12.4 2.1 2.2 4.5-4.9" className="text-accent" />
-                </svg>
-              </span>
-              <span className="text-xl font-bold tracking-[-0.03em] text-ink">ReFon</span>
-            </Link>
-          </div>
+        <Container className="flex h-16 items-center gap-1 sm:gap-3 lg:h-20 lg:gap-8">
+          {/* Left: identity. On the narrowest phones a signed-in buyer's
+              actions need the room, so the glyph stands alone below 380px. */}
+          <BrandMark className="shrink-0" wordmarkClassName="max-[379px]:hidden" />
 
-          {/* Centre: the four destinations. */}
-          <nav aria-label="Primary" className="ml-6 hidden lg:block">
-            <ul className="flex items-center gap-1">
-              {NAVBAR_LINKS.map((link) => {
-                const isActive = isNavbarLinkActive(link, pathname)
-
-                return (
-                  <li key={link.key}>
-                    <NavbarLink link={link} isActive={isActive} reduced={reducedMotion} />
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
+          {/* Centre: search, as wide as the bar allows. One control at every
+              width: a field from `md` up, an icon below it. */}
+          <button
+            ref={searchTriggerRef}
+            type="button"
+            data-testid="navbar-search"
+            onClick={() => open(SURFACE.search)}
+            aria-expanded={isSearchOpen}
+            aria-haspopup="dialog"
+            className="ml-auto grid size-11 shrink-0 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 md:ml-0 md:flex md:h-12 md:w-auto md:max-w-[44rem] md:flex-1 md:place-items-start md:items-center md:gap-3 md:bg-panel md:px-5 md:text-left md:hover:bg-well"
+          >
+            <Search className="size-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            {/* The visible text is the button's name from `md` up, so what a
+                sighted visitor reads and what a voice user says are the same
+                words. Below `md` the icon stands alone and the name moves to a
+                visually hidden span. */}
+            <span className="sr-only">Search refurbished phones</span>
+            <span className="hidden truncate text-[15px] text-muted md:inline" aria-hidden="true">
+              Search iPhone 13, Galaxy S22, Pixel 7…
+            </span>
+          </button>
 
           {/* Right: actions.
 
-              No gap below `sm`: a signed-in buyer gets five 44px targets here
-              (menu, bell, search, cart, drawer), which with 4px gaps overflowed a
-              375px screen by 10px and scrolled every page sideways. The targets
-              keep their full size; only the spacing between them goes. */}
-          <div className="ml-auto flex items-center gap-0 sm:gap-1.5">
+              No gap below `sm`: a signed-in buyer gets several 44px targets
+              here, which with gaps between them overflowed a 375px screen and
+              scrolled every page sideways. The targets keep their full size;
+              only the spacing between them goes. */}
+          <div className="flex shrink-0 items-center gap-0 sm:gap-1 md:ml-auto">
+            <Link
+              to={MARKETPLACE_ROUTES.faq}
+              className="hidden min-h-11 items-center rounded-lg px-3 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand xl:inline-flex"
+            >
+              Need help?
+            </Link>
+
             {user ? (
               <>
                 <Link
@@ -219,32 +215,19 @@ function Header() {
                   aria-label="Account"
                   className={`${ICON_BUTTON} hidden sm:grid`}
                 >
-                  <User className="size-5" strokeWidth={1.5} aria-hidden="true" />
+                  <User className="size-5" strokeWidth={1.75} aria-hidden="true" />
                 </Link>
                 <UserMenu />
               </>
             ) : (
-              <>
-                <Link
-                  to={AUTH_ROUTES.login}
-                  data-testid="navbar-sign-in"
-                  className="hidden min-h-11 items-center rounded-control px-3 text-[15px] font-medium text-ink transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:inline-flex"
-                >
-                  Sign in
-                </Link>
-                {/* The green pill. Hidden when signed in, because an account menu
-                    is the more useful action from that point on.
-
-                    Ink on green rather than white: white on `#10B981` is 2.54:1 and
-                    fails AA at this size. Ink on the same fill is 7.60:1. */}
-                <Link
-                  to={AUTH_ROUTES.register}
-                  data-testid="navbar-join"
-                  className="hidden min-h-10 items-center rounded-control bg-accent px-5 text-[15px] font-semibold text-dark transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:inline-flex"
-                >
-                  Join
-                </Link>
-              </>
+              <Link
+                to={AUTH_ROUTES.login}
+                data-testid="navbar-sign-in"
+                className="hidden min-h-11 items-center gap-2 rounded-lg px-3 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:inline-flex"
+              >
+                <User className="size-5" strokeWidth={1.75} aria-hidden="true" />
+                Sign in
+              </Link>
             )}
 
             <NotificationBell />
@@ -260,22 +243,9 @@ function Header() {
               </Link>
             )}
 
-            <button
-              ref={searchTriggerRef}
-              type="button"
-              data-testid="navbar-search"
-              onClick={() => open(SURFACE.search)}
-              aria-expanded={isSearchOpen}
-              aria-haspopup="dialog"
-              aria-label="Search refurbished phones"
-              className={ICON_BUTTON}
-            >
-              <Search className="size-5" strokeWidth={1.5} aria-hidden="true" />
-            </button>
-
             {showBuyerSurfaces &&
               (isBuyer ? (
-                /* A button, not a link: the cart is a drawer now, and a button is
+                /* A button, not a link: the cart is a drawer, and a button is
                    what a control that opens a panel should be. */
                 <button
                   ref={cartTriggerRef}
@@ -287,7 +257,7 @@ function Header() {
                   aria-label={`Cart, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
                   className={`${ICON_BUTTON} relative`}
                 >
-                  <ShoppingBag className="size-5" strokeWidth={1.5} aria-hidden="true" />
+                  <ShoppingBag className="size-5" strokeWidth={1.75} aria-hidden="true" />
                   {itemCount > 0 && (
                     <motion.span
                       data-testid="navbar-cart-badge"
@@ -316,7 +286,7 @@ function Header() {
                   aria-label="Cart, sign in to use"
                   className={ICON_BUTTON}
                 >
-                  <ShoppingBag className="size-5" strokeWidth={1.5} aria-hidden="true" />
+                  <ShoppingBag className="size-5" strokeWidth={1.75} aria-hidden="true" />
                 </Link>
               ))}
 
@@ -331,10 +301,50 @@ function Header() {
               aria-label="Open menu"
               className={`${ICON_BUTTON} lg:hidden`}
             >
-              <Menu className="size-5" strokeWidth={1.5} aria-hidden="true" />
+              <Menu className="size-5" strokeWidth={1.75} aria-hidden="true" />
             </button>
           </div>
         </Container>
+
+        {/* Row 3: where people shop. It scrolls sideways inside itself on a phone
+            rather than wrapping, so the bar keeps one height at every width. */}
+        <nav aria-label="Primary" className="border-t border-line">
+          <Container>
+            <ul className="no-scrollbar -mx-2 flex h-12 items-center gap-1 overflow-x-auto lg:justify-center lg:gap-2">
+              <li className="shrink-0">
+                <Link
+                  to={BATTERY_SHORTCUT.to}
+                  data-testid="navbar-battery"
+                  className="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-semibold text-brand transition-colors duration-150 hover:bg-brand-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  <BatteryFull className="size-4" strokeWidth={2} aria-hidden="true" />
+                  {BATTERY_SHORTCUT.label}
+                </Link>
+              </li>
+              {NAVBAR_LINKS.slice(0, 1).map((link) => (
+                <li key={link.key} className="shrink-0">
+                  <NavbarLink link={link} isActive={isNavbarLinkActive(link, pathname)} reduced={reducedMotion} />
+                </li>
+              ))}
+              {SHOPPING_SHORTCUTS.filter((shortcut) => shortcut !== BATTERY_SHORTCUT).map((shortcut) => (
+                <li key={shortcut.key} className="shrink-0">
+                  <Link
+                    to={shortcut.to}
+                    data-testid="navbar-shortcut"
+                    className="inline-flex min-h-10 items-center whitespace-nowrap rounded-lg px-2.5 text-[15px] font-medium text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    {shortcut.label}
+                  </Link>
+                </li>
+              ))}
+              {NAVBAR_LINKS.slice(1).map((link) => (
+                <li key={link.key} className="shrink-0">
+                  <NavbarLink link={link} isActive={isNavbarLinkActive(link, pathname)} reduced={reducedMotion} />
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </nav>
       </motion.header>
 
       <MobileMenuOverlay />
@@ -369,8 +379,8 @@ function NavbarLink({ link, isActive, reduced }) {
       data-testid="navbar-link"
       data-active={isActive ? 'true' : 'false'}
       aria-current={isActive ? 'page' : undefined}
-      className={`relative inline-flex min-h-11 items-center px-3 text-[15px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-        isActive ? 'text-ink' : 'text-muted hover:text-ink'
+      className={`relative inline-flex min-h-10 items-center whitespace-nowrap rounded-lg px-2.5 text-[15px] transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+        isActive ? 'font-semibold text-ink' : 'font-medium text-ink'
       }`}
     >
       {link.label}
@@ -379,7 +389,7 @@ function NavbarLink({ link, isActive, reduced }) {
           data-testid="navbar-underline"
           layoutId={layoutId}
           transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 32 }}
-          className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-control bg-accent"
+          className="absolute inset-x-2.5 bottom-0.5 h-0.5 rounded-full bg-brand"
         />
       )}
     </Link>
@@ -492,13 +502,13 @@ function MobileMenuOverlay() {
           className="fixed inset-0 z-modal flex flex-col bg-page lg:hidden"
         >
           <div className="flex h-16 items-center justify-between border-b border-line px-4">
-            <span className="text-xl font-bold tracking-[-0.03em] text-ink">ReFon</span>
+            <Wordmark className="text-2xl" />
             <button
               type="button"
               data-testid="mobile-menu-close"
               onClick={close}
               aria-label="Close menu"
-              className="grid size-11 place-items-center rounded-control text-ink transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="grid size-11 place-items-center rounded-control text-ink transition-colors duration-150 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
             >
               <X className="size-5" strokeWidth={1.5} aria-hidden="true" />
             </button>
@@ -526,7 +536,7 @@ function MobileMenuOverlay() {
                     to={link.to}
                     onClick={close}
                     aria-current={isNavbarLinkActive(link, pathname) ? 'page' : undefined}
-                    className={`flex min-h-14 items-center justify-between border-b border-line text-lg font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
+                    className={`flex min-h-14 items-center justify-between border-b border-line text-lg font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand ${
                       isNavbarLinkActive(link, pathname) ? 'text-ink' : 'text-muted'
                     }`}
                   >
@@ -554,7 +564,7 @@ function MobileMenuOverlay() {
                     to={link.to}
                     state={link.from && !user ? { from: link.from } : undefined}
                     onClick={close}
-                    className="flex min-h-14 items-center justify-between border-b border-line text-lg font-medium text-muted transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                    className="flex min-h-14 items-center justify-between border-b border-line text-lg font-medium text-muted transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
                   >
                     {link.label}
                     {link.meta > 0 ? (
@@ -583,7 +593,7 @@ function MobileMenuOverlay() {
                   to={user ? MARKETPLACE_ROUTES.cart : AUTH_ROUTES.login}
                   state={user ? undefined : { from: MARKETPLACE_ROUTES.cart }}
                   onClick={close}
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-ink px-5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-ink px-5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                 >
                   <ShoppingBag className="size-4" strokeWidth={1.5} aria-hidden="true" />
                   {user ? 'View cart' : 'Sign in to buy'}

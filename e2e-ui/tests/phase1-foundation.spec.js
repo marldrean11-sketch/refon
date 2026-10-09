@@ -326,15 +326,16 @@ test.describe('P1 Phase 1 foundation', () => {
 
     console.log('[P1-03] body', JSON.stringify(computed))
 
-    expect(computed.backgroundColor).toBe('rgb(246, 245, 241)')
-    expect(computed.color).toBe('rgb(17, 17, 17)')
+    // Paper `#F3F5F9` and Night `#0D1633`.
+    expect(computed.backgroundColor).toBe('rgb(243, 245, 249)')
+    expect(computed.color).toBe('rgb(13, 22, 51)')
     // Computed `font-family` quotes a family name containing a space, so the
-    // resolved value is `"Manrope Variable", Manrope, ...`. Comparing the *first*
+    // resolved value is `"Instrument Sans Variable", ...`. Comparing the *first*
     // family is what makes this an assertion about which family actually leads,
-    // rather than a substring match that would equally pass on a stack with
-    // Manrope sitting last in the fallback list.
+    // rather than a substring match that would equally pass on a stack with the
+    // body face sitting last in the fallback list.
     const leadingFamily = computed.fontFamily.split(',')[0].trim()
-    expect(leadingFamily).toBe('"Manrope Variable"')
+    expect(leadingFamily).toBe('"Instrument Sans Variable"')
     expect(computed.fontSize).toBe('17px')
     expect(computed.textTransform).toBe('none')
 
@@ -342,7 +343,7 @@ test.describe('P1 Phase 1 foundation', () => {
     expect(ratio).toBeCloseTo(1.6, 2)
   })
 
-  test('P1-04 Manrope is bundled: loaded, and no font CDN is contacted', async ({ page }) => {
+  test('P1-04 the brand fonts are bundled: loaded, and no font CDN is contacted', async ({ page }) => {
     const fontRequests = []
     page.on('request', (request) => {
       if (/fonts\.(googleapis|gstatic)\.com/.test(request.url())) {
@@ -351,6 +352,9 @@ test.describe('P1 Phase 1 foundation', () => {
     })
 
     await page.goto('/', { waitUntil: 'load' })
+    // A face loads only once something on the page uses it. The mono face is
+    // first used by the hero's ReFon Tag, which renders once listings arrive.
+    await page.locator('[data-testid="hero-panel"] [data-testid="refon-tag"]').waitFor()
     await page.evaluate(() => document.fonts.ready)
 
     const faces = await page.evaluate(() =>
@@ -363,12 +367,16 @@ test.describe('P1 Phase 1 foundation', () => {
 
     console.log('[P1-04] faces', JSON.stringify(faces))
 
-    const manrope = faces.filter((face) => face.family.includes('Manrope'))
-    expect(manrope.length, 'no Manrope face was registered').toBeGreaterThan(0)
-    expect(
-      manrope.some((face) => face.status === 'loaded'),
-      `Manrope never finished loading: ${JSON.stringify(manrope)}`,
-    ).toBe(true)
+    // The body face, the display face (headings and the wordmark), and the data
+    // face (the readings on the ReFon Tag) are all on the home page.
+    for (const family of ['Instrument Sans', 'Archivo', 'IBM Plex Mono']) {
+      const matching = faces.filter((face) => face.family.includes(family))
+      expect(matching.length, `no ${family} face was registered`).toBeGreaterThan(0)
+      expect(
+        matching.some((face) => face.status === 'loaded'),
+        `${family} never finished loading: ${JSON.stringify(matching)}`,
+      ).toBe(true)
+    }
 
     expect(fontRequests, `font CDN contacted: ${fontRequests.join(', ')}`).toEqual([])
   })

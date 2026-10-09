@@ -32,6 +32,28 @@ export const NAVBAR_LINKS = [
   },
 ]
 
+/**
+ * The shopping row's shortcuts, beside the destinations above.
+ *
+ * Each one is a filter the shop already accepts, so a shortcut always lands on
+ * real results. Battery health leads the row and is the only one set in the
+ * brand colour: it is the filter no other shop offers, because no other shop
+ * publishes the measured figure on every listing.
+ */
+export const BATTERY_SHORTCUT = Object.freeze({
+  key: 'battery',
+  label: 'Battery 90%+',
+  to: '/phones?minBattery=90',
+})
+
+export const SHOPPING_SHORTCUTS = Object.freeze([
+  BATTERY_SHORTCUT,
+  { key: 'iphone', label: 'iPhone', to: '/phones?brand=Apple' },
+  { key: 'samsung', label: 'Samsung', to: '/phones?brand=Samsung' },
+  { key: 'pixel', label: 'Pixel', to: '/phones?brand=Google' },
+  { key: 'under10k', label: 'Under ₱10,000', to: '/phones?maxPrice=10000' },
+])
+
 /** Prefixes match their section; exact paths match only themselves. */
 function matchesPattern(pathname, pattern) {
   if (pattern.endsWith('/*')) {

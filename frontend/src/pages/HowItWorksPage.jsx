@@ -142,7 +142,7 @@ export function HowItWorksPage() {
         <div className="mx-auto max-w-3xl text-center">
           <Store className="mx-auto size-10 text-accent-400" aria-hidden="true" />
           <h2 className="mt-5 font-display text-3xl font-bold text-white sm:text-4xl">
-            Premium phones. Smarter prices. Tested for you.
+            Know the phone before you buy it.
           </h2>
           <p className="mt-4 text-lg leading-body text-primary-100/85">
             Join students and young professionals buying capable phones without

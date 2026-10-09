@@ -13,19 +13,19 @@
    */
   :root {
     /* Surfaces */
-    --rf-bg: #f6f5f1;
-    --rf-panel: #eceae4;
+    --rf-bg: #f3f5f9;
+    --rf-panel: #e9edf5;
     --rf-card: #ffffff;
-    --rf-well: #e3e1da;
+    --rf-well: #dfe4ee;
 
     /* Text */
-    --rf-text: #111111;
-    --rf-muted: #6b6b66;
-    --rf-subtle: #94938c;
+    --rf-text: #0d1633;
+    --rf-muted: #4d5672;
+    --rf-subtle: #646c88;
 
     /* Lines */
-    --rf-border: #e6e4dd;
-    --rf-border-strong: #d2cfc6;
+    --rf-border: #e1e5ee;
+    --rf-border-strong: #c8cfdd;
 
     /* Signal */
     --rf-accent: #10b981;
@@ -34,7 +34,9 @@
     --rf-accent-tint: #d1fae5;
 
     /* Dark and status */
-    --rf-dark: #0b0f0e;
+    --rf-dark: #0d1633;
+    --rf-brand: #1f3fd1;
+    --rf-tag: #ffc933;
     --rf-red: #ef4444;
     --rf-grade-b: #f59e0b;
     --rf-grade-c: #f97316;
@@ -47,8 +49,10 @@
     --rf-shadow-hover: 0 20px 60px rgb(0 0 0 / 0.1);
 
     /* Type */
-    --rf-font-sans: 'Manrope Variable', Manrope, ui-sans-serif, system-ui, -apple-system,
-      'Segoe UI', sans-serif;
+    --rf-font-sans: 'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif, system-ui,
+      -apple-system, 'Segoe UI', sans-serif;
+    --rf-font-display: 'Archivo Variable', Archivo, 'Arial Black', ui-sans-serif, system-ui, sans-serif;
+    --rf-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
     /* Motion. Mirrors src/lib/motion.ts. */
     --rf-ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
@@ -103,7 +107,9 @@
   h4,
   h5,
   h6 {
-    @apply font-display font-semibold leading-tight tracking-tight text-ink;
+    @apply font-display font-bold leading-tight tracking-tight text-ink;
+    /* Archivo a step wider than normal: the printed-tag voice of the brand. */
+    font-stretch: 110%;
   }
 
   /* Digits are aligned everywhere.
@@ -194,6 +200,56 @@
   /** A hairline that reads as an engraved rule rather than a border. */
   .rule-strong {
     @apply border-t-2 border-dark;
+  }
+
+  /**
+   * The ReFon Tag's silhouette: a shop tag with chamfered top corners and a
+   * punch hole. `--tag-hole` is the colour behind the tag, so the hole reads as a
+   * hole on whatever surface the tag sits on.
+   */
+  .refon-tag {
+    position: relative;
+    border-radius: 14px;
+    clip-path: polygon(34px 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 0 100%, 0 34px);
+  }
+
+  .refon-tag-hole {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-left: -8px;
+    border-radius: 999px;
+    background: var(--tag-hole, var(--rf-bg));
+    box-shadow: inset 0 0 0 2px rgb(13 22 51 / 0.25);
+  }
+
+  /* Hung slightly off-true, and squared up when it is pointed at. */
+  .refon-tag-tilt {
+    transform: rotate(-2.5deg);
+    transform-origin: 50% 0;
+    transition: transform var(--rf-duration-standard) var(--rf-ease-entrance);
+  }
+
+  .group:hover .refon-tag-tilt,
+  .group:focus-visible .refon-tag-tilt {
+    transform: rotate(0deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .refon-tag-tilt {
+      transition: none;
+    }
+  }
+
+  /** A row that scrolls sideways inside itself without showing a scrollbar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 

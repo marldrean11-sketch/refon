@@ -38,9 +38,8 @@ test.describe('H1 homepage content and structure', () => {
     const heading = (await page.locator('h1').first().innerText()).replace(/\s+/g, ' ')
     console.log('H1_HERO', heading)
 
-    expect(heading).toMatch(/Premium Phones/i)
-    expect(heading).toMatch(/Smarter Prices/i)
-    expect(heading).toMatch(/Tested for You/i)
+    expect(heading).toMatch(/Know the phone/i)
+    expect(heading).toMatch(/before you buy it/i)
 
     const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
     expect(body).toMatch(/condition grades/i)
@@ -258,7 +257,7 @@ test.describe('H9 homepage accessibility basics', () => {
 
     await page.goto('/')
     await page.locator('h1').first().waitFor()
-    await page.getByTestId('hero-plate').waitFor({ timeout: 20_000 })
+    await page.locator('[data-testid="hero-panel"] [data-testid="refon-tag"]').waitFor({ timeout: 20_000 })
 
     const heroPanel = await page.locator('section').first().innerText()
 
