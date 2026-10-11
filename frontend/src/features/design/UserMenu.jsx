@@ -122,19 +122,19 @@ export function UserMenu() {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-controls="refon-user-menu"
-        // The visible initials are repeated in the name so speech-input users can
-        // say what they see (axe: label-content-name-mismatch).
-        aria-label={`Account menu for ${user.name} (${initialsOf(user.name)}), signed in as ${role}`}
+        // The name starts with the visible initials so speech-input users can say
+        // what they see (axe: label-content-name-mismatch).
+        aria-label={`${initialsOf(user.name)} account menu for ${user.name}, signed in as ${role}`}
         className="flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-primary-950 pl-1 pr-1.5 transition duration-150 hover:bg-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-950 focus-visible:ring-offset-2 sm:pr-2"
       >
         <span
           aria-hidden="true"
-          className="grid size-9 place-items-center rounded-[3px] bg-primary-800 font-mono text-xs font-semibold text-white"
+          className="grid size-9 place-items-center rounded-full bg-page font-mono text-xs font-semibold text-accent"
         >
           {initialsOf(user.name)}
         </span>
         <ChevronDown
-          className={`size-3.5 text-primary-300 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+          className={`size-3.5 text-page transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>

@@ -391,7 +391,7 @@ function GiantWordmark({ reduced }) {
       className="pointer-events-none mt-8 select-none"
     >
       <span
-        className="block whitespace-nowrap text-center font-display font-extrabold leading-none tracking-[-0.05em] text-line-2"
+        className="block whitespace-nowrap text-center font-display font-extrabold leading-none tracking-[-0.05em] text-primary-500"
         style={{
           // Sized in viewport units so it spans the width at every breakpoint
           // without a media query, capped at 20rem so it cannot outgrow the
@@ -462,6 +462,7 @@ function SocialLinks() {
               </a>
             ) : (
               <span
+                role="img"
                 aria-label={`${social.label} (coming soon)`}
                 title={`${social.label}: coming soon`}
                 className={`${base} cursor-not-allowed opacity-50`}
