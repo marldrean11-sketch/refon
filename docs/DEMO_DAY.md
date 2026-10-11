@@ -8,8 +8,10 @@ A short list for the booth team. Work top to bottom.
 - [ ] **Check the public address.** If Render gave you something other than `https://refon.onrender.com`, change `url` in `frontend/src/content/site-info.js` and push. The QR poster, share previews and sitemap all read it.
 - [ ] **Booth number.** Set `booth` in `site-info.js` (e.g. `'12'`). It shows in the footer, the Contact page and the poster.
 - [ ] **Social links.** Put the real Facebook, Instagram and TikTok URLs in `socials` in `site-info.js`, or leave `href: null` to show "coming soon".
+- [ ] **Chat links.** Put your Messenger (`https://m.me/<page>`) and Viber links in `chat` in `site-info.js`. Until then the chat button shows them as "soon" and still offers email and phone.
+- [ ] **Treats for the pop challenge.** Visitors who pop 10 floating loops get a "Loop Master" badge with a code. Have stickers or candy ready; the badge says "while booth supplies last".
 - [ ] **Photo storage.** On Render's free plan, uploaded photos are wiped on every redeploy. If sellers will upload photos, set `STORAGE_DRIVER=s3` with a bucket (Cloudflare R2's free tier works). See the README "Environment variables" section.
-- [ ] **Print the poster.** Open `/booth-poster` on the live site, click **Print poster**, print on A4. Test-scan it with two different phones.
+- [ ] **Print the poster.** Open `/booth-poster` on the live site, click **Print poster**, print on A4. Test-scan both QR codes (health check and the small "Rate us" one) with two different phones.
 
 ## The morning of
 
@@ -18,6 +20,11 @@ A short list for the booth team. Work top to bottom.
 - [ ] **HTTPS only.** The camera, microphone and motion tests need `https://`. They will not run on a `localhost` or `http://` link opened from a phone.
 - [ ] **Laptop set-up.** Open the homepage on the big screen. Open `/health-check` in a second tab; on a laptop it shows the QR code for visitors.
 - [ ] **Charge everything** and bring a spare phone for visitors who don't want to use their own.
+- [ ] **Install the app on the booth phone (optional).** On Android/Chrome tap **Install app** in the footer; on iPhone use Share → Add to Home Screen. It opens full screen with the ReFon icon.
+
+## After the fair
+
+- **Read the feedback.** Sign in as admin: the **Booth feedback** panel at the bottom of the Admin Dashboard shows the response count, average stars, the "would buy" split and the latest comments.
 
 ## Demo logins
 
@@ -36,6 +43,8 @@ Only for the hosted demo, which is seeded with your own passwords (see README, "
 3. **Trade-in (20s).** "Magkano kaya 'yan?" Tap their model, storage, condition, battery: the price range counts up.
 4. **Shop (30s).** Open a phone, show the grade explanation and inspection list, tap **Add to cart**: confetti and the 15-minute hold timer.
 5. **Seller and admin (10s, optional).** A seller lists a phone; the admin approves it; it appears in the shop.
+6. **Price-drop alert (20s, optional).** As the buyer, tap the heart on a phone. As the seller, click **Lower price** on that phone in the dashboard. Back as the buyer, the bell shows "Price drop! … now ₱X (was ₱Y)".
+7. **Ask for a rating.** Point at the "Rate us" QR on the poster. Three questions, about 20 seconds.
 
 ## If something goes wrong
 

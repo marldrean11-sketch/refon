@@ -74,6 +74,10 @@ export function deleteListingRequest(id) {
   return apiRequest(`/listings/${id}`, { method: 'DELETE' })
 }
 
+export function lowerListingPriceRequest(id, price) {
+  return apiRequest(`/listings/${id}/price`, { method: 'PATCH', body: { price } })
+}
+
 export function markListingSoldRequest(id) {
   return apiRequest(`/listings/${id}/mark-sold`, { method: 'PATCH' })
 }

@@ -10,6 +10,7 @@ import {
   getRelated,
   getReviews,
   getSuggestions,
+  lowerPrice,
   markSold,
   remove,
   submitInquiry,
@@ -31,6 +32,7 @@ import {
   validateListingId,
   validateListingQuery,
   validateListingSlug,
+  validateLowerPrice,
   validateUpdateListing,
 } from '../validators/listing.validator.js'
 import {
@@ -65,6 +67,14 @@ router.put(
   update,
 )
 router.delete('/:id', authenticate, requireSeller, validateListingId, remove)
+router.patch(
+  '/:id/price',
+  authenticate,
+  requireSeller,
+  validateListingId,
+  validateLowerPrice,
+  lowerPrice,
+)
 router.patch(
   '/:id/mark-sold',
   authenticate,

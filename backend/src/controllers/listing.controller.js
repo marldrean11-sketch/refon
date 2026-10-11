@@ -11,6 +11,7 @@ import {
   getRelatedListings,
   getListingReviews,
   getSellerListings,
+  lowerListingPrice,
   markListingSold,
   updateListing,
 } from '../services/listing.service.js'
@@ -106,6 +107,15 @@ export const getSuggestions = asyncHandler(async (req, res) => {
   const term = req.validatedQuery.q ?? ''
   const data = await getCatalogSuggestions(term)
   return res.status(200).json(data)
+})
+
+export const lowerPrice = asyncHandler(async (req, res) => {
+  const result = await lowerListingPrice(
+    req.validatedParams.id,
+    req.user.id,
+    req.validatedBody.price,
+  )
+  return res.status(200).json(result)
 })
 
 export const markSold = asyncHandler(async (req, res) => {

@@ -9,6 +9,7 @@ import {
   Send,
   ShieldAlert,
   ShoppingBag,
+  TrendingDown,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -60,6 +61,10 @@ const notificationPresentation = {
     icon: BadgeCheck,
     iconClass: 'bg-primary-50 text-primary-700',
   },
+  PRICE_DROP: {
+    icon: TrendingDown,
+    iconClass: 'bg-accent text-page',
+  },
 }
 
 function getNotificationTarget(notification) {
@@ -78,6 +83,13 @@ function getNotificationTarget(notification) {
     notification.type === 'LISTING_APPROVED'
   ) {
     return `/listings/${notification.relatedListingId}`
+  }
+
+  // A price drop opens the saved phone so the buyer sees the new price.
+  if (notification.type === 'PRICE_DROP') {
+    return notification.relatedListingId
+      ? `/listings/${notification.relatedListingId}`
+      : AUTH_ROUTES.buyer
   }
 
   // Sold listings stay reachable from the notification so buyers can still see

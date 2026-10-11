@@ -854,6 +854,90 @@ export async function getListingReviews(id) {
   }
 }
 
+const pesoFormatter = new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+  maximumFractionDigits: 0,
+})
+
+/**
+ * Lowers the price of a live listing and tells everyone who saved it.
+ *
+ * Only a lower price is accepted: that never needs a second moderation round,
+ * because it can only help buyers. Raising a price or changing anything else
+ * still goes through editing and review. A stored reference price stays only
+ * while it is still above the new price, so the discount shown stays genuine.
+ */
+export async function lowerListingPrice(id, userId, newPrice) {
+  return prisma.$transaction(async (transaction) => {
+    const listing = await transaction.listing.findFirst({
+      where: { id, seller: { userId } },
+      select: {
+        id: true,
+        status: true,
+        brand: true,
+        model: true,
+        storage: true,
+        price: true,
+        originalPrice: true,
+        seller: { select: { userId: true } },
+      },
+    })
+
+    if (!listing) {
+      throw new ApiError(404, 'Listing not found.', 'LISTING_NOT_FOUND')
+    }
+
+    if (listing.status !== 'APPROVED') {
+      throw new ApiError(
+        409,
+        'Only live listings can get a price drop. Edit a pending listing instead.',
+        'LISTING_NOT_APPROVED',
+      )
+    }
+
+    const oldPrice = Number(listing.price)
+    if (!(newPrice < oldPrice)) {
+      throw new ApiError(
+        422,
+        'The new price must be lower than the current price.',
+        'PRICE_NOT_LOWER',
+      )
+    }
+
+    const reference = listing.originalPrice != null ? Number(listing.originalPrice) : null
+    const originalPrice = reference != null && reference > newPrice ? reference : null
+    const discountPercent = originalPrice
+      ? Math.min(100, Math.max(0, Math.round(((originalPrice - newPrice) / originalPrice) * 100)))
+      : 0
+
+    const updatedListing = await transaction.listing.update({
+      where: { id: listing.id },
+      data: { price: newPrice, originalPrice, discountPercent },
+      include: listingInclude,
+    })
+
+    const savers = await transaction.favorite.findMany({
+      where: { listingId: listing.id, userId: { not: listing.seller.userId } },
+      select: { userId: true },
+    })
+
+    if (savers.length > 0) {
+      const name = `${listing.brand} ${listing.model} ${listing.storage}`.trim()
+      await transaction.notification.createMany({
+        data: savers.map((saver) => ({
+          userId: saver.userId,
+          type: 'PRICE_DROP',
+          message: `Price drop! The ${name} you saved is now ${pesoFormatter.format(newPrice)} (was ${pesoFormatter.format(oldPrice)}).`,
+          relatedListingId: listing.id,
+        })),
+      })
+    }
+
+    return { listing: presentListing(updatedListing), notified: savers.length }
+  })
+}
+
 export async function markListingSold(id, userId) {
   return prisma.$transaction(async (transaction) => {
     const listing = await transaction.listing.findFirst({

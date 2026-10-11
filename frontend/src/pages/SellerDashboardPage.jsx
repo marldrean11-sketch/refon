@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Trash2,
+  TrendingDown,
   X,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -22,6 +23,7 @@ import { useSellerProfile } from '../features/seller/useSellerProfile.js'
 import { useSellerInquiries } from '../features/inquiries/useSellerInquiries.js'
 import { ConfirmDialog } from '../features/seller/components/ConfirmDialog.jsx'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
+import { LowerPriceDialog } from '../features/seller/components/LowerPriceDialog.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { StatStripSkeleton, Skeleton } from '../components/ui/Skeleton.jsx'
 import { EmptyState, ErrorState } from '../components/ui/StateViews.jsx'
@@ -108,20 +110,31 @@ function ListingRowMeta({ listing }) {
   )
 }
 
-function ListingActions({ listing, onDelete, onMarkSold, isUpdating }) {
+function ListingActions({ listing, onDelete, onMarkSold, onLowerPrice, isUpdating }) {
   const canEdit = editableStatuses.has(listing.status)
 
   if (listing.status === 'APPROVED') {
     return (
-      <button
-        type="button"
-        onClick={() => onMarkSold(listing)}
-        disabled={isUpdating}
-        className="inline-flex items-center gap-1.5 rounded-control border border-line-2 bg-surface px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white disabled:opacity-50"
-      >
-        <ShoppingBag className="size-3.5" aria-hidden="true" />
-        Mark Sold
-      </button>
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => onLowerPrice(listing)}
+          disabled={isUpdating}
+          className="inline-flex items-center gap-1.5 rounded-control border border-accent/60 bg-surface px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-accent transition hover:bg-accent hover:text-page disabled:opacity-50"
+        >
+          <TrendingDown className="size-3.5" aria-hidden="true" />
+          Lower price
+        </button>
+        <button
+          type="button"
+          onClick={() => onMarkSold(listing)}
+          disabled={isUpdating}
+          className="inline-flex items-center gap-1.5 rounded-control border border-line-2 bg-surface px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white disabled:opacity-50"
+        >
+          <ShoppingBag className="size-3.5" aria-hidden="true" />
+          Mark Sold
+        </button>
+      </div>
     )
   }
 
@@ -166,6 +179,7 @@ export function SellerDashboardPage() {
     error,
     deleteListing,
     markSold,
+    lowerPrice,
     refresh: refreshListings,
   } = useSellerListings()
   const {
@@ -176,6 +190,7 @@ export function SellerDashboardPage() {
   } = useSellerProfile()
   const { unreadCount } = useSellerInquiries()
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [priceTarget, setPriceTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [updatingListingId, setUpdatingListingId] = useState(null)
   const [actionError, setActionError] = useState(null)
@@ -284,6 +299,24 @@ export function SellerDashboardPage() {
     } finally {
       setUpdatingListingId(null)
     }
+  }
+
+  async function handleLowerPrice(listing, price) {
+    const { notified } = await lowerPrice(listing.id, price)
+    setPriceTarget(null)
+    const alerted =
+      notified === 0
+        ? 'No buyers have saved it yet.'
+        : `${notified} ${notified === 1 ? 'buyer who saved it was' : 'buyers who saved it were'} alerted.`
+    navigate(AUTH_ROUTES.seller, {
+      replace: true,
+      state: {
+        notice: {
+          type: 'success',
+          message: `${listing.brand} ${listing.model} is now ${currencyFormatter.format(price)}. ${alerted}`,
+        },
+      },
+    })
   }
 
   function dismissNotice() {
@@ -485,15 +518,15 @@ export function SellerDashboardPage() {
                           </p>
                         </div>
                       )}
-                      {...{ onDelete: setDeleteTarget, onMarkSold: handleMarkSold, updatingListingId }}
+                      {...{ onDelete: setDeleteTarget, onMarkSold: handleMarkSold, onLowerPrice: setPriceTarget, updatingListingId }}
                     />
 
                     <ListingGroup
                       title="Live on the marketplace"
-                      description="Visible to every buyer. Mark one sold when it leaves your hands."
+                      description="Visible to every buyer. Lower a price any time; buyers who saved the phone get an alert."
                       listings={liveListings}
                       emptyLabel="No live listings right now."
-                      {...{ onDelete: setDeleteTarget, onMarkSold: handleMarkSold, updatingListingId }}
+                      {...{ onDelete: setDeleteTarget, onMarkSold: handleMarkSold, onLowerPrice: setPriceTarget, updatingListingId }}
                     />
 
                     <ListingGroup
@@ -501,7 +534,7 @@ export function SellerDashboardPage() {
                       description="Locked. A completed sale cannot be edited or removed."
                       listings={soldListings}
                       emptyLabel="No completed sales yet."
-                      {...{ onDelete: setDeleteTarget, onMarkSold: handleMarkSold, updatingListingId }}
+                      {...{ onDelete: setDeleteTarget, onMarkSold: handleMarkSold, onLowerPrice: setPriceTarget, updatingListingId }}
                     />
                   </>
                 ) : (
@@ -513,8 +546,8 @@ export function SellerDashboardPage() {
                 <ListChecks className="mt-0.5 size-4 shrink-0 text-subtle" aria-hidden="true" />
                 <p className="leading-relaxed text-muted">
                   <span className="font-bold text-ink">Editing policy:</span> approved and sold
-                  listings are locked. A future revision workflow will allow approved listings
-                  to be changed by creating a new draft that returns to Pending review.
+                  listings are locked, except that a live listing&rsquo;s price can be lowered.
+                  A lower price goes live right away and alerts buyers who saved the phone.
                 </p>
               </div>
             </>
@@ -534,6 +567,12 @@ export function SellerDashboardPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
         isProcessing={isDeleting}
+      />
+
+      <LowerPriceDialog
+        listing={priceTarget}
+        onClose={() => setPriceTarget(null)}
+        onSubmit={handleLowerPrice}
       />
     </div>
   )
@@ -583,6 +622,7 @@ function ListingGroup({
   renderMeta,
   onDelete,
   onMarkSold,
+  onLowerPrice,
   updatingListingId,
 }) {
   if (listings.length === 0) {
@@ -644,6 +684,7 @@ function ListingGroup({
                   listing={listing}
                   onDelete={onDelete}
                   onMarkSold={onMarkSold}
+                  onLowerPrice={onLowerPrice}
                   isUpdating={updatingListingId === listing.id}
                 />
               </div>

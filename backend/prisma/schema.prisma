@@ -36,6 +36,7 @@ enum NotificationType {
   SELLER_REJECTED
   LISTING_TAKEN_DOWN
   REPORT_RESOLVED
+  PRICE_DROP
 }
 
 enum ReportReason {

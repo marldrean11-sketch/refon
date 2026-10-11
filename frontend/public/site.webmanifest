@@ -1,17 +1,25 @@
 {
-  "name": "ReFon — Premium Refurbished Phones",
+  "id": "/",
+  "name": "ReFon: Tested Pre-loved Phones",
   "short_name": "ReFon",
-  "description": "Inspected secondhand phones from verified sellers. Every listing states its grade, battery health and warranty term.",
-  "start_url": "/",
+  "description": "Pre-loved phones, tested in the open. Every listing states its grade, battery health and warranty term. Check your own phone and estimate its trade-in value.",
+  "lang": "en-PH",
+  "start_url": "/?source=app",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0A0B0D",
   "theme_color": "#0A0B0D",
+  "categories": ["shopping", "utilities"],
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Phone health check", "short_name": "Health check", "url": "/health-check", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Trade-in estimate", "short_name": "Trade-in", "url": "/trade-in", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Shop phones", "short_name": "Shop", "url": "/phones", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

@@ -109,6 +109,12 @@ if (env.staticDir) {
     '/assets',
     express.static(path.join(env.staticDir, 'assets'), { immutable: true, maxAge: '1y', index: false }),
   )
+  // The service worker script must always be fetched fresh, or a deploy can leave
+  // installed copies of the app running old code.
+  app.get('/sw.js', (_req, res) => {
+    res.set('Cache-Control', 'no-cache')
+    res.sendFile(path.join(env.staticDir, 'sw.js'))
+  })
   app.use(express.static(env.staticDir, { index: false, maxAge: '1h' }))
   // Client-side routing: any other GET outside /api and /uploads is a React route.
   app.get(/^\/(?!api\/|uploads\/).*/, (_req, res) => {

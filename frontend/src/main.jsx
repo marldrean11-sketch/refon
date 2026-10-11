@@ -12,8 +12,10 @@ import '@fontsource-variable/geist-mono'
 import './index.css'
 import App from './App.jsx'
 import { installClickSounds } from './lib/sound.js'
+import { installPwa } from './lib/pwa.js'
 
 installClickSounds()
+installPwa()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

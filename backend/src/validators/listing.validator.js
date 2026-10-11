@@ -291,7 +291,18 @@ const listingSlugSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Listing slug is malformed.'),
 })
 
+/** A live listing's new, lower price. The service checks it is actually lower. */
+const lowerPriceSchema = z
+  .object({
+    price: z
+      .number()
+      .positive('Price must be greater than zero.')
+      .max(1_000_000_000, 'Price is outside the accepted range.'),
+  })
+  .strict()
+
 export const validateCreateListing = validate(listingSchema)
+export const validateLowerPrice = validate(lowerPriceSchema)
 export const validateUpdateListing = validate(listingSchema)
 export const validateListingQuery = validateQuery(listingQuerySchema)
 export const validateListingId = validateParams(listingIdSchema)

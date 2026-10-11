@@ -5,6 +5,7 @@ import {
   createListingRequest,
   deleteListingRequest,
   getMyListingsRequest,
+  lowerListingPriceRequest,
   markListingSoldRequest,
   updateListingRequest,
 } from '../listings/listing-api.js'
@@ -92,6 +93,15 @@ export function SellerListingsProvider() {
     return response.listing
   }, [])
 
+  const lowerPrice = useCallback(async (id, price) => {
+    const response = await lowerListingPriceRequest(id, price)
+    setListings((current) =>
+      current.map((listing) => (listing.id === id ? response.listing : listing)),
+    )
+    notifyMarketplaceChange()
+    return response
+  }, [])
+
   const value = useMemo(
     () => ({
       listings,
@@ -102,6 +112,7 @@ export function SellerListingsProvider() {
       updateListing,
       deleteListing,
       markSold,
+      lowerPrice,
     }),
     [
       createListing,
@@ -109,6 +120,7 @@ export function SellerListingsProvider() {
       error,
       isLoading,
       listings,
+      lowerPrice,
       markSold,
       refresh,
       updateListing,

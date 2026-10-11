@@ -74,6 +74,9 @@ jobs:
       - name: Health-check counter tests
         run: npm run test:health-check
 
+      - name: Booth feedback and price-drop tests
+        run: npm run test:booth
+
   ui-tests:
     name: Playwright UI suite
     needs: checks
