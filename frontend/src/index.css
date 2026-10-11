@@ -319,13 +319,16 @@
     position: absolute;
     left: -50%;
     right: -50%;
-    bottom: -40px;
-    height: 300px;
+    bottom: -88px;
+    height: 348px;
     transform: perspective(380px) rotateX(62deg);
     background-image:
       linear-gradient(rgb(198 255 61 / 0.18) 1px, transparent 1px),
       linear-gradient(90deg, rgb(198 255 61 / 0.18) 1px, transparent 1px);
     background-size: 48px 48px;
+    /* The floor scrolls toward the viewer by moving the whole plane one cell,
+       not by animating background-position, so the motion stays on the
+       compositor. */
     animation: rf-grid-move 1.6s linear infinite;
     -webkit-mask-image: linear-gradient(to top, #000 30%, transparent);
     mask-image: linear-gradient(to top, #000 30%, transparent);
@@ -433,8 +436,11 @@
 }
 
 @keyframes rf-grid-move {
+  from {
+    transform: perspective(380px) rotateX(62deg) translateY(0);
+  }
   to {
-    background-position: 0 48px;
+    transform: perspective(380px) rotateX(62deg) translateY(48px);
   }
 }
 

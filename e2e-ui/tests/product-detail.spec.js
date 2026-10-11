@@ -793,7 +793,7 @@ test.describe('D17 pricing honesty and page structure', () => {
       `${listing.batteryPercent}%`,
     )
     expect(canonical, 'canonical is the slug URL').toBe(
-      `https://refon.ph/phones/${listing.slug}`,
+      `https://refon.onrender.com/phones/${listing.slug}`,
     )
 
     // Structured data must describe the real product.

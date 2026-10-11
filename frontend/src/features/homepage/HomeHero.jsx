@@ -132,7 +132,6 @@ export function HomeHero({ listings = [], featured = [] }) {
             <Link
               to={productPath(listing)}
               data-testid="hero-panel"
-              aria-label={`${listing.brand} ${listing.model}, ${formatPeso(listing.price)}`}
               className="block w-full max-w-[380px] rounded-[32px] border border-line-2 bg-card/90 p-5 shadow-2xl backdrop-blur transition-transform duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
             >
@@ -186,7 +185,10 @@ export function HomeHero({ listings = [], featured = [] }) {
                     aria-valuenow={battery}
                     className="mt-2 h-2 overflow-hidden rounded-full bg-line"
                   >
-                    <div className="h-full rounded-full bg-accent" style={{ width: `${shownBattery}%` }} />
+                    <div
+                      className="h-full w-full origin-left rounded-full bg-accent"
+                      style={{ transform: `scaleX(${shownBattery / 100})` }}
+                    />
                   </div>
                 </div>
               )}

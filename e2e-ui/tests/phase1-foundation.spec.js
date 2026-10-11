@@ -353,8 +353,8 @@ test.describe('P1 Phase 1 foundation', () => {
 
     await page.goto('/', { waitUntil: 'load' })
     // A face loads only once something on the page uses it. The mono face is
-    // first used by the hero's ReFon Tag, which renders once listings arrive.
-    await page.locator('[data-testid="hero-panel"] [data-testid="refon-tag"]').waitFor()
+    // first used by the hero card's readings, which render once listings arrive.
+    await page.locator('a[data-testid="hero-panel"]').waitFor()
     await page.evaluate(() => document.fonts.ready)
 
     const faces = await page.evaluate(() =>
@@ -778,13 +778,13 @@ test.describe('P1 Phase 1 foundation', () => {
     }
   })
 
-  test('P1-12 no dark main-page background survives on the three key routes', async ({
+  test('P1-12 the three key routes stay dark: no bright full-page panel', async ({
     page,
   }) => {
-    // The brief's rule is "no dark main-page backgrounds". That is not only about
-    // the body: a full-bleed dark hero is the same violation wearing a costume,
-    // because it is the largest surface on the page. Measured as luminance rather
-    // than as a token name so a hard-coded hex cannot slip past.
+    // The redesign is a dark theme. That is not only about the body: a
+    // full-bleed bright band would break it just as much, because it is the
+    // largest surface on the page. Measured as luminance rather than as a token
+    // name so a hard-coded hex cannot slip past.
     const DARK = ['/', '/phones', PRODUCT_PATH]
 
     for (const route of DARK) {
@@ -801,8 +801,8 @@ test.describe('P1 Phase 1 foundation', () => {
           return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
         }
 
-        // Only the top-level sections that fill the page count: a dark footer or
-        // a dark badge inside a card is a deliberate contrast element, not a page
+        // Only the top-level sections that fill the page count: a lime tile or a
+        // chalk badge inside a card is a deliberate contrast element, not a page
         // background.
         const panels = [...document.querySelectorAll('main > *, main section')]
           .filter((node) => {
@@ -836,13 +836,13 @@ test.describe('P1 Phase 1 foundation', () => {
 
       console.log(`[P1-12] ${route}`, JSON.stringify(result))
 
-      expect(luminanceOf(result.body), `${route} body is dark`).toBeGreaterThan(0.7)
+      expect(luminanceOf(result.body), `${route} body is light`).toBeLessThan(0.05)
 
       for (const panel of result.panels) {
         expect(
           panel.luminance,
-          `${route} has a dark main panel: ${panel.tag} ${panel.className} ${panel.backgroundColor}`,
-        ).toBeGreaterThan(0.5)
+          `${route} has a bright main panel: ${panel.tag} ${panel.className} ${panel.backgroundColor}`,
+        ).toBeLessThan(0.1)
       }
     }
   })
@@ -944,6 +944,13 @@ test.describe('P1 Phase 1 foundation', () => {
     const LAYOUT_CAMEL =
       /\b(width|height|minWidth|minHeight|maxWidth|maxHeight|top|right|bottom|left|inset|margin[A-Za-z]*|padding[A-Za-z]*|fontSize|lineHeight|letterSpacing|gap|rowGap|columnGap|gridTemplateColumns|gridTemplateRows|flexBasis|flexGrow|flexShrink|size)\s*:/g
 
+    /**
+     * Deliberate exceptions, each one named. The Loop logo draws its outline
+     * once on load by animating `stroke-dashoffset` on a 40px SVG path: a paint
+     * of a few hundred pixels, no layout, and nothing else on the page moves.
+     */
+    const KEYFRAME_EXCEPTIONS = { 'rf-loop-draw': 'stroke-dashoffset' }
+
     const violations = []
 
     const files = []
@@ -984,6 +991,7 @@ test.describe('P1 Phase 1 foundation', () => {
             const property = match[2].toLowerCase()
             if (property === 'to' || property === 'from') continue
             if (ANIMATABLE.has(property) || property.startsWith('--')) continue
+            if (KEYFRAME_EXCEPTIONS[name.replace('@keyframes', '').trim()] === property) continue
             violations.push(`${relative(file)}: @keyframes ${name} animates ${property}`)
           }
         }

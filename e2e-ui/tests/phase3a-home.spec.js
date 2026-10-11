@@ -355,54 +355,20 @@ test.describe('P3A home page, top half', () => {
     }
   })
 
-  test('P3A-04 the carousel stays put until asked, and its dots and arrows move it', async ({
-    page,
-  }) => {
+  test('P3A-04 the hero has no timer: its featured phone stays put', async ({ page }) => {
     await page.setViewportSize(DESKTOP)
     await page.goto('/', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(1500)
 
-    // Scoped to the hero's own tablist: New Arrivals has tabs of its own further
-    // down the page, and counting page-wide read as "two dots selected".
-    const HERO_TABS = '[role="tablist"][aria-label="Slides"] [role="tab"]'
-    const dots = page.locator(`${HERO_TABS}[aria-selected]`)
-    const dotCount = await dots.count()
+    // The hero shows one live listing and never rotates it on a timer: a
+    // moving headline or product is something a reader has to chase.
+    const card = page.locator('a[data-testid="hero-panel"]')
+    await card.waitFor()
+    const before = await card.getAttribute('href')
 
-    console.log('[P3A-04] dots', dotCount)
-    expect(dotCount, 'the carousel has fewer than two slides').toBeGreaterThan(1)
-
-    const selectedIndex = () =>
-      page.evaluate((selector) =>
-        [...document.querySelectorAll(selector)].findIndex(
-          (node) => node.getAttribute('aria-selected') === 'true',
-        ),
-        HERO_TABS,
-      )
-
-    const before = await selectedIndex()
-    expect(before, 'no dot is selected on load').toBe(0)
-
-    // No timer: the pointer is away from the hero and the slide does not change.
     await page.mouse.move(20, 880)
     await page.waitForTimeout(SLIDE_INTERVAL + 1800)
-    expect(await selectedIndex(), 'the carousel advanced on its own').toBe(before)
-
-    // Exactly one dot is ever selected, and the arrows move it by one.
-    const selectedCount = await page.locator(`${HERO_TABS}[aria-selected="true"]`).count()
-    expect(selectedCount, 'more than one dot is selected at once').toBe(1)
-
-    await page.getByTestId('hero-next').click()
-    await page.waitForTimeout(500)
-    expect(await selectedIndex(), 'the next arrow did not advance').toBe((before + 1) % dotCount)
-
-    await page.getByTestId('hero-prev').click()
-    await page.waitForTimeout(500)
-    expect(await selectedIndex(), 'the previous arrow did not go back').toBe(before)
-
-    // A dot jumps straight to its slide.
-    await dots.nth(dotCount - 1).click()
-    await page.waitForTimeout(500)
-    expect(await selectedIndex(), 'a dot did not select its slide').toBe(dotCount - 1)
+    expect(await card.getAttribute('href'), 'the hero changed phone on its own').toBe(before)
+    expect(await page.locator('[role="tablist"][aria-label="Slides"]').count(), 'a carousel came back').toBe(0)
   })
 
   test('P3A-05 the hero does not move on scroll at any width', async ({ page }) => {
@@ -411,14 +377,14 @@ test.describe('P3A home page, top half', () => {
       await page.goto('/', { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(1200)
 
-      // The tag's offset inside the yellow band. Parallax would change it; the
+      // The card's offset inside the hero band. Parallax would change it; the
       // page scrolling on its own moves both boxes together and does not.
       const offset = () =>
         page.evaluate(() => {
-          const panel = document.querySelector('[data-testid="hero-panel"]')
-          const tag = panel?.querySelector('[data-testid="refon-tag"]')
-          if (!panel || !tag) return null
-          return { y: Math.round(tag.getBoundingClientRect().top - panel.getBoundingClientRect().top) }
+          const card = document.querySelector('a[data-testid="hero-panel"]')
+          const band = card?.closest('section')
+          if (!card || !band) return null
+          return { y: Math.round(card.getBoundingClientRect().top - band.getBoundingClientRect().top) }
         })
 
       await scrollTo(page, 0)
@@ -430,8 +396,8 @@ test.describe('P3A home page, top half', () => {
       const scrolled = await offset()
 
       console.log(`[P3A-05] ${viewport.width}px tag offset at top`, JSON.stringify(atTop), 'scrolled', JSON.stringify(scrolled))
-      expect(atTop, 'the hero has no tag').not.toBeNull()
-      expect(Math.abs(scrolled.y - atTop.y), `the hero tag moved on scroll at ${viewport.width}px`).toBeLessThan(1)
+      expect(atTop, 'the hero has no featured card').not.toBeNull()
+      expect(Math.abs(scrolled.y - atTop.y), `the hero card moved on scroll at ${viewport.width}px`).toBeLessThan(1)
     }
   })
 
@@ -706,7 +672,7 @@ test.describe('P3A home page, top half', () => {
     expect(tabIndexes.filter((index) => index === 0), 'the tablist is not a roving tabindex').toHaveLength(1)
   })
 
-  test('P3A-09 reduced motion freezes the hero and the carousel', async ({ browser }) => {
+  test('P3A-09 reduced motion freezes the hero', async ({ browser }) => {
     const context = await browser.newContext({ reducedMotion: 'reduce' })
     const page = await context.newPage()
     const bucket = watch(page)
@@ -761,25 +727,18 @@ test.describe('P3A home page, top half', () => {
       expect(Math.abs(line.y), 'a headline line is offset under reduced motion').toBeLessThan(1)
     }
 
-    // The carousel must not advance on its own. Nothing hovers the panel here.
-    const selectedIndex = () =>
-      page.evaluate(() =>
-        [...document.querySelectorAll('[role="tablist"][aria-label="Slides"] [role="tab"]')].findIndex(
-          (node) => node.getAttribute('aria-selected') === 'true',
-        ),
-      )
-
-    const before = await selectedIndex()
+    // The featured phone must not change on its own. Nothing hovers the panel here.
+    const card = page.locator('a[data-testid="hero-panel"]')
+    const before = await card.getAttribute('href')
     await page.waitForTimeout(SLIDE_INTERVAL + 2500)
-    const after = await selectedIndex()
+    expect(await card.getAttribute('href'), 'the hero changed phone under reduced motion').toBe(before)
 
-    console.log('[P3A-09] carousel index before', before, 'after', after)
-    expect(after, 'the carousel auto-advanced under reduced motion').toBe(before)
-
-    // And the arrows still work — reduced motion means "no animation", not "no UI".
-    await page.getByTestId('hero-next').click()
-    await page.waitForTimeout(400)
-    expect(await selectedIndex(), 'the next arrow is inert under reduced motion').not.toBe(before)
+    // The floating loops and the card hold still: no tilt is applied without a pointer.
+    const cardTransform = await card.evaluate((node) => getComputedStyle(node).transform)
+    expect(
+      cardTransform === 'none' || /matrix\(1,\s*0,\s*0,\s*1,\s*0,\s*0\)/.test(cardTransform) || /matrix3d\(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1\)/.test(cardTransform),
+      `the hero card is transformed under reduced motion: ${cardTransform}`,
+    ).toBe(true)
 
     const notes = unexpected(bucket)
     expect(notes, notes.join('\n')).toEqual([])
@@ -941,8 +900,10 @@ test.describe('P3A home page, top half', () => {
 
     for (const file of cssFiles) {
       const source = fs.readFileSync(file, 'utf8')
-      for (const block of source.matchAll(/@keyframes\s+[\w-]+\s*\{[\s\S]*?\n\}/g)) {
+      for (const block of source.matchAll(/@keyframes\s+([\w-]+)\s*\{[\s\S]*?\n\}/g)) {
         for (const property of block[0].matchAll(/^\s*([a-z-]+)\s*:/gm)) {
+          // The Loop logo's one-time outline draw (see P1-10's exception).
+          if (block[1] === 'rf-loop-draw' && property[1] === 'stroke-dashoffset') continue
           if (!['transform', 'opacity', 'transform-origin'].includes(property[1])) {
             offenders.push(`${path.relative(FRONTEND, file)} @keyframes ${property[1]}`)
           }

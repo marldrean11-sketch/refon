@@ -222,8 +222,8 @@ export function TradeInPage() {
                   aria-valuenow={answered}
                 >
                   <div
-                    className="h-full rounded-full bg-accent transition-[width] duration-500 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]"
-                    style={{ width: `${(answered / steps.length) * 100}%` }}
+                    className="h-full w-full origin-left rounded-full bg-accent transition-transform duration-500 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]"
+                    style={{ transform: `scaleX(${answered / steps.length})` }}
                   />
                 </div>
               </>

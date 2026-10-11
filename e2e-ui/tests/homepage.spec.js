@@ -38,8 +38,8 @@ test.describe('H1 homepage content and structure', () => {
     const heading = (await page.locator('h1').first().innerText()).replace(/\s+/g, ' ')
     console.log('H1_HERO', heading)
 
-    expect(heading).toMatch(/Know the phone/i)
-    expect(heading).toMatch(/before you buy it/i)
+    expect(heading).toMatch(/Pre-loved phones/i)
+    expect(heading).toMatch(/Tested in the open/i)
 
     const body = (await page.locator('body').innerText()).replace(/\s+/g, ' ')
     expect(body).toMatch(/condition grades/i)
@@ -257,15 +257,15 @@ test.describe('H9 homepage accessibility basics', () => {
 
     await page.goto('/')
     await page.locator('h1').first().waitFor()
-    await page.locator('[data-testid="hero-panel"] [data-testid="refon-tag"]').waitFor({ timeout: 20_000 })
-
-    const heroPanel = await page.locator('section').first().innerText()
+    const card = page.locator('a[data-testid="hero-panel"]')
+    await card.waitFor({ timeout: 20_000 })
 
     // The battery figure in the hero must be the one the API reports, not a
-    // decorative constant.
-    expect(heroPanel, `hero shows the live battery figure for ${hero.model}`).toContain(
-      `${hero.batteryPercent}%`,
-    )
+    // decorative constant. It counts up on arrival, so wait for it to settle.
+    await expect
+      .poll(() => card.innerText(), { message: `hero shows the live battery figure for ${hero.model}` })
+      .toContain(`${hero.batteryPercent}%`)
+    const heroPanel = await card.innerText()
     expect(heroPanel).toContain(hero.model)
     expect(heroPanel).toContain(hero.storage)
   })

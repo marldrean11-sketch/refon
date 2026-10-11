@@ -180,7 +180,7 @@ function Header() {
             onClick={() => open(SURFACE.search)}
             aria-expanded={isSearchOpen}
             aria-haspopup="dialog"
-            className="ml-auto grid size-11 shrink-0 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-page md:ml-0 md:flex md:h-12 md:w-auto md:max-w-[36rem] md:flex-1 md:place-items-start md:items-center md:gap-3 md:border md:border-line-2 md:bg-card md:px-5 md:text-left md:hover:border-accent/60"
+            className="ml-auto grid size-11 shrink-0 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-page md:ml-0 md:flex md:h-12 md:w-auto md:min-w-0 md:max-w-[36rem] md:flex-1 md:place-items-start md:items-center md:gap-3 md:border md:border-line-2 md:bg-card md:px-5 md:text-left md:hover:border-accent/60"
           >
             <Search className="size-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             {/* The visible text is the button's name from `md` up, so what a
@@ -453,6 +453,9 @@ function MobileMenuOverlay() {
   const links = user
     ? [
         ...buyerLinks,
+        ...(user.role === 'BUYER'
+          ? [{ key: 'inquiries', label: 'My inquiries', to: AUTH_ROUTES.myInquiries }]
+          : []),
         { key: 'account', label: 'Account', to: AUTH_ROUTES.account },
         user.role === 'ADMIN'
           ? { key: 'admin', label: 'Admin dashboard', to: AUTH_ROUTES.admin }

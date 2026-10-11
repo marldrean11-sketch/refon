@@ -326,10 +326,10 @@ export function RegisterPage() {
 }
 
 const STRENGTH = [
-  { width: '0%', tone: 'bg-line', text: 'text-subtle', label: '' },
-  { width: '33%', tone: 'bg-grade-c', text: 'text-grade-c', label: 'Mahina' },
-  { width: '66%', tone: 'bg-grade-b', text: 'text-grade-b', label: 'Pwede na' },
-  { width: '100%', tone: 'bg-accent', text: 'text-accent', label: 'Malakas!' },
+  { scale: 0, tone: 'bg-line', text: 'text-subtle', label: '' },
+  { scale: 0.33, tone: 'bg-grade-c', text: 'text-grade-c', label: 'Mahina' },
+  { scale: 0.66, tone: 'bg-grade-b', text: 'text-grade-b', label: 'Pwede na' },
+  { scale: 1, tone: 'bg-accent', text: 'text-accent', label: 'Malakas!' },
 ]
 
 /**
@@ -352,8 +352,8 @@ function PasswordStrength({ password }) {
     <div className="-mt-2 flex items-center gap-3" aria-live="polite">
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
         <div
-          className={`h-full rounded-full ${level.tone} transition-[width] duration-500 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]`}
-          style={{ width: level.width }}
+          className={`h-full w-full origin-left rounded-full ${level.tone} transition-transform duration-500 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]`}
+          style={{ transform: `scaleX(${level.scale})` }}
         />
       </div>
       <span className={`min-w-[4.5rem] text-right font-mono text-[12px] ${level.text}`}>
