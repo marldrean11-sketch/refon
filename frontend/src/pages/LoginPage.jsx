@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AlertCircle, ArrowRight } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
+import { celebrateNextPage } from '../components/layout/WelcomeBurst.jsx'
 import { LogoGlyph } from '../components/ui/BrandMark.jsx'
 import { PasswordField } from '../components/auth/PasswordField.jsx'
 import { TextField } from '../components/ui/TextField.jsx'
@@ -77,6 +78,7 @@ export function LoginPage() {
         clearIntent()
       }
 
+      celebrateNextPage('login')
       navigate(destination, { replace: true })
     } catch (error) {
       const fieldErrors = error.errors ?? {}

@@ -256,7 +256,7 @@ function CheckRow({ check, number, supported, result, isActive, onStart, onFinis
 
   return (
     <li
-      className={`rounded-card border bg-card transition-[border-color,box-shadow] duration-200 ${
+      className={`rf-spotlight rounded-card border bg-card transition-[border-color,box-shadow] duration-200 hover:border-line-2 ${
         isActive ? 'border-accent/60 shadow-card' : result?.status === 'passed' ? 'border-accent/30' : 'border-line'
       }`}
     >

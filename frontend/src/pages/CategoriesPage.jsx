@@ -86,7 +86,7 @@ function CategoryCard({ category }) {
   return (
     <Link
       to={categoryHref(category)}
-      className="group relative flex h-full flex-col overflow-hidden rounded-card-lg border border-line bg-white p-6 shadow-card transition duration-300 hover:-translate-y-1 hover:border-primary-200 hover:shadow-card-hover"
+      className="rf-spotlight group relative flex h-full flex-col overflow-hidden rounded-card-lg border border-line bg-white p-6 shadow-card transition duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-card-hover"
     >
       <div className="relative">
         <PhoneArtwork

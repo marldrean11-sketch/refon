@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Confetti } from './Confetti.jsx'
 
 /** The Loop's path: a phone outline drawn as one stroke that ends in an arrow. */
 const LOOP_PATH =
@@ -10,7 +12,7 @@ const LOOP_PATH =
  * A lime tile holding a phone whose outline is a single stroke that comes back
  * around and ends in an arrowhead: a phone, given another round. On first paint
  * the stroke draws itself and the arrowhead pops in (`.rf-loop-draw` in
- * index.css); `spin` makes it turn once when its parent is hovered, and `loading`
+ * index.css); it turns once when its parent link is hovered, and `loading`
  * keeps it turning, which is how the same mark doubles as the spinner.
  *
  * `inverse` swaps the tile to near-black with a lime outline, for lime panels.
@@ -53,7 +55,13 @@ export function Wordmark({ inverse = false, className = 'text-[1.35rem] sm:text-
   )
 }
 
-/** The lockup: Loop beside the wordmark, as a link home. */
+/**
+ * The lockup: Loop beside the wordmark, as a link home.
+ *
+ * A click squashes the tile, spins it once with a bounce and pops a little lime
+ * confetti, while the link still takes the visitor home. Reduced motion keeps
+ * the navigation and drops the effect (index.css).
+ */
 export function BrandMark({
   inverse = false,
   compact = false,
@@ -61,14 +69,35 @@ export function BrandMark({
   wordmarkClassName = '',
   onClick,
 }) {
+  // `burst` only ever counts up, so each click remounts the glyph to replay the
+  // spin; `active` turns the confetti off again once its flight is over.
+  const [burst, setBurst] = useState(0)
+  const [active, setActive] = useState(false)
+
+  useEffect(() => {
+    if (!active) return undefined
+    const timer = window.setTimeout(() => setActive(false), 900)
+    return () => window.clearTimeout(timer)
+  }, [active, burst])
+
   return (
     <Link
       to="/"
-      onClick={onClick}
+      onClick={(event) => {
+        setBurst((count) => count + 1)
+        setActive(true)
+        onClick?.(event)
+      }}
       aria-label="ReFon home"
+      data-testid="brand-mark"
       className={`group inline-flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page ${className}`}
     >
-      <LogoGlyph className="size-9 shrink-0 sm:size-10" inverse={inverse} />
+      <span className="relative shrink-0">
+        <span key={burst} className={`block ${burst ? 'rf-logo-click' : ''}`}>
+          <LogoGlyph className="size-9 sm:size-10" inverse={inverse} draw={burst === 0} />
+        </span>
+        <Confetti active={active} burstKey={burst} />
+      </span>
       {!compact && (
         <Wordmark inverse={inverse} className={`text-[1.35rem] sm:text-[1.5rem] ${wordmarkClassName}`} />
       )}

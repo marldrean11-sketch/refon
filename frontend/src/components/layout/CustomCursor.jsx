@@ -5,7 +5,8 @@ const INTERACTIVE = 'a, button, input, select, textarea, label, [role="button"],
 
 /**
  * The lime cursor dot: a small dot that follows the mouse and opens into a ring
- * over anything clickable.
+ * over anything clickable. The same listener drives the glow on `.rf-spotlight`
+ * cards.
  *
  * Desktop mice only. It never renders on touch screens, and reduced motion turns
  * it off entirely, since a trailing cursor is motion the visitor did not ask for.
@@ -30,6 +31,14 @@ export function CustomCursor() {
     if (!enabled) return undefined
 
     function onMove(event) {
+      // The card spotlight: one listener for every `.rf-spotlight` on the page.
+      const card = event.target.closest?.('.rf-spotlight')
+      if (card) {
+        const rect = card.getBoundingClientRect()
+        card.style.setProperty('--mx', `${event.clientX - rect.left}px`)
+        card.style.setProperty('--my', `${event.clientY - rect.top}px`)
+      }
+
       const dot = dotRef.current
       if (dot) {
         dot.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`

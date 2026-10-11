@@ -49,7 +49,7 @@ export function HowItWorksPage() {
             return (
               <li
                 key={entry.step}
-                className="relative overflow-hidden rounded-card-lg border border-line bg-white p-6 shadow-card"
+                className="rf-spotlight rf-lift hover:border-accent/40 relative overflow-hidden rounded-card-lg border border-line bg-white p-6 shadow-card"
               >
                 <span
                   className="absolute -right-3 -top-5 font-display text-7xl font-bold text-primary-50"
@@ -92,7 +92,7 @@ export function HowItWorksPage() {
           {SELLER_STEPS.map((entry) => (
             <li
               key={entry.step}
-              className="rounded-card-lg border border-line bg-white p-6 shadow-card"
+              className="rf-spotlight rf-lift hover:border-accent/40 rounded-card-lg border border-line bg-white p-6 shadow-card"
             >
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-accent-700">
                 Step {entry.step}
@@ -124,7 +124,7 @@ export function HowItWorksPage() {
           {TRUST_PILLARS.map((pillar, index) => (
             <article
               key={pillar.id}
-              className="rounded-card-lg border border-line bg-white p-6 shadow-card"
+              className="rf-spotlight rf-lift hover:border-accent/40 rounded-card-lg border border-line bg-white p-6 shadow-card"
             >
               <span className="font-display text-sm font-bold text-primary-600">
                 0{index + 1}

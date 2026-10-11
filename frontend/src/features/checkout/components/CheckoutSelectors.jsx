@@ -20,7 +20,7 @@ function OptionCard({ name, value, checked, onChange, title, description, meta, 
       className={`relative flex items-start gap-3.5 rounded-2xl border p-4 transition duration-200 ${
         checked
           ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-500'
-          : 'border-line bg-white hover:border-primary-200 hover:bg-primary-50/40'
+          : 'rf-spotlight border-line bg-white hover:-translate-y-0.5 hover:border-accent/40'
       }`}
     >
       <input

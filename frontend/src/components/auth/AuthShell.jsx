@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { BadgeCheck, ClipboardCheck, ScanSearch } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { usePrefersReducedMotion } from '../../lib/motion.ts'
 import { BrandMark, LogoGlyph } from '../ui/BrandMark.jsx'
+import { FloatingLoops } from '../brand/FloatingLoops.jsx'
 
 /**
  * The three promises on the lime panel: what is actually checked, said plainly,
@@ -39,10 +41,26 @@ export function AuthShell({
   lede = 'Your saved phones, your cart holds and your seller inquiries are waiting.',
 }) {
   const reduceMotion = usePrefersReducedMotion()
+  // The two phones lean toward the pointer: a few pixels of drift, mouse only.
+  const [lean, setLean] = useState({ x: 0, y: 0 })
+
+  function onPointerMove(event) {
+    if (reduceMotion || event.pointerType !== 'mouse') return
+    const rect = event.currentTarget.getBoundingClientRect()
+    setLean({
+      x: ((event.clientX - rect.left) / rect.width - 0.5) * 2,
+      y: ((event.clientY - rect.top) / rect.height - 0.5) * 2,
+    })
+  }
 
   return (
     <div className="min-h-screen bg-page lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(30rem,1.05fr)]">
-      <aside className="relative hidden min-h-[100dvh] overflow-hidden bg-accent px-10 py-12 text-page lg:flex lg:flex-col xl:px-14">
+      <aside
+        onPointerMove={onPointerMove}
+        onPointerLeave={() => setLean({ x: 0, y: 0 })}
+        className="relative hidden min-h-[100dvh] overflow-hidden bg-accent px-10 py-12 text-page lg:flex lg:flex-col xl:px-14"
+      >
+        <FloatingLoops floor={false} loopClassName="text-page" className="opacity-40" />
         <div className="relative z-10">
           <BrandMark inverse />
         </div>
@@ -68,15 +86,25 @@ export function AuthShell({
 
         <div className="relative z-10 my-8 min-h-[16rem] flex-1" aria-hidden="true">
           <div className="rf-float absolute left-[10%] top-6">
+            <div
+              className="transition-transform duration-300 ease-out"
+              style={{ transform: `translate3d(${lean.x * 14}px, ${lean.y * 10}px, 0) rotate(${lean.x * 4}deg)` }}
+            >
             <div className="relative h-60 w-32 -rotate-6 rounded-[28px] border-4 border-page bg-page shadow-2xl">
               <div className="absolute inset-x-3 bottom-4 rounded-xl bg-accent/90 px-2 py-1.5 text-center font-mono text-[11px] font-semibold text-page">
                 BATT 91%
               </div>
             </div>
+            </div>
           </div>
           <div className="rf-float absolute left-[42%] top-14" style={{ animationDelay: '0.8s' }}>
+            <div
+              className="transition-transform duration-300 ease-out"
+              style={{ transform: `translate3d(${lean.x * -10}px, ${lean.y * 14}px, 0) rotate(${lean.x * -5}deg)` }}
+            >
             <div className="relative h-56 w-28 rotate-6 rounded-[26px] border-4 border-page bg-chalk shadow-2xl">
               <LogoGlyph className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2" draw={false} />
+            </div>
             </div>
           </div>
         </div>
@@ -112,7 +140,7 @@ export function AuthShell({
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
-            className="w-full max-w-md"
+            className="rf-stagger w-full max-w-md"
           >
             {children}
           </motion.div>

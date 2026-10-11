@@ -142,7 +142,7 @@ export function TradeInPage() {
       <Container className="grid gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
         <ol className="grid gap-4" aria-label="Trade-in questions">
           {steps.map((step, index) => (
-            <li key={step.key} className="rounded-card-lg border border-line bg-card p-5 sm:p-6">
+            <li key={step.key} className="rf-spotlight rounded-card-lg border border-line bg-card p-5 transition-colors duration-200 hover:border-line-2 sm:p-6">
               <fieldset>
                 <legend className="flex items-center gap-3">
                   <span className="font-mono text-xs text-accent">{String(index + 1).padStart(2, '0')}</span>

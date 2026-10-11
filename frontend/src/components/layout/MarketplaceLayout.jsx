@@ -8,6 +8,8 @@ import { EmailVerificationBanner } from '../auth/EmailVerificationBanner.jsx'
 import { PageTransition } from './PageTransition.jsx'
 import { LoadingScreen } from '../ui/LoadingScreen.jsx'
 import { CustomCursor } from './CustomCursor.jsx'
+import { BackToTop } from './BackToTop.jsx'
+import { WelcomeBurst } from './WelcomeBurst.jsx'
 
 /**
  * The public marketplace shell.
@@ -51,6 +53,8 @@ export function MarketplaceLayout() {
 
       <SiteFooter />
       <CompareTray hidden={pathname === MARKETPLACE_ROUTES.compare} />
+      <BackToTop />
+      <WelcomeBurst />
       <CustomCursor />
     </div>
   )

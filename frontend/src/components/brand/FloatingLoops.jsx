@@ -24,7 +24,7 @@ const LOOPS = Object.freeze([
  * in a `relative` layer above it. Reduced-motion collapses every animation in
  * `index.css`, which leaves a still grid and a few outlines.
  */
-export function FloatingLoops({ className = '', floor = true, density = 'full' }) {
+export function FloatingLoops({ className = '', floor = true, density = 'full', loopClassName = 'text-accent' }) {
   const loops = density === 'light' ? LOOPS.filter((_, i) => i % 2 === 0) : LOOPS
 
   return (
@@ -33,7 +33,7 @@ export function FloatingLoops({ className = '', floor = true, density = 'full' }
       {loops.map((loop) => (
         <span
           key={loop.left}
-          className="rf-rising-loop text-accent"
+          className={`rf-rising-loop ${loopClassName}`}
           style={{
             left: loop.left,
             width: loop.size,

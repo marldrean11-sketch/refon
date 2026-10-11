@@ -262,6 +262,11 @@
     animation: rf-spin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
+  /** The logo's click: squash, then one bouncy spin back to rest. */
+  .rf-logo-click {
+    animation: rf-logo-click 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
   .rf-loop-spin {
     animation: rf-spin 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
   }
@@ -277,6 +282,19 @@
 
   .rf-bounce:active {
     transform: scale(0.93);
+  }
+
+  /**
+   * A soft lime glow that follows the cursor across a card. `--mx`/`--my` are
+   * set by the pointer listener in `CustomCursor`; until then the glow sits off
+   * the card, so a touch screen never shows it.
+   */
+  .rf-spotlight {
+    background-image: radial-gradient(
+      320px circle at var(--mx, -999px) var(--my, -999px),
+      rgb(198 255 61 / 0.08),
+      transparent 65%
+    );
   }
 
   /** Cards that lift and tip a little toward the visitor. */
@@ -324,6 +342,31 @@
 
   .rf-float {
     animation: rf-float 3.2s ease-in-out infinite;
+  }
+
+  /** Form rows rise in one after another (the auth pages). */
+  .rf-stagger form > * {
+    animation: rf-rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .rf-stagger form > *:nth-child(2) {
+    animation-delay: 0.05s;
+  }
+
+  .rf-stagger form > *:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+
+  .rf-stagger form > *:nth-child(4) {
+    animation-delay: 0.15s;
+  }
+
+  .rf-stagger form > *:nth-child(5) {
+    animation-delay: 0.2s;
+  }
+
+  .rf-stagger form > *:nth-child(n + 6) {
+    animation-delay: 0.25s;
   }
 
   /** Staggered entrance for a hero's lines. */
@@ -504,5 +547,17 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes rf-logo-click {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+  18% {
+    transform: scale(0.82, 0.72) rotate(0);
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
   }
 }

@@ -96,7 +96,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
       whileHover={reduceMotion || preview ? undefined : { y: -3 }}
       whileTap={reduceMotion || preview ? undefined : { scale: 0.995 }}
       transition={standardTransition}
-      className="group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-200 hover:border-primary-400 hover:shadow-card-hover"
+      className="rf-spotlight group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:border-accent/40 hover:shadow-card-hover"
     >
       {!preview && (
         <Link

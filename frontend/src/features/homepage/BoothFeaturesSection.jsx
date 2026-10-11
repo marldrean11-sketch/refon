@@ -48,7 +48,7 @@ export function BoothFeaturesSection() {
                 className={`rf-lift group flex h-full min-h-[270px] flex-col gap-4 rounded-[28px] p-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page ${
                   tile.filled
                     ? 'bg-accent text-page'
-                    : 'border border-line-2 bg-card text-ink hover:border-accent/60'
+                    : 'rf-spotlight border border-line-2 bg-card text-ink hover:border-accent/60'
                 }`}
               >
                 <span

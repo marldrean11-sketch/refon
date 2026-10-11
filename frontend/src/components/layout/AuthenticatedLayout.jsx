@@ -2,6 +2,8 @@ import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import { SiteFooter } from '../../features/design/SiteFooter.jsx'
 import { CustomCursor } from './CustomCursor.jsx'
+import { BackToTop } from './BackToTop.jsx'
+import { WelcomeBurst } from './WelcomeBurst.jsx'
 import { SiteHeader } from '../../features/design/SiteHeader.jsx'
 import { EmailVerificationBanner } from '../auth/EmailVerificationBanner.jsx'
 import { PageTransition } from './PageTransition.jsx'
@@ -41,6 +43,8 @@ export function AuthenticatedLayout() {
       </main>
 
       <SiteFooter />
+      <BackToTop />
+      <WelcomeBurst />
       <CustomCursor />
     </div>
   )

@@ -179,7 +179,7 @@ export function ListingGallery({ listing }) {
   return (
     <div>
       <div
-        className="group relative aspect-[4/3] overflow-hidden rounded-card border border-line bg-surface sm:aspect-[4/3] lg:aspect-[4/3]"
+        className="group group/stage relative aspect-[4/3] overflow-hidden rounded-card border border-line bg-surface sm:aspect-[4/3] lg:aspect-[4/3]"
         role="region"
         aria-label={`${listing.brand} ${listing.model} gallery, showing ${activeLabel}`}
         aria-roledescription="carousel"
@@ -211,7 +211,9 @@ export function ListingGallery({ listing }) {
             transition={standardTransition}
             className="h-full w-full"
           >
-            {renderView(activeView, activeLabel, { eager: true })}
+            <div className="h-full w-full transition-transform duration-500 ease-out group-hover/stage:scale-[1.04]">
+              {renderView(activeView, activeLabel, { eager: true })}
+            </div>
           </motion.div>
         </AnimatePresence>
 

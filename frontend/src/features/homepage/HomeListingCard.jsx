@@ -35,7 +35,7 @@ export function HomeListingCard({ listing }) {
         to={productPath(listing)}
         data-testid="arrivals-card"
         data-listing={listing.id}
-        className="group flex h-full flex-col rounded-card border border-line bg-card p-5 shadow-card transition-shadow duration-200 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+        className="rf-spotlight group flex h-full flex-col rounded-card border border-line bg-card p-5 shadow-card transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:border-accent/40 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
