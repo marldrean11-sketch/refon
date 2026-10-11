@@ -35,6 +35,8 @@ export default {
          * fill is near-black.
          */
         white: '#16191e',
+        /** True light type, for text on photos and device screens that stay dark. */
+        chalk: '#f2f4f0',
 
         /** Text: chalk, then two greys. `subtle` is never used on a control. */
         ink: '#f2f4f0',

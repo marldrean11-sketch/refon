@@ -53,7 +53,7 @@ export function FinalCtaSection() {
             <div className="mt-5 flex flex-col gap-3">
               <ButtonLink
                 to={MARKETPLACE_ROUTES.shop}
-                variant="light"
+                variant="primary"
                 size="lg"
                 className="group"
               >

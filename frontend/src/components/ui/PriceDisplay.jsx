@@ -63,7 +63,7 @@ export function PriceDisplay({
           </p>
         )}
         {hasDiscount && inlineChip && (
-          <span className="rounded-sm bg-flare-500 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-dark">
+          <span className="rounded-sm bg-flare-500 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-page">
             Save {percentOff}%
           </span>
         )}
@@ -71,7 +71,7 @@ export function PriceDisplay({
       {hasDiscount && showSavings && (
         <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-flare-700">
           {!inlineChip && (
-            <span className="rounded-sm bg-flare-500 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-dark">
+            <span className="rounded-sm bg-flare-500 px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-page">
               Save {percentOff}%
             </span>
           )}

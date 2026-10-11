@@ -7,6 +7,7 @@ import { SiteHeader } from '../../features/design/SiteHeader.jsx'
 import { EmailVerificationBanner } from '../auth/EmailVerificationBanner.jsx'
 import { PageTransition } from './PageTransition.jsx'
 import { LoadingScreen } from '../ui/LoadingScreen.jsx'
+import { CustomCursor } from './CustomCursor.jsx'
 
 /**
  * The public marketplace shell.
@@ -50,6 +51,7 @@ export function MarketplaceLayout() {
 
       <SiteFooter />
       <CompareTray hidden={pathname === MARKETPLACE_ROUTES.compare} />
+      <CustomCursor />
     </div>
   )
 }

@@ -9,24 +9,29 @@ import { ImageIcon } from 'lucide-react'
  * instead and this is never used.
  */
 
+/**
+ * The backdrop behind each brand's illustration: dark, with a faint tint of the
+ * brand so a grid of cards is not one flat colour. The device body carries the
+ * listing's real colour on top of it.
+ */
 const BRAND_SURFACES = {
-  Apple: { from: '#f4f4f1', via: '#e8e8e2', to: '#d8d8cf', glow: 'rgba(120,133,138,0.22)' },
-  Samsung: { from: '#f3f5f6', via: '#e6ebee', to: '#d6dee2', glow: 'rgba(37,99,235,0.16)' },
-  Google: { from: '#f5f4f2', via: '#eaeae6', to: '#dbdcd6', glow: 'rgba(79,70,229,0.16)' },
-  Xiaomi: { from: '#faf5ef', via: '#f0e6da', to: '#e3d4c2', glow: 'rgba(217,119,6,0.16)' },
-  Oppo: { from: '#f2f7f4', via: '#e4eee8', to: '#d3e2d8', glow: 'rgba(5,150,105,0.16)' },
-  Vivo: { from: '#f2f5f8', via: '#e3eaf0', to: '#d2dde7', glow: 'rgba(14,165,233,0.16)' },
-  OnePlus: { from: '#faf3f2', via: '#f0e3e1', to: '#e2cecb', glow: 'rgba(185,28,28,0.15)' },
-  Realme: { from: '#faf7f0', via: '#efe8da', to: '#e0d5c1', glow: 'rgba(217,119,6,0.15)' },
-  Nokia: { from: '#f5f5f2', via: '#e9e9e3', to: '#d9d9d1', glow: 'rgba(71,85,105,0.16)' },
-  Huawei: { from: '#faf4ef', via: '#efe3d9', to: '#e0cdbd', glow: 'rgba(234,88,12,0.15)' },
+  Apple: { from: '#1e2228', via: '#191c21', to: '#121418', glow: 'rgba(198,255,61,0.12)' },
+  Samsung: { from: '#1a2030', via: '#171b25', to: '#121418', glow: 'rgba(96,140,255,0.16)' },
+  Google: { from: '#1f1d2a', via: '#191a22', to: '#121418', glow: 'rgba(150,130,255,0.16)' },
+  Xiaomi: { from: '#2a2019', via: '#1f1b18', to: '#121418', glow: 'rgba(255,165,38,0.14)' },
+  Oppo: { from: '#17241f', via: '#161e1b', to: '#121418', glow: 'rgba(61,255,170,0.12)' },
+  Vivo: { from: '#172330', via: '#151c24', to: '#121418', glow: 'rgba(61,200,255,0.14)' },
+  OnePlus: { from: '#2a1a1a', via: '#201819', to: '#121418', glow: 'rgba(255,107,92,0.14)' },
+  Realme: { from: '#29241a', via: '#1f1d18', to: '#121418', glow: 'rgba(255,200,61,0.14)' },
+  Nokia: { from: '#1d2126', via: '#181b20', to: '#121418', glow: 'rgba(180,190,200,0.12)' },
+  Huawei: { from: '#2a1d17', via: '#201a17', to: '#121418', glow: 'rgba(255,122,92,0.14)' },
 }
 
 const DEFAULT_SURFACE = {
-  from: '#f4f4f1',
-  via: '#e8e8e2',
-  to: '#d8d8cf',
-  glow: 'rgba(17,22,26,0.14)',
+  from: '#1e2228',
+  via: '#191c21',
+  to: '#121418',
+  glow: 'rgba(198,255,61,0.1)',
 }
 
 /** Maps the free-text colour on a listing to a real device body colour. */
@@ -312,7 +317,7 @@ export function PhoneArtwork({
               <>
                 <CameraCluster layout={layout} trim={body.trim} />
                 <div className="absolute bottom-3 left-1/2 h-[38%] w-[22%] -translate-x-1/2 rounded-[45%] border border-white/10" />
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase tracking-[0.2em] text-white/45">
+                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase tracking-[0.2em] text-chalk/45">
                   {brand}
                 </span>
               </>
@@ -358,13 +363,13 @@ function ScreenContent({ batteryPercent, brand }) {
       <div>
         {batteryPercent != null ? (
           <>
-            <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-white/55">
+            <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-chalk/55">
               Battery health
             </p>
-            <p className="font-mono text-lg font-semibold tabular-nums leading-none text-white">
+            <p className="font-mono text-lg font-semibold tabular-nums leading-none text-chalk">
               {batteryPercent}%
             </p>
-            <div className="mt-1.5 h-1 overflow-hidden rounded-[2px] bg-white/20">
+            <div className="mt-1.5 h-1 overflow-hidden rounded-[2px] bg-chalk/20">
               <div
                 className="h-full rounded-[2px] bg-accent-300"
                 style={{ width: `${batteryPercent}%` }}
@@ -373,10 +378,10 @@ function ScreenContent({ batteryPercent, brand }) {
           </>
         ) : (
           <>
-            <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-white/55">
+            <p className="text-[7px] font-bold uppercase tracking-[0.16em] text-chalk/55">
               Tested device
             </p>
-            <p className="font-display text-lg font-bold leading-none text-white">
+            <p className="font-display text-lg font-bold leading-none text-chalk">
               {brandLabelInitials(brand)}
             </p>
           </>
@@ -386,7 +391,7 @@ function ScreenContent({ batteryPercent, brand }) {
         {[38, 62, 88, 100].map((height) => (
           <span
             key={height}
-            className="flex-1 rounded-t-sm bg-white/35"
+            className="flex-1 rounded-t-sm bg-chalk/35"
             style={{ height: `${height * 0.24}px` }}
           />
         ))}

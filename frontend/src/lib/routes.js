@@ -41,6 +41,7 @@ export const MARKETPLACE_ROUTES = Object.freeze({
   qualityCheck: '/quality-check',
   /** The in-browser self-test a visitor runs on the phone in their hand. */
   healthCheck: '/health-check',
+  tradeIn: '/trade-in',
   compare: '/compare',
   cart: '/cart',
   checkout: '/checkout',

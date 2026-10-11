@@ -1,8 +1,9 @@
 /**
  * The footer.
  *
- * Four link columns, a newsletter field, and a wordmark that arrives when it
- * scrolls into view.
+ * Link columns, contact details, social links, the team credit, a newsletter
+ * field, and a wordmark that arrives when it scrolls into view. Contact, socials
+ * and credits come from `content/site-info.js`.
  *
  * The columns are assembled from `navigation-config.js` rather than restated, so
  * the footer cannot drift from the header, the drawer, and the tab bar. `How we
@@ -17,8 +18,10 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Mail, MapPin, Phone } from "lucide-react";
 import { BrandMark } from "../../components/ui/BrandMark.jsx";
+import { FloatingLoops } from "../../components/brand/FloatingLoops.jsx";
+import { SITE_INFO, boothLabel } from "../../content/site-info.js";
 import { useAuth } from "../auth/useAuth.js";
 import { AUTH_ROUTES, MARKETPLACE_ROUTES } from "../../lib/routes.js";
 import { canSeeBuyerDestinations } from "./navigation-config.js";
@@ -72,17 +75,37 @@ const COLUMNS = [
 ];
 
 /**
- * Contrast on the dark panel.
- *
- * White on Night `#0D1633` is 17.8:1. The muted step used for supporting text
- * is `#A3ACC8`, a navy-tinted grey at 7.9:1 — comfortably past the 4.5:1 AA
- * threshold for body text. The green is `#34D399`, safe for text as well as icons.
+ * Social glyphs, drawn inline: Lucide no longer ships brand marks. Simple
+ * outline forms in `currentColor`, so they match the other footer icons.
  */
-const MUTED_ON_DARK = "#a3acc8";
-const ACCENT_ON_DARK = "#34d399";
+function FacebookIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M15 3h-2.5A3.5 3.5 0 0 0 9 6.5V10H7v3.5h2V21h3.5v-7.5H15l.5-3.5h-3V7a1 1 0 0 1 1-1H15z" />
+    </svg>
+  );
+}
 
-/** The wordmark's tone: 3.3:1 on Night, which clears the 3:1 large-text floor. */
-const WORDMARK_ON_DARK = "#5d6890";
+function InstagramIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+function TikTokIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5" />
+      <path d="M14 3c.4 2.6 2.2 4.3 5 4.5" />
+    </svg>
+  );
+}
+
+const SOCIAL_ICONS = { facebook: FacebookIcon, instagram: InstagramIcon, tiktok: TikTokIcon };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -124,25 +147,25 @@ export function SiteFooter() {
   return (
     <footer
       data-testid="site-footer"
-      className="mt-auto overflow-hidden bg-dark text-white"
+      className="relative mt-auto overflow-hidden border-t border-line bg-panel text-ink"
     >
       {/* The extra bottom clearance clears the mobile tab bar, which is fixed to
           the viewport until the desktop navigation takes over at `lg`. */}
-      <div className="mx-auto w-full max-w-7xl px-4 pb-32 pt-14 sm:px-6 lg:px-8 lg:pb-10">
+      <FloatingLoops floor={false} density="light" className="opacity-60" />
+      <div className="relative mx-auto w-full max-w-7xl px-4 pb-32 pt-14 sm:px-6 lg:px-8 lg:pb-10">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_repeat(5,1fr)] lg:gap-8">
           <div className="sm:col-span-2 lg:col-span-1">
-            <BrandMark inverse className="focus-visible:ring-offset-dark" />
+            <BrandMark />
 
-            <p
-              className="mt-5 max-w-sm text-sm leading-relaxed"
-              style={{ color: MUTED_ON_DARK }}
-            >
-              A marketplace for tested refurbished phones. Every listing
-              publishes its condition grade, measured battery health, and
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted">
+              {SITE_INFO.tagline} A marketplace for tested pre-loved phones.
+              Every listing publishes its grade, measured battery health, and
               warranty term before you decide anything.
             </p>
 
-            <dl className="mt-7 max-w-sm border-t border-white/15 pt-5 text-sm">
+            <ContactBlock />
+
+            <dl className="mt-7 max-w-sm border-t border-line pt-5 text-sm">
               {[
                 ["11", "inspection checks per phone"],
                 ["A / B / C", "published condition grade"],
@@ -152,13 +175,10 @@ export function SiteFooter() {
                   key={label}
                   className="grid grid-cols-[6.5rem_1fr] items-baseline gap-3 py-1.5"
                 >
-                  <dt
-                    className="font-semibold tabular-nums"
-                    style={{ color: ACCENT_ON_DARK }}
-                  >
+                  <dt className="font-mono font-semibold tabular-nums text-accent">
                     {value}
                   </dt>
-                  <dd style={{ color: MUTED_ON_DARK }}>{label}</dd>
+                  <dd className="text-muted">{label}</dd>
                 </div>
               ))}
             </dl>
@@ -180,14 +200,12 @@ export function SiteFooter() {
 
         <GiantWordmark reduced={reducedMotion} />
 
-        <div className="mt-8 flex flex-col gap-3 border-t border-white/15 pt-6 text-[13px] sm:flex-row sm:items-center sm:justify-between">
-          <p style={{ color: MUTED_ON_DARK }}>
-            © {new Date().getFullYear()} ReFon. Refurbished, with the
-            measurements published.
-          </p>
-          <p style={{ color: MUTED_ON_DARK }}>
-            Free standard delivery over ₱15,000 · 7-day returns
-          </p>
+        <div className="mt-8 flex flex-col gap-4 border-t border-line pt-6 text-[13px] text-muted sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <p>© {new Date().getFullYear()} ReFon. Pre-loved, with the measurements published.</p>
+            <p data-testid="footer-credits" className="text-subtle">{SITE_INFO.credits}</p>
+          </div>
+          <SocialLinks />
         </div>
       </div>
     </footer>
@@ -201,7 +219,7 @@ function FooterColumn({ title, links, user }) {
           `index.css` sets `text-ink` on every `h1`–`h6` in the base layer, so a
           heading inside the dark footer picks up near-black text unless it says
           otherwise — which is exactly what happened here. */}
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.12em] text-white">
+      <h2 className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-accent">
         {title}
       </h2>
       <ul className="mt-4 flex flex-col gap-2.5">
@@ -216,8 +234,7 @@ function FooterColumn({ title, links, user }) {
                 to={gated ? AUTH_ROUTES.login : link.to}
                 state={gated ? { from: MARKETPLACE_ROUTES.cart } : undefined}
                 data-testid="footer-link"
-                className="text-[15px] transition-colors duration-150 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-dark"
-                style={{ color: MUTED_ON_DARK }}
+                className="text-[15px] text-muted transition-colors duration-150 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
               >
                 {link.label}
               </Link>
@@ -283,7 +300,7 @@ function NewsletterForm({ reduced }) {
     >
       <label
         htmlFor="newsletter-email"
-        className="block text-[13px] font-semibold uppercase tracking-[0.12em] text-white"
+        className="block font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-accent"
       >
         Product drops
       </label>
@@ -300,12 +317,12 @@ function NewsletterForm({ reduced }) {
           aria-invalid={Boolean(error)}
           aria-describedby={error ? "newsletter-error" : "newsletter-hint"}
           placeholder="you@example.com"
-          className="min-h-11 min-w-0 flex-1 rounded-control border border-white/25 bg-transparent px-3 text-[15px] text-white placeholder:text-white/40 transition-colors duration-150 hover:border-white/40 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
+          className="min-h-11 min-w-0 flex-1 rounded-control border border-line-2 bg-card px-4 text-[15px] text-ink placeholder:text-subtle transition-colors duration-150 hover:border-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40"
         />
         <button
           type="submit"
           data-testid="newsletter-submit"
-          className="min-h-11 shrink-0 rounded-control bg-accent px-4 text-[15px] font-semibold text-dark transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-dark"
+          className="rf-bounce min-h-11 shrink-0 rounded-control bg-accent px-5 text-[15px] font-semibold text-page transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel"
         >
           Join
         </button>
@@ -316,7 +333,7 @@ function NewsletterForm({ reduced }) {
           id="newsletter-error"
           data-testid="newsletter-error"
           role="alert"
-          className="mt-2 text-[13px] text-red-300"
+          className="mt-2 text-[13px] text-danger"
         >
           {error}
         </p>
@@ -326,7 +343,7 @@ function NewsletterForm({ reduced }) {
           initial={reduced ? false : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={reduced ? { duration: 0 } : { duration: 0.25 }}
-          className="mt-2 flex items-center gap-2 text-[13px] text-white"
+          className="mt-2 flex items-center gap-2 text-[13px] text-accent"
         >
           <Check
             className="size-4 shrink-0"
@@ -337,11 +354,7 @@ function NewsletterForm({ reduced }) {
           sent.
         </motion.p>
       ) : (
-        <p
-          id="newsletter-hint"
-          className="mt-2 text-[13px]"
-          style={{ color: MUTED_ON_DARK }}
-        >
+        <p id="newsletter-hint" className="mt-2 text-[13px] text-muted">
           Occasional notes on what we list and what we test.
         </p>
       )}
@@ -361,10 +374,8 @@ function NewsletterForm({ reduced }) {
  *   - **No clipping.** `leading-[0.78]` with `overflow-hidden` cut the bowls of
  *     the `e` and `o` off flat, so the wordmark read as a slab of broken
  *     letterforms. The line box is now tall enough for the glyphs.
- *   - **A real tone.** At 23vw this is large text, so AA asks for 3:1. The
- *     original 7%-white fill measured 1.17:1 and axe flagged it. `#5D6890` is
- *     3.26:1 on Night — quiet against the navy panel, and readable,
- *     which a wordmark should be.
+ *   - **Decorative only.** It is `aria-hidden` and repeats the logo above, so
+ *     its quiet tone is a deliberate echo rather than text anyone must read.
  */
 function GiantWordmark({ reduced }) {
   return (
@@ -380,19 +391,87 @@ function GiantWordmark({ reduced }) {
       className="pointer-events-none mt-8 select-none"
     >
       <span
-        className="block whitespace-nowrap text-center font-display font-black leading-none tracking-[-0.04em]"
+        className="block whitespace-nowrap text-center font-display font-extrabold leading-none tracking-[-0.05em] text-line-2"
         style={{
           // Sized in viewport units so it spans the width at every breakpoint
           // without a media query, capped at 20rem so it cannot outgrow the
           // footer on a very wide display, and stepped *up* from plain `vw` on
           // narrow screens — at 23vw a 390px phone got a 90px wordmark, which
           // reads as a heading rather than the closing signature it is.
-          fontSize: "min(24vw, 17rem)",
-          color: WORDMARK_ON_DARK,
+          fontSize: "min(22vw, 16rem)",
         }}
       >
-        refon
+        re<span className="text-accent/70">fon</span>
       </span>
     </motion.div>
+  );
+}
+
+/** Email, phone, and where to find the booth. */
+function ContactBlock() {
+  const { contact, location } = SITE_INFO;
+  const row = "flex items-start gap-2.5 text-sm text-muted";
+  return (
+    <ul data-testid="footer-contact" className="mt-6 flex max-w-sm flex-col gap-2.5">
+      <li className={row}>
+        <Mail className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={1.75} aria-hidden="true" />
+        <a href={`mailto:${contact.email}`} className="break-all transition-colors hover:text-accent">
+          {contact.email}
+        </a>
+      </li>
+      <li className={row}>
+        <Phone className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={1.75} aria-hidden="true" />
+        <a href={contact.phoneHref} className="transition-colors hover:text-accent">
+          {contact.phone}
+        </a>
+      </li>
+      <li className={row}>
+        <MapPin className="mt-0.5 size-4 shrink-0 text-accent" strokeWidth={1.75} aria-hidden="true" />
+        <span>
+          {location.venue}, {location.city}
+          <br />
+          {boothLabel(location)}
+        </span>
+      </li>
+    </ul>
+  );
+}
+
+/**
+ * Social icons. An account without an `href` yet is shown, so the layout is
+ * final, but rendered as a disabled placeholder rather than a link to nowhere.
+ */
+function SocialLinks() {
+  return (
+    <ul data-testid="footer-socials" className="flex items-center gap-2">
+      {SITE_INFO.socials.map((social) => {
+        const Icon = SOCIAL_ICONS[social.id] ?? TikTokIcon;
+        const base =
+          "grid size-11 place-items-center rounded-full border border-line-2 text-ink transition-colors duration-150";
+        return (
+          <li key={social.id}>
+            {social.href ? (
+              <a
+                href={social.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`ReFon on ${social.label}`}
+                className={`rf-bounce ${base} hover:border-accent hover:text-accent`}
+              >
+                <Icon className="size-[18px]" aria-hidden="true" />
+              </a>
+            ) : (
+              <span
+                aria-label={`${social.label} (coming soon)`}
+                title={`${social.label}: coming soon`}
+                className={`${base} cursor-not-allowed opacity-50`}
+              >
+                <Icon className="size-[18px]" aria-hidden="true" />
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

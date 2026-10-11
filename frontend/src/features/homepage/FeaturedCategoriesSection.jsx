@@ -110,7 +110,7 @@ export function FeaturedCategoriesSection() {
       <Container size="full" className="px-4 sm:px-6 lg:px-8">
         {/* The statement line: the one sentence the whole homepage stands on,
             set big enough to read as the page's second headline. */}
-        <p className="max-w-5xl font-display text-[clamp(2rem,5vw,4rem)] font-black leading-[1.02] tracking-[-0.035em] text-night [text-wrap:balance]">
+        <p className="max-w-5xl font-display text-[clamp(2rem,5vw,4rem)] font-black leading-[1.02] tracking-[-0.035em] text-ink [text-wrap:balance]">
           Secondhand phones, checked before they&rsquo;re listed.
         </p>
 

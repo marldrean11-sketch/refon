@@ -1,203 +1,224 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, ScanLine } from 'lucide-react'
 import { Container } from '../design/Container.jsx'
-import { RefonTag } from '../../components/ui/RefonTag.jsx'
+import { FloatingLoops } from '../../components/brand/FloatingLoops.jsx'
+import { PhoneArtwork } from '../listings/PhoneArtwork.jsx'
 import { isImageReference } from '../listings/image-reference.js'
-import { HERO_SLIDES } from '../../content/home-content.js'
-import { durations, easings, usePrefersReducedMotion } from '../../lib/motion.ts'
+import { getConditionGrade } from '../../lib/listing-taxonomy.js'
+import { formatPeso } from '../../lib/format.js'
+import { MARKETPLACE_ROUTES, productPath } from '../../lib/routes.js'
+import { usePrefersReducedMotion } from '../../lib/motion.ts'
 
-/**
- * Which listing each slide puts on its tag.
- *
- * The tag is the hero's picture, so every slide shows a real, buyable phone and
- * its real figures. A slide whose pick finds nothing falls back to the first
- * featured phone rather than showing an empty tag.
- */
-const PICKS = {
-  featured: (listings, featured) => featured[0],
-  battery: (listings) =>
-    [...listings]
-      .filter((listing) => Number.isFinite(Number(listing.batteryPercent)))
-      .sort((a, b) => Number(b.batteryPercent) - Number(a.batteryPercent))[0],
-  budget: (listings) =>
-    [...listings]
-      .filter((listing) => Number(listing.price) <= 10000)
-      .sort((a, b) => Number(a.price) - Number(b.price))[0],
+const GRADE_CHIP = {
+  A: 'bg-grade-a text-page',
+  B: 'bg-grade-b text-page',
+  C: 'bg-grade-c text-page',
 }
 
 /** The listing's photograph, when a seller has uploaded a real one. */
 function photoOf(listing) {
   const photo = listing?.mainPhoto ?? listing?.photos?.[0]
-
   return isImageReference(photo) ? photo : null
+}
+
+/**
+ * Counts from 0 up to `target` once, so the battery bar fills on arrival.
+ * Reduced motion skips straight to the figure.
+ */
+function useCountUp(target, reduced) {
+  const [value, setValue] = useState(0)
+
+  useEffect(() => {
+    if (!Number.isFinite(target)) return undefined
+    if (reduced) {
+      const id = requestAnimationFrame(() => setValue(target))
+      return () => cancelAnimationFrame(id)
+    }
+
+    let frame
+    const start = performance.now()
+    const duration = 1100
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration)
+      setValue(Math.round(target * (1 - Math.pow(1 - t, 3))))
+      if (t < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [target, reduced])
+
+  return value
 }
 
 /**
  * The homepage hero.
  *
- * A full-width Tag Yellow band in the layout big marketplaces use: one headline,
- * one sentence, one primary action, and a picture on the right. ReFon's picture is
- * the tag of a real phone. Slides change only when the visitor asks, with the
- * dots on the left and the arrows on the right below the band. There is no timer:
- * a moving headline is something a reader has to chase.
- *
- * When the slide's phone has a real photograph, the photo sits in a 4:5 frame and
- * the tag hangs over its lower edge. The seed listings carry no photos
- * (`prisma/seed-data.js` explains why), so by default the tag stands alone.
+ * A dark band over the floating-loops background: one headline, one sentence,
+ * two actions, and a live listing card on the right. The card tilts toward the
+ * pointer and its battery bar fills on arrival; every figure on it (grade,
+ * battery, checks, warranty, price) is the API's value for that listing, so the
+ * hero can never advertise a phone that is gone or a price that has moved.
  */
 export function HomeHero({ listings = [], featured = [] }) {
   const reduced = usePrefersReducedMotion()
-  const [index, setIndex] = useState(0)
+  const listing = featured[0] ?? listings[0] ?? null
+  const [tilt, setTilt] = useState({ x: 0, y: 0 })
+  const sectionRef = useRef(null)
 
-  const slides = useMemo(
-    () =>
-      HERO_SLIDES.map((slide) => ({
-        ...slide,
-        listing: PICKS[slide.pick]?.(listings, featured) ?? featured[0] ?? listings[0] ?? null,
-      })),
-    [featured, listings],
-  )
+  const battery = Number(listing?.batteryPercent)
+  const shownBattery = useCountUp(battery, reduced)
+  const grade = listing ? getConditionGrade(listing.grade) : null
+  const checks = Array.isArray(listing?.inspectionChecks) ? listing.inspectionChecks.length : 0
+  const total = Number(listing?.inspectionTotal) || 0
+  const photo = photoOf(listing)
 
-  const count = slides.length
-  const slide = slides[index] ?? slides[0]
-
-  function go(next) {
-    setIndex((next + count) % count)
+  function onPointerMove(event) {
+    if (reduced || event.pointerType !== 'mouse') return
+    const rect = sectionRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const nx = (event.clientX - rect.left) / rect.width - 0.5
+    const ny = (event.clientY - rect.top) / rect.height - 0.5
+    setTilt({ x: +(-ny * 12).toFixed(1), y: +(nx * 20).toFixed(1) })
   }
 
-  const fade = reduced
-    ? {}
-    : {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
-        transition: { duration: durations.micro, ease: easings.ui },
-      }
-
   return (
-    <section aria-roledescription="carousel" aria-label="Featured" className="bg-page">
-      <div data-testid="hero-panel" className="bg-tag text-night">
-        <Container className="grid items-center gap-10 py-12 sm:py-14 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.8fr)] lg:gap-14 lg:py-16">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={slide.key}
-              {...fade}
-              role="group"
-              aria-roledescription="slide"
-              aria-label={`${index + 1} of ${count}`}
-              className="min-w-0"
+    <section
+      ref={sectionRef}
+      aria-label="Featured"
+      onPointerMove={onPointerMove}
+      onPointerLeave={() => setTilt({ x: 0, y: 0 })}
+      className="relative overflow-hidden border-b border-line bg-page"
+    >
+      <FloatingLoops />
+
+      <Container className="relative grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.25fr_1fr] lg:gap-16 lg:py-28">
+        <div className="flex flex-col items-start gap-7">
+          <span className="rf-rise inline-flex items-center gap-2 rounded-full border border-line-2 bg-page/60 px-4 py-2 font-mono text-[12px] uppercase tracking-[0.14em] text-accent backdrop-blur">
+            2015–2024 phones · graded · battery measured
+          </span>
+
+          <h1 className="rf-rise-2 font-display text-[clamp(2.6rem,6vw,5.25rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-ink">
+            Pre-loved phones.
+            <br />
+            <span className="text-accent">Tested in the open.</span>
+          </h1>
+
+          <p className="rf-rise-3 max-w-xl text-lg leading-relaxed text-muted sm:text-xl">
+            Sulit na, legit pa. Every listing shows its grade, its real battery health and
+            all 11 inspection checks before you pay a peso.
+          </p>
+
+          <div className="rf-rise-3 flex flex-wrap gap-3">
+            <Link
+              to={MARKETPLACE_ROUTES.shop}
+              className="rf-bounce inline-flex min-h-14 items-center gap-2 rounded-full bg-accent px-7 text-[16px] font-semibold text-page hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
             >
-              <h1 className="font-display text-[clamp(2.4rem,5.4vw,4.4rem)] font-black leading-[0.98] tracking-[-0.035em] text-night">
-                {slide.headline.map((line) => (
-                  <span key={line} className="block">
-                    {line}
-                  </span>
-                ))}
-              </h1>
+              Shop tested phones
+              <ArrowRight className="size-4" strokeWidth={2.25} aria-hidden="true" />
+            </Link>
+            <Link
+              to={MARKETPLACE_ROUTES.healthCheck}
+              className="rf-bounce inline-flex min-h-14 items-center gap-2 rounded-full border border-line-2 bg-page/60 px-7 text-[16px] font-medium text-ink backdrop-blur hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <ScanLine className="size-4" strokeWidth={2} aria-hidden="true" />
+              Check my own phone
+            </Link>
+          </div>
+        </div>
 
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-night/85">{slide.body}</p>
-
-              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-                <Link
-                  to={slide.primary.to}
-                  className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-night px-6 text-base font-semibold text-white transition-colors duration-200 hover:bg-night-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-night/30"
-                >
-                  {slide.primary.label}
-                  <ArrowRight className="size-4" strokeWidth={2} aria-hidden="true" />
-                </Link>
-                {slide.secondary ? (
-                  <Link
-                    to={slide.secondary.to}
-                    className="inline-flex min-h-11 items-center text-base font-semibold text-night underline decoration-night/40 decoration-2 underline-offset-[6px] transition-colors duration-200 hover:decoration-night"
-                  >
-                    {slide.secondary.label}
-                  </Link>
-                ) : null}
+        <div className="flex justify-center [perspective:1000px] lg:justify-end">
+          {listing ? (
+            <Link
+              to={productPath(listing)}
+              data-testid="hero-panel"
+              aria-label={`${listing.brand} ${listing.model}, ${formatPeso(listing.price)}`}
+              className="block w-full max-w-[380px] rounded-[32px] border border-line-2 bg-card/90 p-5 shadow-2xl backdrop-blur transition-transform duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              style={{ transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)` }}
+            >
+              <div className="overflow-hidden rounded-[22px] bg-well">
+                {photo ? (
+                  <img src={photo} alt="" className="aspect-[4/3.4] w-full object-cover" />
+                ) : (
+                  <div className="rf-float">
+                    <PhoneArtwork
+                      brand={listing.brand}
+                      model={listing.model}
+                      color={listing.color}
+                      batteryPercent={listing.batteryPercent}
+                      className="aspect-[4/3.4]"
+                      showLabel={false}
+                    />
+                  </div>
+                )}
               </div>
-            </motion.div>
-          </AnimatePresence>
 
-          <div className="flex min-h-[22rem] items-center justify-center lg:justify-end">
-            <AnimatePresence mode="wait" initial={false}>
-              {slide.listing ? (
-                <motion.div key={`${slide.key}-${slide.listing.id}`} {...fade} className="w-full max-w-[26rem]">
-                  {photoOf(slide.listing) ? (
-                    <div className="mx-auto mb-[-5rem] aspect-[4/5] w-3/4 overflow-hidden rounded-card-lg bg-card">
-                      <img
-                        src={photoOf(slide.listing)}
-                        alt={`${slide.listing.brand} ${slide.listing.model} in ${slide.listing.color ?? 'as pictured'}`}
-                        width={800}
-                        height={1000}
-                        fetchPriority="high"
-                        decoding="async"
-                        className="size-full object-contain p-6"
-                      />
-                    </div>
-                  ) : null}
-                  <RefonTag
-                    listing={slide.listing}
-                    tone="night"
-                    className="relative [--tag-hole:theme(colors.tag.DEFAULT)]"
-                  />
-                </motion.div>
-              ) : (
-                <div
-                  key="placeholder"
-                  aria-hidden="true"
-                  className="refon-tag h-[22rem] w-full max-w-[26rem] animate-pulse bg-night/10"
-                />
+              <div className="mt-5 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[19px] font-semibold text-ink">
+                    {listing.brand} {listing.model}
+                  </p>
+                  <p className="text-sm text-subtle">
+                    {[listing.storage, listing.color].filter(Boolean).join(' · ')}
+                  </p>
+                </div>
+                {grade && (
+                  <span
+                    data-testid="hero-chip"
+                    className={`shrink-0 rounded-full px-3 py-1 text-[13px] font-semibold ${GRADE_CHIP[grade.id] ?? GRADE_CHIP.C}`}
+                  >
+                    Grade {grade.id}
+                  </span>
+                )}
+              </div>
+
+              {Number.isFinite(battery) && (
+                <div className="mt-4">
+                  <div className="flex justify-between font-mono text-[12px] uppercase tracking-[0.1em]">
+                    <span className="text-subtle">Battery health</span>
+                    <span className="text-accent">{shownBattery}%</span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label="Battery health"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={battery}
+                    className="mt-2 h-2 overflow-hidden rounded-full bg-line"
+                  >
+                    <div className="h-full rounded-full bg-accent" style={{ width: `${shownBattery}%` }} />
+                  </div>
+                </div>
               )}
-            </AnimatePresence>
-          </div>
-        </Container>
-      </div>
 
-      {count > 1 ? (
-        <Container className="flex items-center justify-between py-5">
-          <div role="tablist" aria-label="Slides" className="flex items-center gap-1">
-            {slides.map((entry, position) => (
-              <button
-                key={entry.key}
-                type="button"
-                role="tab"
-                onClick={() => go(position)}
-                aria-label={`Slide ${position + 1} of ${count}`}
-                aria-selected={position === index}
-                className="grid size-8 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-              >
-                <span
-                  className={`block size-2.5 rounded-full border-2 border-night transition-colors duration-200 ${
-                    position === index ? 'bg-night' : 'bg-transparent'
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 font-mono">
+                <div className="rounded-2xl bg-well px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-subtle">Checks</p>
+                  <p className="text-lg text-ink">
+                    {listing.inspectionRecorded && total ? `${checks}/${total}` : 'Not recorded'}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-well px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-[0.1em] text-subtle">Warranty</p>
+                  <p className="text-lg text-ink">{listing.warrantyMonths ? `${listing.warrantyMonths} months` : 'None'}</p>
+                </div>
+              </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              data-testid="hero-prev"
-              onClick={() => go(index - 1)}
-              aria-label="Previous slide"
-              className="grid size-12 place-items-center rounded-full bg-night text-white transition-colors duration-200 hover:bg-night-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
-            >
-              <ChevronLeft className="size-5" strokeWidth={2} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              data-testid="hero-next"
-              onClick={() => go(index + 1)}
-              aria-label="Next slide"
-              className="grid size-12 place-items-center rounded-full bg-night text-white transition-colors duration-200 hover:bg-night-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
-            >
-              <ChevronRight className="size-5" strokeWidth={2} aria-hidden="true" />
-            </button>
-          </div>
-        </Container>
-      ) : null}
+              <div className="mt-5 flex items-center justify-between">
+                <span className="font-display text-[28px] font-bold tracking-[-0.02em] text-ink">
+                  {formatPeso(listing.price)}
+                </span>
+                <span className="inline-flex items-center gap-1 text-sm font-semibold text-accent">
+                  View phone
+                  <ArrowRight className="size-4" strokeWidth={2.25} aria-hidden="true" />
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <div data-testid="hero-panel" className="h-[520px] w-full max-w-[380px] animate-pulse rounded-[32px] border border-line bg-card/70" />
+          )}
+        </div>
+      </Container>
     </section>
   )
 }

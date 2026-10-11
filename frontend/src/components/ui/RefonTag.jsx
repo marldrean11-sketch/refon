@@ -22,7 +22,7 @@ import { productPath } from '../../lib/routes.js'
  */
 const TONES = {
   tag: {
-    surface: 'bg-tag text-night',
+    surface: 'bg-tag text-page',
     rule: 'border-night/35',
     priceRule: 'border-night',
     track: 'bg-night/15',

@@ -162,7 +162,7 @@ function Header() {
         aria-label="Site"
         animate={{ y: isHidden ? '-100%' : '0%' }}
         transition={reducedMotion ? { duration: 0 } : { duration: 0.28, ease: easings.ui }}
-        className={`sticky top-0 z-header border-b bg-card transition-shadow duration-300 ${
+        className={`sticky top-0 z-header border-b bg-page/85 backdrop-blur-xl transition-shadow duration-300 ${
           isScrolled ? 'border-line shadow-sm' : 'border-line'
         }`}
       >
@@ -180,7 +180,7 @@ function Header() {
             onClick={() => open(SURFACE.search)}
             aria-expanded={isSearchOpen}
             aria-haspopup="dialog"
-            className="ml-auto grid size-11 shrink-0 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 md:ml-0 md:flex md:h-12 md:w-auto md:max-w-[44rem] md:flex-1 md:place-items-start md:items-center md:gap-3 md:bg-panel md:px-5 md:text-left md:hover:bg-well"
+            className="ml-auto grid size-11 shrink-0 place-items-center rounded-full text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-page md:ml-0 md:flex md:h-12 md:w-auto md:max-w-[36rem] md:flex-1 md:place-items-start md:items-center md:gap-3 md:border md:border-line-2 md:bg-card md:px-5 md:text-left md:hover:border-accent/60"
           >
             <Search className="size-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             {/* The visible text is the button's name from `md` up, so what a
@@ -223,7 +223,7 @@ function Header() {
               <Link
                 to={AUTH_ROUTES.login}
                 data-testid="navbar-sign-in"
-                className="hidden min-h-11 items-center gap-2 rounded-lg px-3 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:inline-flex"
+                className="rf-bounce hidden min-h-11 items-center gap-2 rounded-full border border-line-2 px-4 text-[15px] font-semibold text-ink transition-colors duration-150 hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:inline-flex"
               >
                 <User className="size-5" strokeWidth={1.75} aria-hidden="true" />
                 Sign in
@@ -255,7 +255,7 @@ function Header() {
                   aria-expanded={isCartOpen}
                   aria-haspopup="dialog"
                   aria-label={`Cart, ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
-                  className={`${ICON_BUTTON} relative`}
+                  className={`${ICON_BUTTON} rf-bounce relative`}
                 >
                   <ShoppingBag className="size-5" strokeWidth={1.75} aria-hidden="true" />
                   {itemCount > 0 && (
@@ -315,7 +315,7 @@ function Header() {
                 <Link
                   to={BATTERY_SHORTCUT.to}
                   data-testid="navbar-battery"
-                  className="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[15px] font-semibold text-brand transition-colors duration-150 hover:bg-brand-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-full bg-accent-100 px-3 text-[15px] font-semibold text-accent transition-colors duration-150 hover:bg-accent-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <BatteryFull className="size-4" strokeWidth={2} aria-hidden="true" />
                   {BATTERY_SHORTCUT.label}
@@ -499,7 +499,7 @@ function MobileMenuOverlay() {
           animate={{ opacity: 1 }}
           exit={reducedMotion ? undefined : { opacity: 0 }}
           transition={{ duration: 0.2, ease: easings.ui }}
-          className="fixed inset-0 z-modal flex flex-col bg-page lg:hidden"
+          className="fixed inset-0 z-modal flex flex-col overflow-hidden bg-page lg:hidden"
         >
           <div className="flex h-16 items-center justify-between border-b border-line px-4">
             <Wordmark className="text-2xl" />
@@ -593,7 +593,7 @@ function MobileMenuOverlay() {
                   to={user ? MARKETPLACE_ROUTES.cart : AUTH_ROUTES.login}
                   state={user ? undefined : { from: MARKETPLACE_ROUTES.cart }}
                   onClick={close}
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-ink px-5 text-[15px] font-semibold text-white transition-colors duration-150 hover:bg-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-[15px] font-semibold text-page transition-colors duration-150 hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                 >
                   <ShoppingBag className="size-4" strokeWidth={1.5} aria-hidden="true" />
                   {user ? 'View cart' : 'Sign in to buy'}

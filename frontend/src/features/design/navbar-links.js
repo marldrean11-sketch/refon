@@ -7,8 +7,8 @@
  * single link, and `How we test` is reachable from the footer and from the
  * homepage's inspection section, so nothing became unreachable.
  *
- * No trade-in entry: there is no trade-in route, and inventing a destination
- * would be worse than the missing link. See the Phase 2 report.
+ * Health check and Trade-in are the two booth features, so they sit in the
+ * primary row rather than the footer.
  */
 export const NAVBAR_LINKS = [
   {
@@ -17,6 +17,18 @@ export const NAVBAR_LINKS = [
     to: '/phones',
     // One shopper-facing destination, so the highlight spans every way into it.
     activePaths: ['/phones', '/browse', '/phones/*', '/listings/*', '/compare'],
+  },
+  {
+    key: 'healthCheck',
+    label: 'Health check',
+    to: '/health-check',
+    activePaths: ['/health-check'],
+  },
+  {
+    key: 'tradeIn',
+    label: 'Trade-in',
+    to: '/trade-in',
+    activePaths: ['/trade-in'],
   },
   {
     key: 'categories',
