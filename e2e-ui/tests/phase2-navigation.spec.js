@@ -1111,6 +1111,9 @@ test.describe('P2 navigation foundation', () => {
 
     await page.getByTestId('navbar-search').click()
     await expect(page.getByTestId('search-overlay')).toBeVisible()
+    // Let the overlay finish fading in. Half-faded text on the near-black page
+    // measures as low contrast even though the settled text passes.
+    await page.waitForTimeout(600)
     const overlay = await runAxe(page, '[data-testid="search-overlay"]')
     console.log('[P2-14] search overlay', JSON.stringify(overlay))
     expect(overlay, JSON.stringify(overlay, null, 2)).toEqual([])

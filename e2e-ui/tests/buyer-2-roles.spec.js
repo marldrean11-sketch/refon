@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { tryClickHeart, watchErrors, expectNoFatalErrors } from './support.js'
 import { LISTINGS, openListing } from './constants.js'
+import { restoreListingStatus } from './support-db.js'
 
 async function apiLogin(request, email, password) {
   const res = await request.post('http://localhost:4000/api/auth/login', {
@@ -12,6 +13,12 @@ async function apiLogin(request, email, password) {
 
 test.describe('buyer C7', () => {
   test.use({ storageState: 'state/buyer2.json' })
+
+  // C7 marks the seeded iPhone 6s sold. Put it back afterwards, so later specs
+  // in the same run (P2-08 buys it as the cheap phone) still find it for sale.
+  test.afterAll(async () => {
+    await restoreListingStatus(LISTINGS.iphone6s)
+  })
 
   test('C7 mark-sold propagates to /saved, /my-inquiries and notification targets', async ({ page, request }) => {
     const all = watchErrors(page)
