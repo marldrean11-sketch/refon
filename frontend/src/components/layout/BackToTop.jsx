@@ -60,7 +60,7 @@ export function BackToTop() {
       aria-label="Back to top"
       tabIndex={visible ? 0 : -1}
       aria-hidden={!visible}
-      className={`rf-bounce group fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] right-4 z-header grid size-14 place-items-center rounded-full border border-line-2 bg-card/90 text-ink shadow-pop backdrop-blur transition-[opacity,transform] duration-300 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:bottom-6 lg:right-6 ${
+      className={`rf-bounce group fixed bottom-[calc(13rem+env(safe-area-inset-bottom))] right-4 z-header grid size-14 place-items-center rounded-full border border-line-2 bg-card/90 text-ink shadow-pop backdrop-blur transition-[opacity,transform] duration-300 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:bottom-24 lg:right-6 ${
         visible ? 'opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
       }`}
     >

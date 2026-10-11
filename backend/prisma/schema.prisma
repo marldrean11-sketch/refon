@@ -389,3 +389,22 @@ model HealthCheckRun {
   @@index([createdAt])
   @@map("health_check_runs")
 }
+
+enum FeedbackWouldBuy {
+  YES
+  MAYBE
+  NO
+}
+
+/// Anonymous booth feedback from the /feedback form. No account, no contact
+/// details: a rating, an intent answer and an optional comment.
+model Feedback {
+  id        String           @id @default(uuid()) @db.Uuid
+  rating    Int              @db.SmallInt
+  wouldBuy  FeedbackWouldBuy @map("would_buy")
+  comment   String?          @db.VarChar(500)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("feedback")
+}

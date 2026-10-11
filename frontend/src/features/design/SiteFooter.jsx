@@ -64,6 +64,7 @@ const COLUMNS = [
       { label: "Returns", to: MARKETPLACE_ROUTES.returns },
       { label: "FAQ", to: MARKETPLACE_ROUTES.faq },
       { label: "Contact us", to: MARKETPLACE_ROUTES.contact },
+      { label: "Rate ReFon", to: MARKETPLACE_ROUTES.feedback },
     ],
   },
   {

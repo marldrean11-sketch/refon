@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LogoGlyph } from '../ui/BrandMark.jsx'
 import { Confetti } from '../ui/Confetti.jsx'
 import { play } from '../../lib/sound.js'
+import { recordPop } from '../../lib/pop-challenge.js'
 
 /**
  * Where each rising Loop starts and how it moves. Fixed rather than random so
@@ -27,7 +28,42 @@ const HIT_SLOP = 12
 /** The surprise a popped loop can turn into. One is picked per pop. */
 const REACTIONS = ['confetti', 'split', 'word', 'spin']
 
-const WORDS = ['Sulit!', 'Legit!', 'Check mo muna!', 'Ayos!', 'Pak!', 'Walang tinatago!', 'Tested!', 'Galing!']
+/**
+ * Taglish shop-talk for the word pops, in four groups: value, trust, hype and
+ * hustle. Nothing here promises a discount, a deadline or limited stock: ReFon
+ * does not use fake urgency, even in a joke.
+ */
+const WORDS = [
+  // Value and price
+  'Sulit deal!',
+  'Swak sa budget!',
+  'Presyong kaibigan!',
+  'Tipid tech!',
+  'Abot-kaya!',
+  'Bawat piso, sulit!',
+  // Trust and quality
+  'Legit seller!',
+  'Walang daya!',
+  'Tested, hindi hula!',
+  'Grade A vibes!',
+  'May warranty!',
+  'Battery check: pasado!',
+  // Hype and fun
+  'Panalo!',
+  'Pak na pak!',
+  'Lodi deal!',
+  'Solid!',
+  'G na G!',
+  'Petmalu!',
+  "Ayos 'yan!",
+  // Business and hustle
+  'Benta!',
+  'Kita-kits sa booth!',
+  'Upgrade na!',
+  'Trade-in mo na!',
+  'Second life, first class!',
+  'Pre-loved, pro-level!',
+]
 
 /** Mini loops flung out by a split, as fixed directions. */
 const SPLIT = [
@@ -147,6 +183,7 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
       setHovered(-1)
       host.style.cursor = ''
       play(kind === 'spin' ? 'click' : kind === 'jackpot' ? 'chime' : 'pop')
+      recordPop()
 
       // Clear the effect, then send a fresh loop up from the bottom.
       window.setTimeout(() => setBursts((list) => list.filter((burst) => burst.id !== id)), 1300)

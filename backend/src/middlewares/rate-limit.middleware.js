@@ -40,6 +40,9 @@ export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 
 /** One visitor rarely finishes more than a few health checks in ten minutes. */
 export const healthCheckLimiter = createLimiter({ windowMs: tenMinutes, limit: 10 })
 
+/** A visitor leaves feedback once or twice; five in thirty minutes is generous. */
+export const feedbackLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })
+
 export const cartLimiter = createLimiter({ windowMs: tenMinutes, limit: 120 })
 
 // Checkout repricing is a read of the buyer's cart with a little arithmetic on

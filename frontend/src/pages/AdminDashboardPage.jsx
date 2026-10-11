@@ -22,6 +22,7 @@ import { isImageReference } from '../features/listings/image-reference.js'
 import { Skeleton } from '../components/ui/Skeleton.jsx'
 import { Container } from '../features/design/Container.jsx'
 import { MetricStrip, Panel } from '../features/design/Surfaces.jsx'
+import { FeedbackSummaryPanel } from '../features/feedback/FeedbackSummaryPanel.jsx'
 import {
   approveListingRequest,
   approveSellerRequest,
@@ -994,6 +995,8 @@ export function AdminDashboardPage() {
                 )}
               </div>
             </Panel>
+
+            <FeedbackSummaryPanel />
           </>
         )}
       </Container>

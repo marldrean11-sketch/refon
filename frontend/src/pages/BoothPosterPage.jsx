@@ -21,8 +21,8 @@ const STEPS = [
  * the current origin, so a poster printed from a laptop running locally still
  * works for visitors' phones.
  */
-export function BoothPosterPage() {
-  const target = `${SITE_INFO.url}${MARKETPLACE_ROUTES.healthCheck}`
+/** An SVG QR code for `target`, drawn locally by `qrcode`. Empty until ready. */
+function useQrSvg(target) {
   const [svg, setSvg] = useState('')
 
   useEffect(() => {
@@ -39,6 +39,15 @@ export function BoothPosterPage() {
       cancelled = true
     }
   }, [target])
+
+  return svg
+}
+
+export function BoothPosterPage() {
+  const target = `${SITE_INFO.url}${MARKETPLACE_ROUTES.healthCheck}`
+  const feedbackTarget = `${SITE_INFO.url}${MARKETPLACE_ROUTES.feedback}`
+  const svg = useQrSvg(target)
+  const feedbackSvg = useQrSvg(feedbackTarget)
 
   return (
     <div className="min-h-screen bg-page px-4 py-8 print:bg-white print:p-0">
@@ -86,7 +95,7 @@ export function BoothPosterPage() {
         <div className="mt-[10mm] flex flex-1 items-center justify-center">
           <div className="rounded-[28px] border-[6px] border-[#c6ff3d] bg-[#ffffff] p-[8mm]">
             <div
-              className="size-[95mm] [&>svg]:size-full"
+              className="size-[85mm] [&>svg]:size-full"
               role="img"
               aria-label="QR code that opens the ReFon phone health check"
               // Generated locally by `qrcode` from the site's own address.
@@ -106,9 +115,21 @@ export function BoothPosterPage() {
           ))}
         </ol>
 
-        <footer className="mt-[8mm] flex items-end justify-between gap-4 border-t-2 border-[#0a0b0d] pt-4 text-[13px]">
-          <span className="font-semibold">Sulit na, legit pa.</span>
-          <span className="text-right">{SITE_INFO.credits}</span>
+        <footer className="mt-[8mm] flex items-center justify-between gap-4 border-t-2 border-[#0a0b0d] pt-4 text-[13px]">
+          <div className="flex items-center gap-3" data-testid="poster-feedback-qr">
+            <div
+              className="size-[22mm] shrink-0 [&>svg]:size-full"
+              role="img"
+              aria-label="QR code that opens the ReFon feedback form"
+              dangerouslySetInnerHTML={{ __html: feedbackSvg }}
+            />
+            <div>
+              <p className="font-display text-[16px] font-bold">Rate us!</p>
+              <p className="leading-snug">Kumusta ang ReFon? Tell us in 30 seconds.</p>
+              <p className="mt-0.5 font-semibold">Sulit na, legit pa.</p>
+            </div>
+          </div>
+          <span className="max-w-[80mm] text-right">{SITE_INFO.credits}</span>
         </footer>
       </article>
     </div>

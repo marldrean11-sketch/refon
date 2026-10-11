@@ -17,6 +17,7 @@ import { INSPECTION_CHECKS, CONDITION_GRADE_ORDER, getConditionGrade } from '../
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 import { INSPECTION_STAGES } from '../content/policy-content.js'
 import { FloatingLoops } from '../components/brand/FloatingLoops.jsx'
+import { BatteryExplainer } from '../features/listings/BatteryExplainer.jsx'
 
 const STAGE_ICONS = [Microscope, Cpu, ClipboardCheck, Badge, ShieldCheck]
 
@@ -152,6 +153,12 @@ export function QualityCheckPage() {
               ))}
             </ul>
           </div>
+        </div>
+      </Section>
+
+      <Section>
+        <div id="battery" className="scroll-mt-28">
+          <BatteryExplainer />
         </div>
       </Section>
 

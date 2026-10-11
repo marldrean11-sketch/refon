@@ -18,6 +18,7 @@ import {
   validateRejectSeller,
 } from '../validators/admin.validator.js'
 import { validateSellerId } from '../validators/seller.validator.js'
+import { summary as feedbackSummary } from '../controllers/feedback.controller.js'
 import {
   reports,
   resolve,
@@ -32,6 +33,7 @@ const router = Router()
 
 router.use(authenticate, requireAdmin)
 router.get('/stats', stats)
+router.get('/feedback', feedbackSummary)
 router.get('/sellers/pending', pendingSellers)
 router.patch('/sellers/:id/approve', validateSellerId, approveSeller)
 router.patch('/sellers/:id/reject', validateSellerId, validateRejectSeller, rejectSeller)

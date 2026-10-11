@@ -43,6 +43,7 @@ export const MARKETPLACE_ROUTES = Object.freeze({
   healthCheck: '/health-check',
   tradeIn: '/trade-in',
   boothPoster: '/booth-poster',
+  feedback: '/feedback',
   compare: '/compare',
   cart: '/cart',
   checkout: '/checkout',

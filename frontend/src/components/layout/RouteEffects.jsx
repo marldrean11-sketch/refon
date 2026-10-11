@@ -38,6 +38,10 @@ const ROUTE_META = {
     description: 'Printable Techno Fair poster with a QR code to the ReFon phone health check.',
     robots: 'noindex, nofollow',
   },
+  '/feedback': {
+    title: 'Rate ReFon · Feedback',
+    description: 'Three quick, anonymous questions about ReFon. No sign-in needed.',
+  },
   '/trade-in': {
     title: 'Trade-in Estimator · ReFon',
     description: 'Magkano kaya ’yan? Get an honest price range for your old phone in six quick taps.',

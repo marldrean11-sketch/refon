@@ -9,6 +9,7 @@ import { env } from './config/env.js'
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js'
 import { health } from './routes/health.routes.js'
 import healthCheckRoutes from './routes/health-check.routes.js'
+import feedbackRoutes from './routes/feedback.routes.js'
 import { serveLocalSeedImage, serveStoredImage } from './controllers/storage.controller.js'
 import authRoutes from './routes/auth.routes.js'
 import sellerRoutes from './routes/seller.routes.js'
@@ -98,6 +99,7 @@ app.use('/api/my-inquiries', myInquiryRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/checkout', checkoutRoutes)
 app.use('/api/health-checks', healthCheckRoutes)
+app.use('/api/feedback', feedbackRoutes)
 
 if (env.staticDir) {
   // Single-service deploy: serve the built frontend from the same origin as the API.

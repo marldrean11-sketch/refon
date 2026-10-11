@@ -454,8 +454,8 @@ export function ListingDetailPage() {
                     during inspection and published before purchase.
                   </p>
                   <Link
-                    to="/quality-check"
-                    className="mt-3 inline-flex font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-primary-800 underline underline-offset-2 hover:text-primary-950"
+                    to="/quality-check#battery"
+                    className="mt-3 inline-flex font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-accent underline underline-offset-2 hover:text-accent-hover"
                   >
                     How we measure battery health
                   </Link>

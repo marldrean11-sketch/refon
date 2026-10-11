@@ -29,6 +29,16 @@ export const SITE_INFO = Object.freeze({
     booth: null,
   }),
 
+  /**
+   * The "Chat with us" button. Set `messenger` to your page's m.me link (e.g.
+   * 'https://m.me/refonph') and `viber` to a viber:// chat link when ready;
+   * until then both show as "coming soon" and email and phone still work.
+   */
+  chat: Object.freeze({
+    messenger: null,
+    viber: null,
+  }),
+
   /** Placeholders until the accounts exist: set `href` to the real URL. */
   socials: Object.freeze([
     Object.freeze({ id: 'facebook', label: 'Facebook', href: null }),

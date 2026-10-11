@@ -10,6 +10,8 @@ import { LoadingScreen } from '../ui/LoadingScreen.jsx'
 import { CustomCursor } from './CustomCursor.jsx'
 import { BackToTop } from './BackToTop.jsx'
 import { WelcomeBurst } from './WelcomeBurst.jsx'
+import { PopChallenge } from './PopChallenge.jsx'
+import { ChatButton } from './ChatButton.jsx'
 
 /**
  * The public marketplace shell.
@@ -55,6 +57,8 @@ export function MarketplaceLayout() {
       <CompareTray hidden={pathname === MARKETPLACE_ROUTES.compare} />
       <BackToTop />
       <WelcomeBurst />
+      <PopChallenge />
+      <ChatButton />
       <CustomCursor />
     </div>
   )
