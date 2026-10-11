@@ -1,3 +1,6 @@
+import { useEffect } from 'react'
+import { play } from '../../lib/sound.js'
+
 const COLORS = ['#c6ff3d', '#f2f4f0', '#ffb547', '#3df2ff']
 
 /** Evenly spread flight paths, fixed so every burst looks the same. */
@@ -18,7 +21,11 @@ const PIECES = Array.from({ length: 14 }, (_, i) => {
  * and `aria-hidden`; the event it celebrates is announced by the caller (a toast
  * or a status message). Reduced motion collapses the flight to nothing.
  */
-export function Confetti({ active, burstKey = 0 }) {
+export function Confetti({ active, burstKey = 0, sound = 'confetti' }) {
+  useEffect(() => {
+    if (active && sound) play(sound)
+  }, [active, burstKey, sound])
+
   if (!active) return null
 
   return (

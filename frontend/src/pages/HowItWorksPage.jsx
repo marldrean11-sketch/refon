@@ -51,12 +51,6 @@ export function HowItWorksPage() {
                 key={entry.step}
                 className="rf-spotlight rf-lift hover:border-accent/40 relative overflow-hidden rounded-card-lg border border-line bg-white p-6 shadow-card"
               >
-                <span
-                  className="absolute -right-3 -top-5 font-display text-7xl font-bold text-primary-50"
-                  aria-hidden="true"
-                >
-                  {entry.step}
-                </span>
                 <span className="relative grid size-11 place-items-center rounded-2xl bg-primary-50 text-primary-600">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
@@ -141,10 +135,10 @@ export function HowItWorksPage() {
       <Section tone="navy">
         <div className="mx-auto max-w-3xl text-center">
           <Store className="mx-auto size-10 text-accent-400" aria-hidden="true" />
-          <h2 className="mt-5 font-display text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mt-5 font-display text-3xl font-bold text-ink sm:text-4xl">
             Know the phone before you buy it.
           </h2>
-          <p className="mt-4 text-lg leading-body text-primary-100/85">
+          <p className="mt-4 text-lg leading-body text-muted">
             Join students and young professionals buying capable phones without
             paying brand-new prices or guessing what they are getting.
           </p>
@@ -156,7 +150,6 @@ export function HowItWorksPage() {
               to={MARKETPLACE_ROUTES.about}
               variant="secondary"
               size="lg"
-              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
             >
               About ReFon
             </ButtonLink>

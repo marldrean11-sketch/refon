@@ -46,7 +46,7 @@ export function ComingSoonPage() {
           aria-hidden="true"
         />
         <div className="relative">
-          <span className="grid size-14 place-items-center rounded-2xl bg-primary-500 text-white shadow-card">
+          <span className="grid size-14 place-items-center rounded-2xl bg-accent text-page shadow-card">
             <Icon className="size-7" aria-hidden="true" />
           </span>
           <p className="mt-8 text-xs font-bold uppercase tracking-[0.18em] text-accent-700">

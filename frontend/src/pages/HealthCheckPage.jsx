@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ClipboardCopy, Info, RotateCcw, Smartphone } from 'lucide-react'
 import QRCode from 'qrcode'
@@ -26,6 +26,12 @@ import {
   VibrationTest,
 } from '../features/health-check/InlineTests.jsx'
 import { INSPECTION_CHECKS } from '../lib/listing-taxonomy.js'
+import { UpgradePicks } from '../features/health-check/UpgradePicks.jsx'
+import {
+  checkedTodayLabel,
+  recordHealthCheckRun,
+  useHealthCheckStats,
+} from '../features/health-check/health-check-stats.js'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 
 const TESTS = {
@@ -79,6 +85,25 @@ export function HealthCheckPage() {
     }
   }, [results])
 
+  // Count this phone once, after three checks (or every check this browser can
+  // run, when that is fewer). One visit is one phone, however often it reruns.
+  const stats = useHealthCheckStats()
+  const recorded = useRef(false)
+  const runnable = HEALTH_CHECKS.filter((check) => support[check.id]).length
+  useEffect(() => {
+    if (recorded.current || counts.done < Math.min(3, Math.max(1, runnable))) return
+    recorded.current = true
+    recordHealthCheckRun({ completed: counts.done, passed: counts.passed })
+      .then((response) => {
+        if (response?.stats) {
+          window.dispatchEvent(new CustomEvent('refon:health-stats', { detail: response.stats }))
+        }
+      })
+      .catch(() => {
+        // The counter is a nicety; a failed post never interrupts the test.
+      })
+  }, [counts.done, counts.passed, runnable])
+
   async function copyReport() {
     try {
       await navigator.clipboard.writeText(buildReportText(results, facts))
@@ -106,7 +131,14 @@ export function HealthCheckPage() {
             <div className="flex min-w-0 flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-6">
               <ProgressRing done={counts.done} total={HEALTH_CHECKS.length} />
               <div className="min-w-0">
-              <p className="font-mono text-[12px] uppercase tracking-[0.14em] text-accent">Phone health check</p>
+              <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] uppercase tracking-[0.14em] text-accent">
+                Phone health check
+                {checkedTodayLabel(stats) && (
+                  <span data-testid="checked-today" className="rounded-full border border-accent/40 bg-accent-100 px-2.5 py-0.5 normal-case tracking-normal">
+                    {checkedTodayLabel(stats)}
+                  </span>
+                )}
+              </p>
               <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-[2.75rem] sm:leading-[1.05]">
                 {counts.done === HEALTH_CHECKS.length ? 'Ayos! All done.' : 'Check mo muna.'}
               </h1>
@@ -229,6 +261,10 @@ export function HealthCheckPage() {
             </span>
           </p>
         </aside>
+      </Container>
+
+      <Container className="pb-12">
+        <UpgradePicks done={counts.done === HEALTH_CHECKS.length} />
       </Container>
     </div>
   )

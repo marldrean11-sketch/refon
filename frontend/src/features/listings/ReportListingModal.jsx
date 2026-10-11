@@ -200,7 +200,7 @@ export function ReportListingModal({ listing, onClose, open = true }) {
             <button
               type="button"
               onClick={handleClose}
-              className="mt-8 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:w-auto sm:px-7"
+              className="mt-8 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-accent px-5 text-sm font-bold text-page shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-accent hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:w-auto sm:px-7"
             >
               <Check className="size-4" aria-hidden="true" />
               Done

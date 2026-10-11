@@ -376,3 +376,16 @@ model Notification {
   @@index([userId, createdAt])
   @@map("notifications")
 }
+
+/// One visitor finishing at least one phone health check. Anonymous on purpose:
+/// it powers the "phones checked today" counter and stores nothing about the
+/// visitor or their device.
+model HealthCheckRun {
+  id        String   @id @default(uuid()) @db.Uuid
+  passed    Int      @default(0) @db.SmallInt
+  completed Int      @default(0) @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("health_check_runs")
+}

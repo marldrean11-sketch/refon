@@ -37,6 +37,9 @@ export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 
 // Cart writes reserve physical inventory, so they are deliberately more generous
 // than they look: a buyer assembling several phones should not be throttled, but a
 // script hammering add/remove to probe which phones are held should be.
+/** One visitor rarely finishes more than a few health checks in ten minutes. */
+export const healthCheckLimiter = createLimiter({ windowMs: tenMinutes, limit: 10 })
+
 export const cartLimiter = createLimiter({ windowMs: tenMinutes, limit: 120 })
 
 // Checkout repricing is a read of the buyer's cart with a little arithmetic on

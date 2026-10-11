@@ -21,6 +21,7 @@ import { motion } from "framer-motion";
 import { Check, Mail, MapPin, Phone } from "lucide-react";
 import { BrandMark } from "../../components/ui/BrandMark.jsx";
 import { FloatingLoops } from "../../components/brand/FloatingLoops.jsx";
+import { SoundToggle } from "../../components/ui/SoundToggle.jsx";
 import { SITE_INFO, boothLabel } from "../../content/site-info.js";
 import { useAuth } from "../auth/useAuth.js";
 import { AUTH_ROUTES, MARKETPLACE_ROUTES } from "../../lib/routes.js";
@@ -205,7 +206,10 @@ export function SiteFooter() {
             <p>© {new Date().getFullYear()} ReFon. Pre-loved, with the measurements published.</p>
             <p data-testid="footer-credits" className="text-subtle">{SITE_INFO.credits}</p>
           </div>
-          <SocialLinks />
+          <div className="flex flex-wrap items-center gap-3">
+            <SoundToggle />
+            <SocialLinks />
+          </div>
         </div>
       </div>
     </footer>

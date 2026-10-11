@@ -98,7 +98,7 @@ export function QualityCheckPage() {
                   >
                     <span
                       className={`grid size-11 shrink-0 place-items-center rounded-2xl ${
-                        isActive ? 'bg-primary-500 text-white' : 'bg-primary-50 text-primary-600'
+                        isActive ? 'bg-accent text-page' : 'bg-primary-50 text-primary-600'
                       }`}
                     >
                       <Icon className="size-5" aria-hidden="true" />
@@ -236,10 +236,10 @@ export function QualityCheckPage() {
       <Section tone="navy">
         <div className="mx-auto max-w-3xl text-center">
           <Smartphone className="mx-auto size-10 text-accent-400" aria-hidden="true" />
-          <h2 className="mt-5 font-display text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mt-5 font-display text-3xl font-bold text-ink sm:text-4xl">
             Every listing shows its own inspection results
           </h2>
-          <p className="mt-4 text-lg leading-body text-primary-100/85">
+          <p className="mt-4 text-lg leading-body text-muted">
             Open any phone and you will see its grade, its measured battery health, and
             which checks passed on that device — not a generic policy page.
           </p>
@@ -251,7 +251,6 @@ export function QualityCheckPage() {
               to={MARKETPLACE_ROUTES.warranty}
               variant="secondary"
               size="lg"
-              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
             >
               View warranty policy
             </ButtonLink>

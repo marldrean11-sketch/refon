@@ -147,7 +147,7 @@ function ContactActions({ inquiry, onAct, onCopy, isCopied }) {
         <button
           type="button"
           onClick={() => onAct()}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-primary-500 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-bold text-page shadow-sm transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
         >
           <CheckCheck className="size-3.5" aria-hidden="true" />
           Mark as read
@@ -374,7 +374,7 @@ export function SellerInquiriesPage() {
                 aria-pressed={statusFilter === tab.value}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
                   statusFilter === tab.value
-                    ? 'bg-primary-500 text-white shadow-sm'
+                    ? 'bg-accent text-page shadow-sm'
                     : 'text-muted hover:bg-primary-50 hover:text-primary-700'
                 }`}
               >
@@ -484,7 +484,7 @@ export function SellerInquiriesPage() {
               </p>
               <Link
                 to={AUTH_ROUTES.seller}
-                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                className="mt-7 inline-flex h-12 items-center justify-center rounded-xl bg-accent px-5 text-sm font-bold text-page shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-accent hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
               >
                 Back to dashboard
               </Link>

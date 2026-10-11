@@ -24,7 +24,7 @@ export function CheckoutSection({
         <div className="flex items-start gap-3.5">
           {step && (
             <span
-              className="grid size-8 shrink-0 place-items-center rounded-full bg-primary-500 text-xs font-bold text-white"
+              className="grid size-8 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-page"
               aria-hidden="true"
             >
               {step}

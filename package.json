@@ -23,7 +23,8 @@
     "test:ui": "npm --prefix e2e-ui test",
     "admin:create": "npm run admin:create --workspace @refon/backend",
     "uploads:cleanup": "npm run uploads:cleanup --workspace @refon/backend",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "test:health-check": "npm run test:health-check --workspace @refon/backend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

@@ -287,7 +287,7 @@ export function AccountPage() {
             <button
               type="submit"
               disabled={isSavingProfile}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-500 px-6 py-3.5 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-3.5 text-sm font-bold text-page shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-accent hover:shadow-card-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
               {isSavingProfile ? (
                 <>
@@ -365,7 +365,7 @@ export function AccountPage() {
             <button
               type="submit"
               disabled={isSavingPassword}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-500 px-6 py-3.5 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-3.5 text-sm font-bold text-page shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-accent hover:shadow-card-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
             >
               {isSavingPassword ? (
                 <>

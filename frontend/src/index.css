@@ -417,6 +417,29 @@
     animation-iteration-count: infinite;
   }
 
+  /**
+   * The floating loops as a toy: a pointed-at loop glows and wiggles, a popped
+   * one is hidden at once while a lime ring expands where it was.
+   */
+  .rf-loop-toy {
+    transition:
+      filter 200ms ease,
+      transform 200ms ease;
+  }
+
+  .rf-loop-toy.is-hovered {
+    filter: drop-shadow(0 0 10px rgb(198 255 61 / 0.9));
+    animation: rf-wiggle 0.5s ease-in-out infinite;
+  }
+
+  .rf-rising-loop[data-popped='true'] {
+    visibility: hidden;
+  }
+
+  .rf-loop-popped {
+    animation: rf-ring-out 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
   /** Confetti piece; `--dx`/`--dy` set its flight. */
   .rf-confetti {
     position: absolute;
@@ -559,5 +582,29 @@
   }
   100% {
     transform: scale(1) rotate(360deg);
+  }
+}
+
+@keyframes rf-wiggle {
+  0%,
+  100% {
+    transform: rotate(0) scale(1.15);
+  }
+  25% {
+    transform: rotate(-12deg) scale(1.15);
+  }
+  75% {
+    transform: rotate(12deg) scale(1.15);
+  }
+}
+
+@keyframes rf-ring-out {
+  from {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
   }
 }

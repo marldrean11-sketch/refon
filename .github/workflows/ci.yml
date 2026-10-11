@@ -71,6 +71,9 @@ jobs:
       - name: Storage tests
         run: npm run test:storage
 
+      - name: Health-check counter tests
+        run: npm run test:health-check
+
   ui-tests:
     name: Playwright UI suite
     needs: checks

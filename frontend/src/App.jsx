@@ -179,7 +179,7 @@ function App() {
         <RouteEffects />
         <a
           href="#main-content"
-          className="sr-only fixed left-4 top-4 z-toast rounded-control bg-primary-500 px-4 py-3 text-sm font-bold text-white shadow-card focus:not-sr-only"
+          className="sr-only fixed left-4 top-4 z-toast rounded-control bg-accent px-4 py-3 text-sm font-bold text-page shadow-card focus:not-sr-only"
         >
           Skip to main content
         </a>

@@ -19,7 +19,7 @@ export function BrowseFilters({ filters, brands, onChange, onReset, activeCount 
           </div>
         </div>
         {activeCount > 0 && (
-          <span className="grid size-7 place-items-center rounded-full bg-primary-500 text-xs font-bold text-white">
+          <span className="grid size-7 place-items-center rounded-full bg-accent text-xs font-bold text-page">
             {activeCount}
           </span>
         )}

@@ -165,7 +165,7 @@ export function SellerListingFormPage({ mode = 'create' }) {
           </p>
           <Link
             to={AUTH_ROUTES.seller}
-            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-3 text-sm font-bold text-white shadow-card"
+            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-page shadow-card"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back to dashboard
@@ -198,7 +198,7 @@ export function SellerListingFormPage({ mode = 'create' }) {
           </p>
           <Link
             to={AUTH_ROUTES.seller}
-            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-primary-500 px-5 py-3 text-sm font-bold text-white shadow-card"
+            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-page shadow-card"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
             Back to dashboard
@@ -827,7 +827,7 @@ function SellerListingFormEditor({ mode, existingListing }) {
                               className="aspect-[4/3] w-full object-cover"
                             />
                             {index === 0 && (
-                              <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary-600 px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm">
+                              <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1.5 text-[11px] font-bold text-page shadow-sm">
                                 <Star className="size-3.5 fill-current" aria-hidden="true" />
                                 Main Photo
                               </span>
@@ -927,7 +927,7 @@ function SellerListingFormEditor({ mode, existingListing }) {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary-500 px-6 text-sm font-bold text-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-60"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-bold text-page shadow-card transition duration-200 hover:-translate-y-0.5 hover:bg-accent hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-60"
                   >
                     {isSubmitting ? (
                       <>

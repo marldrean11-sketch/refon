@@ -30,9 +30,17 @@ export function CustomCursor() {
   useEffect(() => {
     if (!enabled) return undefined
 
+    // The card the glow is on, so it can be cleared when the pointer leaves.
+    let litCard = null
+
     function onMove(event) {
       // The card spotlight: one listener for every `.rf-spotlight` on the page.
-      const card = event.target.closest?.('.rf-spotlight')
+      const card = event.target.closest?.('.rf-spotlight') ?? null
+      if (litCard && litCard !== card) {
+        litCard.style.removeProperty('--mx')
+        litCard.style.removeProperty('--my')
+      }
+      litCard = card
       if (card) {
         const rect = card.getBoundingClientRect()
         card.style.setProperty('--mx', `${event.clientX - rect.left}px`)

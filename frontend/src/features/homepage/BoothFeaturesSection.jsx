@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Container } from '../design/Container.jsx'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
+import { checkedTodayLabel, useHealthCheckStats } from '../health-check/health-check-stats.js'
 
 /**
  * The three things a visitor can do at the booth, as three big tiles. The first
@@ -36,6 +37,9 @@ const TILES = Object.freeze([
 ])
 
 export function BoothFeaturesSection() {
+  const stats = useHealthCheckStats()
+  const checked = checkedTodayLabel(stats)
+
   return (
     <section aria-label="What you can do on ReFon" className="bg-page py-16 sm:py-20">
       <Container>
@@ -68,6 +72,15 @@ export function BoothFeaturesSection() {
                 <span className={`text-[16px] leading-relaxed ${tile.filled ? 'text-page/85' : 'text-muted'}`}>
                   {tile.body}
                 </span>
+                {tile.key === 'health' && checked && (
+                  <span
+                    data-testid="checked-today"
+                    className="inline-flex items-center gap-2 self-start rounded-full bg-page px-3 py-1 font-mono text-[12px] text-accent"
+                  >
+                    <span className="size-2 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+                    {checked}
+                  </span>
+                )}
                 <span className="mt-auto inline-flex items-center gap-2 font-semibold">
                   {tile.cta}
                   <ArrowRight
