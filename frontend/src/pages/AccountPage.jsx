@@ -3,7 +3,6 @@ import {
   AlertCircle,
   BadgeCheck,
   Check,
-  LoaderCircle,
   LogOut,
   MailWarning,
   RefreshCw,
@@ -18,6 +17,7 @@ import {
   updateProfileRequest,
 } from '../features/account/account-api.js'
 import { resendVerificationRequest } from '../features/auth/auth-api.js'
+import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
 
 const roleLabels = {
   ADMIN: 'Administrator',
@@ -110,7 +110,7 @@ function VerificationCard({ isVerified }) {
             className="inline-flex items-center gap-2 rounded-2xl border border-line bg-white px-4 py-3 text-sm font-bold text-primary-700 shadow-sm transition duration-200 hover:border-primary-200 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSending ? (
-              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+              <LoopSpinner className="size-4" />
             ) : (
               <RefreshCw className="size-4" aria-hidden="true" />
             )}
@@ -291,7 +291,7 @@ export function AccountPage() {
             >
               {isSavingProfile ? (
                 <>
-                  <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                  <LoopSpinner className="size-5" />
                   Saving…
                 </>
               ) : (
@@ -369,7 +369,7 @@ export function AccountPage() {
             >
               {isSavingPassword ? (
                 <>
-                  <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                  <LoopSpinner className="size-5" />
                   Changing…
                 </>
               ) : (

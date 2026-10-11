@@ -33,6 +33,11 @@ const ROUTE_META = {
     title: 'Phone Health Check · ReFon',
     description: 'Test the phone in your hand in your browser: screen, touch, speaker, microphone, cameras, vibration, motion sensors and battery.',
   },
+  '/booth-poster': {
+    title: 'Booth Poster · ReFon',
+    description: 'Printable Techno Fair poster with a QR code to the ReFon phone health check.',
+    robots: 'noindex, nofollow',
+  },
   '/trade-in': {
     title: 'Trade-in Estimator · ReFon',
     description: 'Magkano kaya ’yan? Get an honest price range for your old phone in six quick taps.',
@@ -317,15 +322,12 @@ function applyRouteMeta(pathname) {
   upsertMeta('meta[name="twitter:description"]', 'name', meta.description)
   upsertCanonical(canonical)
 
-  // A page that publishes an image gets a summary_large_image card; a page that
-  // does not must not inherit the previous page's image.
-  if (meta.image) {
-    upsertMeta('meta[property="og:image"]', 'property', `${ORIGIN}${meta.image}`)
-    upsertMeta('meta[name="twitter:card"]', 'name', 'summary_large_image')
-  } else {
-    document.head.querySelector('meta[property="og:image"]')?.remove()
-    upsertMeta('meta[name="twitter:card"]', 'name', 'summary')
-  }
+  // A page that publishes its own image uses it; every other page falls back to
+  // the branded share card, so a shared link never shows a blank preview.
+  const image = meta.image ?? '/og-image.png'
+  upsertMeta('meta[property="og:image"]', 'property', `${ORIGIN}${image}`)
+  upsertMeta('meta[name="twitter:image"]', 'name', `${ORIGIN}${image}`)
+  upsertMeta('meta[name="twitter:card"]', 'name', 'summary_large_image')
 
   upsertJsonLd(meta.jsonLd ?? null)
   upsertRobots(meta.robots ?? null)

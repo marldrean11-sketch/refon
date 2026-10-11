@@ -5,6 +5,7 @@ import { useCart } from '../useCart.js'
 import { cartErrorHeadline, cartErrorMessage } from '../cart-errors.js'
 import { useToast } from '../../../components/ui/Toast.jsx'
 import { Confetti } from '../../../components/ui/Confetti.jsx'
+import { LoopSpinner } from '../../../components/ui/LoopSpinner.jsx'
 import { useAuth } from '../../auth/useAuth.js'
 import { rememberIntent } from '../pending-intent.js'
 import { deviceName } from '../cart-state.js'
@@ -147,10 +148,7 @@ export function AddToCartButton({
 
   const content = isBusy ? (
     <>
-      <span
-        className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
-        aria-hidden="true"
-      />
+      <LoopSpinner className="size-5" />
       Reserving…
     </>
   ) : inCart || justAdded ? (

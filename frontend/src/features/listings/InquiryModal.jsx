@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  AlertCircle,
-  Check,
-  LoaderCircle,
-  MessageCircle,
-  Send,
-  ShieldCheck,
-  UserRound,
-  X,
-} from 'lucide-react'
+import { AlertCircle, Check, MessageCircle, Send, ShieldCheck, UserRound, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { TextField } from '../../components/ui/TextField.jsx'
 import { submitInquiryRequest } from './listing-api.js'
 import { notifyMarketplaceChange } from '../../lib/marketplace-sync.js'
 import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
+import { LoopSpinner } from '../../components/ui/LoopSpinner.jsx'
 
 function getInitialForm(listing) {
   return {
@@ -385,7 +377,7 @@ export function InquiryModal({ listing, onClose, open = true }) {
               >
                 {status === 'submitting' ? (
                   <>
-                    <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                    <LoopSpinner className="size-5" />
                     Sending inquiry…
                   </>
                 ) : (

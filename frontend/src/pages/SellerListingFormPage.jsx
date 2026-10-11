@@ -10,7 +10,6 @@ import {
   ImagePlus,
   Info,
   LockKeyhole,
-  LoaderCircle,
   RefreshCw,
   Save,
   Send,
@@ -26,6 +25,7 @@ import { uploadPhotosRequest } from '../features/listings/listing-api.js'
 import { useSellerListings } from '../features/seller/useSellerListings.js'
 import { useSellerProfile } from '../features/seller/useSellerProfile.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
+import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
 
 const brandOptions = ['Apple', 'Samsung', 'Xiaomi', 'OPPO']
 const years = Array.from({ length: 10 }, (_, index) => 2015 + index)
@@ -931,7 +931,7 @@ function SellerListingFormEditor({ mode, existingListing }) {
                   >
                     {isSubmitting ? (
                       <>
-                        <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+                        <LoopSpinner className="size-4" />
                         Saving…
                       </>
                     ) : (

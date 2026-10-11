@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  AlertCircle,
-  Check,
-  Flag,
-  LoaderCircle,
-  ShieldAlert,
-  X,
-} from 'lucide-react'
+import { AlertCircle, Check, Flag, ShieldAlert, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { reportListingRequest } from './listing-api.js'
 import { notifyMarketplaceChange } from '../../lib/marketplace-sync.js'
 import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
+import { LoopSpinner } from '../../components/ui/LoopSpinner.jsx'
 
 const MAX_DETAILS = 1000
 
@@ -342,7 +336,7 @@ export function ReportListingModal({ listing, onClose, open = true }) {
               >
                 {status === 'submitting' ? (
                   <>
-                    <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                    <LoopSpinner className="size-5" />
                     Submitting report…
                   </>
                 ) : (

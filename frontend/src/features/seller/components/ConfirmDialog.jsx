@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { AlertTriangle, LoaderCircle, Trash2, X } from 'lucide-react'
+import { AlertTriangle, Trash2, X } from 'lucide-react'
 import { standardTransition, usePrefersReducedMotion } from '../../../lib/motion.ts'
 import { AnimatePresence, motion } from 'framer-motion'
+import { LoopSpinner } from '../../../components/ui/LoopSpinner.jsx'
 
 export function ConfirmDialog({
   open,
@@ -135,7 +136,7 @@ export function ConfirmDialog({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-control bg-danger px-4 font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-red-700 disabled:opacity-60"
           >
             {isProcessing ? (
-              <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
+              <LoopSpinner className="size-3.5" />
             ) : (
               <Trash2 className="size-3.5" aria-hidden="true" />
             )}

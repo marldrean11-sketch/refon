@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { AlertCircle, ArrowRight, CheckCircle2, KeyRound, LoaderCircle } from 'lucide-react'
+import { AlertCircle, ArrowRight, CheckCircle2, KeyRound } from 'lucide-react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
 import { PasswordField } from '../components/auth/PasswordField.jsx'
 import { useAuth } from '../features/auth/useAuth.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { resetPasswordRequest } from '../features/auth/auth-api.js'
+import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
 
 export function ResetPasswordPage() {
   const { user } = useAuth()
@@ -154,7 +155,7 @@ export function ResetPasswordPage() {
           >
             {isSubmitting ? (
               <>
-                <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                <LoopSpinner className="size-5" />
                 Updating your password…
               </>
             ) : (

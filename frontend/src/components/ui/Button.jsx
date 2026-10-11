@@ -1,5 +1,5 @@
-import { Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { LoopSpinner } from './LoopSpinner.jsx'
 
 /**
  * One set of button shapes for the whole site.
@@ -101,7 +101,7 @@ export function Button({
       className={classesFor({ variant, size, fullWidth, className })}
       {...buttonProps}
     >
-      {loading && <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />}
+      {loading && <LoopSpinner className="size-4 shrink-0" />}
       {children}
     </button>
   )

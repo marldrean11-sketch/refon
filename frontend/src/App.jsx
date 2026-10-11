@@ -127,6 +127,9 @@ const CheckoutConfirmedPage = lazy(() =>
 const HealthCheckPage = lazy(() =>
   import('./pages/HealthCheckPage.jsx').then((module) => ({ default: module.HealthCheckPage })),
 )
+const BoothPosterPage = lazy(() =>
+  import('./pages/BoothPosterPage.jsx').then((module) => ({ default: module.BoothPosterPage })),
+)
 const TradeInPage = lazy(() =>
   import('./pages/TradeInPage.jsx').then((module) => ({ default: module.TradeInPage })),
 )
@@ -190,6 +193,9 @@ function App() {
                 badge silently vanished the moment a seller walked into the shop.
                 The provider no-ops for anyone who is not a seller, so this costs
                 anonymous and buyer visits nothing. */}
+            {/* The printable booth poster stands alone: no header, footer or cursor. */}
+            <Route path={MARKETPLACE_ROUTES.boothPoster} element={<BoothPosterPage />} />
+
             <Route element={<SellerInquiriesProvider />}>
               <Route element={<MarketplaceLayout />}>
                 <Route path="/" element={<LandingPage />} />

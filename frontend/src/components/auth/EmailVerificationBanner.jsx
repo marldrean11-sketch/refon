@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { LoaderCircle, MailWarning, RefreshCw, X } from 'lucide-react'
+import { MailWarning, RefreshCw, X } from 'lucide-react'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { resendVerificationRequest } from '../../features/auth/auth-api.js'
+import { LoopSpinner } from '../ui/LoopSpinner.jsx'
 
 const DISMISS_KEY = 'refon:verify-email-banner-dismissed'
 
@@ -78,7 +79,7 @@ export function EmailVerificationBanner() {
             className="inline-flex min-h-11 items-center gap-2 rounded-control bg-amber-600 px-3 text-xs font-bold text-white transition duration-150 hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSending ? (
-              <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
+              <LoopSpinner className="size-3.5" />
             ) : (
               <RefreshCw className="size-3.5" aria-hidden="true" />
             )}

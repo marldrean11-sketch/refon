@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { AlertCircle, ArrowRight, LoaderCircle, Mail, ShieldAlert } from 'lucide-react'
+import { AlertCircle, ArrowRight, Mail, ShieldAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
 import { TextField } from '../components/ui/TextField.jsx'
 import { useAuth } from '../features/auth/useAuth.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { forgotPasswordRequest } from '../features/auth/auth-api.js'
+import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
 
 export function ForgotPasswordPage() {
   const { user } = useAuth()
@@ -114,7 +115,7 @@ export function ForgotPasswordPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                    <LoopSpinner className="size-5" />
                     Sending the link…
                   </>
                 ) : (

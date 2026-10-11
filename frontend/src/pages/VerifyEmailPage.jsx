@@ -8,6 +8,7 @@ import {
   resendVerificationRequest,
   verifyEmailRequest,
 } from '../features/auth/auth-api.js'
+import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
 
 const stateStyles = {
   verifying: {
@@ -127,7 +128,7 @@ export function VerifyEmailPage() {
             >
               {isResending ? (
                 <>
-                  <LoaderCircle className="size-5 animate-spin" aria-hidden="true" />
+                  <LoopSpinner className="size-5" />
                   Sending a new link…
                 </>
               ) : (
