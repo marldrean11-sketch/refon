@@ -1,104 +1,96 @@
 import { BadgeCheck, ClipboardCheck, ScanSearch } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { usePrefersReducedMotion } from '../../lib/motion.ts'
-import { BrandMark } from '../ui/BrandMark.jsx'
+import { BrandMark, LogoGlyph } from '../ui/BrandMark.jsx'
 
 /**
- * The published standard.
- *
- * The left panel used to be a marketing panel: a gradient, a headline about
- * trust, and three cards with icons in coloured rounded squares. It is now the
- * thing the form is actually about — the inspection standard, typeset as a
- * numbered list with the same monospace voice the rest of the product uses.
- *
- * That is a real argument, not decoration: someone about to type a password has
- * not yet decided to trust the site, and reading what is actually checked is a
- * better reason than being told to feel reassured.
+ * The three promises on the lime panel: what is actually checked, said plainly,
+ * because someone about to type a password has not yet decided to trust the site.
  */
 const standard = [
   {
     icon: ClipboardCheck,
     title: 'Eleven functional checks',
-    body: 'Display, touch, cameras, audio, charging, radios, buttons, and biometrics. Every one is recorded per device.',
+    body: 'Display, touch, cameras, audio, charging, radios, buttons and biometrics.',
   },
   {
     icon: ScanSearch,
     title: 'IMEI checked, never published',
-    body: 'The identifier is confirmed against carrier records. Only the last four digits are ever stored.',
+    body: 'Only the last four digits are ever stored.',
   },
   {
     icon: BadgeCheck,
     title: 'Sellers verified before listing',
-    body: 'Identity and business details are reviewed, and a moderator approves every listing before it goes live.',
+    body: 'A moderator approves every listing before it goes live.',
   },
 ]
 
-export function AuthShell({ children }) {
+/**
+ * The split-screen shell for sign-in, registration and account recovery.
+ *
+ * Left: a volt-lime panel with a Taglish greeting, two floating phones and the
+ * ReFon standard. Right: the form on the dark page. Below `lg` the panel goes
+ * and the form stands alone under the logo.
+ */
+export function AuthShell({
+  children,
+  eyebrow = 'Welcome back',
+  headline = 'Tara, pasok!',
+  lede = 'Your saved phones, your cart holds and your seller inquiries are waiting.',
+}) {
   const reduceMotion = usePrefersReducedMotion()
 
   return (
-    <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(30rem,1.05fr)]">
-      <aside className="relative hidden min-h-[100dvh] overflow-hidden bg-primary-950 px-10 py-12 text-white lg:flex lg:flex-col xl:px-14">
-        <div
-          className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.9)_1px,transparent_1px)] [background-size:72px_72px]"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute -left-24 top-1/4 size-[26rem] rounded-full bg-accent-600/10 blur-[100px]"
-          aria-hidden="true"
-        />
-
+    <div className="min-h-screen bg-page lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(30rem,1.05fr)]">
+      <aside className="relative hidden min-h-[100dvh] overflow-hidden bg-accent px-10 py-12 text-page lg:flex lg:flex-col xl:px-14">
         <div className="relative z-10">
           <BrandMark inverse />
         </div>
 
-        <div className="relative z-10 my-auto max-w-xl py-14">
+        <div className="relative z-10 mt-14 max-w-xl">
           <motion.p
             initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-300"
+            className="font-mono text-[12px] font-medium uppercase tracking-[0.16em] text-page/70"
           >
-            The ReFon standard
+            {eyebrow}
           </motion.p>
-
           <motion.h2
-            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06 }}
-            className="mt-5 font-display text-4xl font-bold leading-[1.03] tracking-[-0.04em] text-white xl:text-5xl"
+            transition={{ delay: 0.06, type: 'spring', stiffness: 260, damping: 18 }}
+            className="mt-4 font-display text-[clamp(2.75rem,4.6vw,4.25rem)] font-extrabold leading-[1.02] tracking-[-0.035em] text-page"
           >
-            Refurbished, with the measurements published.
+            {headline}
           </motion.h2>
-
-          <ol className="mt-10 border-t border-primary-800">
-            {standard.map(({ icon: Icon, title, body }, index) => (
-              <motion.li
-                key={title}
-                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.12 + index * 0.07 }}
-                className="flex gap-4 border-b border-primary-800 py-5"
-              >
-                <span className="flex shrink-0 flex-col items-center gap-2">
-                  <span className="font-mono text-[10px] font-semibold tabular-nums text-primary-500">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <Icon className="size-5 text-accent-400" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="font-display text-base font-bold tracking-tight text-white">
-                    {title}
-                  </p>
-                  <p className="mt-1.5 text-sm leading-body text-primary-400">{body}</p>
-                </div>
-              </motion.li>
-            ))}
-          </ol>
+          <p className="mt-4 max-w-md text-lg leading-relaxed text-page/80">{lede}</p>
         </div>
 
-        <p className="relative z-10 font-mono text-[11px] uppercase tracking-[0.1em] text-primary-500">
-          © {new Date().getFullYear()} ReFon
-        </p>
+        <div className="relative z-10 my-8 min-h-[16rem] flex-1" aria-hidden="true">
+          <div className="rf-float absolute left-[10%] top-6">
+            <div className="relative h-60 w-32 -rotate-6 rounded-[28px] border-4 border-page bg-page shadow-2xl">
+              <div className="absolute inset-x-3 bottom-4 rounded-xl bg-accent/90 px-2 py-1.5 text-center font-mono text-[11px] font-semibold text-page">
+                BATT 91%
+              </div>
+            </div>
+          </div>
+          <div className="rf-float absolute left-[42%] top-14" style={{ animationDelay: '0.8s' }}>
+            <div className="relative h-56 w-28 rotate-6 rounded-[26px] border-4 border-page bg-chalk shadow-2xl">
+              <LogoGlyph className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2" draw={false} />
+            </div>
+          </div>
+        </div>
+
+        <ol className="relative z-10 grid gap-3 border-t border-page/15 pt-6">
+          {standard.map(({ icon: Icon, title, body }) => (
+            <li key={title} className="flex gap-3">
+              <Icon className="mt-0.5 size-5 shrink-0 text-page" aria-hidden="true" />
+              <p className="text-sm leading-relaxed text-page/80">
+                <span className="font-semibold text-page">{title}.</span> {body}
+              </p>
+            </li>
+          ))}
+        </ol>
       </aside>
 
       <main

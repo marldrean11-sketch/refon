@@ -280,7 +280,7 @@ export function CameraTest({ onResult }) {
   return (
     <div className="grid gap-3">
       <div
-        className={`relative overflow-hidden rounded-card bg-dark ${state === 'open' ? 'aspect-[3/4] max-h-[60vh] sm:aspect-video' : 'hidden'}`}
+        className={`relative overflow-hidden rounded-card bg-black ${state === 'open' ? 'aspect-[3/4] max-h-[60vh] sm:aspect-video' : 'hidden'}`}
       >
         <video
           ref={videoRef}

@@ -4,6 +4,7 @@ import { ButtonLink } from '../components/ui/Button.jsx'
 import { SUSTAINABILITY_POINTS } from '../content/policy-content.js'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 import { StaticPageLayout } from './StaticPageLayout.jsx'
+import { SITE_INFO } from '../content/site-info.js'
 
 const VALUES = [
   {
@@ -67,6 +68,13 @@ export function AboutPage() {
           own servers.
         </p>
       </div>
+
+      <p
+        data-testid="about-credits"
+        className="mt-8 inline-flex rounded-full border border-accent/40 bg-accent-100 px-4 py-2 font-mono text-[12px] uppercase tracking-[0.1em] text-accent"
+      >
+        {SITE_INFO.credits}
+      </p>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2">
         <section className="rounded-card-lg border border-primary-100 bg-primary-50 p-6">

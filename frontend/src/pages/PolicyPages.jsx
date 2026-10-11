@@ -1,4 +1,4 @@
-import { SITE_INFO } from '../content/site-info.js'
+import { SITE_INFO, boothLabel } from '../content/site-info.js'
 import { PolicyList, StaticPageLayout } from './StaticPageLayout.jsx'
 import {
   RETURN_TERMS,
@@ -214,11 +214,16 @@ export function TermsPage() {
 }
 
 export function ContactPage() {
+  const { contact, location, socials, credits } = SITE_INFO
+  const card = 'rounded-card-lg border border-line bg-card p-6'
+  const title = 'font-display text-lg font-semibold text-ink'
+  const body = 'mt-2 text-sm leading-body text-muted'
+
   return (
     <StaticPageLayout
       eyebrow="Support"
       title="Contact us"
-      lede="Questions about a listing, an order, or selling on ReFon. We answer within one business day."
+      lede="Questions about a listing, the health check, a trade-in or selling on ReFon. Message us, or find us at the Techno Fair."
       breadcrumb={[
         { label: 'Home', to: MARKETPLACE_ROUTES.home },
         { label: 'Contact Us' },
@@ -226,42 +231,70 @@ export function ContactPage() {
       cta={{ label: 'Shop refurbished phones', to: MARKETPLACE_ROUTES.shop }}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <section className="rounded-card-lg border border-line bg-white p-6">
-          <h2 className="font-display text-lg font-semibold text-ink">Email</h2>
-          <p className="mt-2 text-sm leading-body text-muted">
-            {SITE_INFO.contact.email}: best for order questions and seller applications.
+        <section className={card} data-testid="contact-email">
+          <h2 className={title}>Email</h2>
+          <p className={body}>
+            <a href={`mailto:${contact.email}`} className="font-semibold text-accent hover:underline">
+              {contact.email}
+            </a>
+            <br />
+            Best for listing questions and seller applications.
           </p>
         </section>
-        <section className="rounded-card-lg border border-line bg-white p-6">
-          <h2 className="font-display text-lg font-semibold text-ink">Phone</h2>
-          <p className="mt-2 text-sm leading-body text-muted">
-            +63 2 8123 4567 — Monday to Saturday, 9am to 6pm PHT.
+        <section className={card} data-testid="contact-phone">
+          <h2 className={title}>Phone</h2>
+          <p className={body}>
+            <a href={contact.phoneHref} className="font-semibold text-accent hover:underline">
+              {contact.phone}
+            </a>
+            <br />
+            {contact.hours}
           </p>
         </section>
-        <section className="rounded-card-lg border border-line bg-white p-6">
-          <h2 className="font-display text-lg font-semibold text-ink">Office</h2>
-          <p className="mt-2 text-sm leading-body text-muted">
-            Quezon City, Philippines. Walk-ins by appointment.
+        <section className={card} data-testid="contact-location">
+          <h2 className={title}>Find us</h2>
+          <p className={body}>
+            {location.venue}, {location.city}, {location.country}
+            <br />
+            {boothLabel(location)}
           </p>
         </section>
-        <section className="rounded-card-lg border border-line bg-white p-6">
-          <h2 className="font-display text-lg font-semibold text-ink">Report a listing</h2>
-          <p className="mt-2 text-sm leading-body text-muted">
-            Use the report option on any product page. It goes straight to the
-            moderation team.
+        <section className={card}>
+          <h2 className={title}>Report a listing</h2>
+          <p className={body}>
+            Use the report option on any product page. It goes straight to the moderation team.
           </p>
         </section>
       </div>
 
-      <div className="mt-8 rounded-card-lg border border-primary-100 bg-primary-50 p-6">
-        <h2 className="font-display text-xl font-semibold text-ink">
-          Already placed an order?
-        </h2>
+      <div className="mt-8 rounded-card-lg border border-line-2 bg-panel p-6">
+        <h2 className="font-display text-xl font-semibold text-ink">Social media</h2>
         <p className="mt-2 text-sm leading-body text-muted">
-          Order questions are fastest through the order timeline in your account,
-          where you can see the current status and request a return or warranty
-          service.
+          {socials.some((social) => social.href)
+            ? 'Follow ReFon for new drops and booth updates.'
+            : 'Our Facebook, Instagram and TikTok pages are coming soon.'}
         </p>
+        <ul className="mt-4 flex flex-wrap gap-2">
+          {socials.map((social) => (
+            <li key={social.id}>
+              {social.href ? (
+                <a
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rf-bounce inline-flex min-h-11 items-center rounded-full border border-line-2 px-4 text-sm font-semibold text-ink hover:border-accent hover:text-accent"
+                >
+                  {social.label}
+                </a>
+              ) : (
+                <span className="inline-flex min-h-11 items-center rounded-full border border-dashed border-line-2 px-4 text-sm text-subtle">
+                  {social.label} · soon
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-6 border-t border-line pt-4 text-[13px] text-subtle">{credits}</p>
       </div>
     </StaticPageLayout>
   )

@@ -2,13 +2,13 @@ import { useState } from 'react'
 import {
   AlertCircle,
   ArrowRight,
-  LoaderCircle,
   ShieldCheck,
   ShoppingBag,
   Store,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
+import { LogoGlyph } from '../components/ui/BrandMark.jsx'
 import { PasswordField } from '../components/auth/PasswordField.jsx'
 import { TextField } from '../components/ui/TextField.jsx'
 import { useAuth } from '../features/auth/useAuth.js'
@@ -30,14 +30,14 @@ const initialForm = {
 const roleOptions = [
   {
     value: 'BUYER',
-    label: "I'm a Buyer",
-    description: 'Find a trusted second-hand phone.',
+    label: 'Bibili ako',
+    description: 'Shop graded phones, save favourites and hold one for 15 minutes.',
     icon: ShoppingBag,
   },
   {
     value: 'SELLER',
-    label: "I'm a Seller",
-    description: 'List phones and manage my shop.',
+    label: 'Magbebenta ako',
+    description: 'List phones with a grade, a battery reading and the 11-point check.',
     icon: Store,
   },
 ]
@@ -128,10 +128,18 @@ export function RegisterPage() {
   const visibleError = formError || initializationError
 
   return (
-    <AuthShell>
-      <section className="rounded-card-lg border border-line bg-surface p-5 sm:p-8">
+    <AuthShell
+      eyebrow="Join ReFon"
+      headline="Join the sulit side."
+      lede={
+        form.role === 'SELLER'
+          ? 'Sell to buyers who can see exactly what they are getting, so fewer “legit ba ’to?” messages.'
+          : 'Buy pre-loved phones with the grade, battery and checks shown up front. Walang tinatago.'
+      }
+    >
+      <section className="rounded-card-lg border border-line bg-card p-5 sm:p-8">
         <div className="mb-7">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700">
+          <p className="font-mono text-[12px] font-medium uppercase tracking-[0.16em] text-accent">
             Join ReFon
           </p>
           <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink">
@@ -145,7 +153,7 @@ export function RegisterPage() {
 
         {visibleError && (
           <div
-            className="mb-6 rounded-control border border-danger bg-red-50 p-4 text-sm text-danger"
+            className="mb-6 rounded-2xl border border-danger/50 bg-red-50 p-4 text-sm text-danger"
             role="alert"
             aria-live="assertive"
           >
@@ -157,6 +165,66 @@ export function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          {/* The role comes first, as two big tap cards: it decides what the rest of
+              the account is for. Real radio inputs underneath, so it is one
+              question with two answers to assistive technology. */}
+          <fieldset aria-describedby={fieldErrors.role ? 'register-role-error' : undefined}>
+            <legend className="font-mono text-[12px] font-medium uppercase tracking-[0.12em] text-muted">
+              Ano’ng gagawin mo sa ReFon?
+            </legend>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Account type">
+              {roleOptions.map((option) => {
+                const Icon = option.icon
+                const isSelected = form.role === option.value
+
+                return (
+                  <label key={option.value} className="group cursor-pointer">
+                    <input
+                      id={`register-role-${option.value}`}
+                      type="radio"
+                      name="role"
+                      value={option.value}
+                      checked={isSelected}
+                      onChange={() => selectRole(option.value)}
+                      disabled={isSubmitting}
+                      className="peer sr-only"
+                    />
+                    <span
+                      className={`rf-lift flex h-full min-h-[10.5rem] flex-col gap-2.5 rounded-[22px] border-2 p-5 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent ${
+                        isSelected
+                          ? 'border-accent bg-accent text-page'
+                          : 'border-line-2 bg-well text-ink hover:border-subtle'
+                      }`}
+                    >
+                      <span
+                        className={`grid size-11 place-items-center rounded-2xl ${
+                          isSelected ? 'bg-page text-accent' : 'bg-line text-ink'
+                        }`}
+                      >
+                        <Icon className="size-5" aria-hidden="true" />
+                      </span>
+                      <span className={`font-display text-lg font-bold ${isSelected ? 'text-page' : 'text-ink'}`}>
+                        {option.label}
+                      </span>
+                      <span className={`text-[13px] leading-relaxed ${isSelected ? 'text-page/80' : 'text-muted'}`}>
+                        {option.description}
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+            {fieldErrors.role && (
+              <p
+                id="register-role-error"
+                className="mt-2 text-xs font-medium text-danger"
+                role="alert"
+              >
+                {fieldErrors.role}
+              </p>
+            )}
+          </fieldset>
+
           <TextField
             id="name"
             name="name"
@@ -200,92 +268,14 @@ export function RegisterPage() {
             required
           />
 
-          {/* The role choice is a segmented control rather than two icon cards.
-              It is one question with two answers, so it reads as one control —
-              and it immediately shows what picking each one actually does. */}
-          <fieldset aria-describedby={fieldErrors.role ? 'register-role-error' : undefined}>
-            <legend className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-ink">
-              How will you use ReFon?
-            </legend>
-            <div
-              className="mt-2 grid gap-px overflow-hidden rounded-control border border-line-2 bg-line sm:grid-cols-2"
-              role="radiogroup"
-              aria-label="Account type"
-            >
-              {roleOptions.map((option) => {
-                const Icon = option.icon
-                const isSelected = form.role === option.value
-
-                return (
-                  <label key={option.value} className="group cursor-pointer">
-                    <input
-                      id={`register-role-${option.value}`}
-                      type="radio"
-                      name="role"
-                      value={option.value}
-                      checked={isSelected}
-                      onChange={() => selectRole(option.value)}
-                      disabled={isSubmitting}
-                      className="peer sr-only"
-                    />
-                    <span
-                      className={`flex h-full flex-col p-4 transition duration-150 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:-outline-offset-2 peer-focus-visible:outline-primary-950 ${
-                        isSelected
-                          ? 'bg-primary-950 text-white'
-                          : 'bg-surface hover:bg-surface-2'
-                      }`}
-                    >
-                      <span className="flex items-center justify-between gap-2">
-                        <Icon
-                          className={`size-4 ${isSelected ? 'text-accent-300' : 'text-subtle'}`}
-                          aria-hidden="true"
-                        />
-                        <span
-                          className={`grid size-4 place-items-center rounded-full border ${
-                            isSelected ? 'border-white bg-white' : 'border-line-2 bg-surface'
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {isSelected ? <span className="block size-1.5 rounded-full bg-primary-950" /> : null}
-                        </span>
-                      </span>
-                      <span
-                        className={`mt-3 text-sm font-bold ${
-                          isSelected ? 'text-white' : 'text-ink'
-                        }`}
-                      >
-                        {option.label}
-                      </span>
-                      <span
-                        className={`mt-1 text-xs leading-relaxed ${
-                          isSelected ? 'text-primary-300' : 'text-muted'
-                        }`}
-                      >
-                        {option.description}
-                      </span>
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-            {fieldErrors.role && (
-              <p
-                id="register-role-error"
-                className="mt-2 text-xs font-medium text-danger"
-                role="alert"
-              >
-                {fieldErrors.role}
-              </p>
-            )}
-          </fieldset>
+          <PasswordStrength password={form.password} />
 
           {form.role === 'SELLER' && (
-            <div className="flex gap-3 rounded-control border border-accent-300 bg-accent-50 p-4 text-sm text-accent-900">
+            <div className="flex gap-3 rounded-2xl border border-dashed border-line-2 bg-well p-4 text-sm text-muted">
               <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent-700" aria-hidden="true" />
               <p className="leading-relaxed">
-                We’ll create your seller profile with{' '}
-                <span className="font-bold">PENDING</span> verification. Seller tools
-                unlock after review.
+                Seller accounts are checked by our admin team before your first listing goes live.
+                Your profile starts as <span className="font-bold text-ink">PENDING</span> until then.
               </p>
             </div>
           )}
@@ -293,11 +283,11 @@ export function RegisterPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-primary-950 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition duration-150 hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rf-bounce group inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-[16px] font-semibold text-page transition duration-150 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>
-                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+                <LogoGlyph className="size-6" draw={false} loading />
                 Creating your account…
               </>
             ) : (
@@ -332,5 +322,44 @@ export function RegisterPage() {
         </p>
       </section>
     </AuthShell>
+  )
+}
+
+const STRENGTH = [
+  { width: '0%', tone: 'bg-line', text: 'text-subtle', label: '' },
+  { width: '33%', tone: 'bg-grade-c', text: 'text-grade-c', label: 'Mahina' },
+  { width: '66%', tone: 'bg-grade-b', text: 'text-grade-b', label: 'Pwede na' },
+  { width: '100%', tone: 'bg-accent', text: 'text-accent', label: 'Malakas!' },
+]
+
+/**
+ * A rough strength meter. It only encourages; the rule that is enforced is the
+ * 8–72 character length in `auth.validation.js`.
+ */
+function PasswordStrength({ password }) {
+  const value = password ?? ''
+  const score =
+    value.length === 0
+      ? 0
+      : value.length < 8
+        ? 1
+        : value.length >= 12 || (/[0-9]/.test(value) && /[a-z]/i.test(value) && /[^a-z0-9]/i.test(value))
+          ? 3
+          : 2
+  const level = STRENGTH[score]
+
+  return (
+    <div className="-mt-2 flex items-center gap-3" aria-live="polite">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+        <div
+          className={`h-full rounded-full ${level.tone} transition-[width] duration-500 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]`}
+          style={{ width: level.width }}
+        />
+      </div>
+      <span className={`min-w-[4.5rem] text-right font-mono text-[12px] ${level.text}`}>
+        {level.label && <span className="sr-only">Password strength: </span>}
+        {level.label}
+      </span>
+    </div>
   )
 }

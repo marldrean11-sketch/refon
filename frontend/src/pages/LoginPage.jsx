@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { AlertCircle, ArrowRight, LoaderCircle } from 'lucide-react'
+import { AlertCircle, ArrowRight } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
+import { LogoGlyph } from '../components/ui/BrandMark.jsx'
 import { PasswordField } from '../components/auth/PasswordField.jsx'
 import { TextField } from '../components/ui/TextField.jsx'
 import { useAuth } from '../features/auth/useAuth.js'
@@ -107,22 +108,25 @@ export function LoginPage() {
 
   return (
     <AuthShell>
-      <section className="rounded-card-lg border border-line bg-surface p-5 sm:p-8">
+      <section className="rounded-card-lg border border-line bg-card p-5 sm:p-8">
         <div className="mb-7">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-700">
+          <p className="font-mono text-[12px] font-medium uppercase tracking-[0.16em] text-accent">
             Welcome back
           </p>
           <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink">
             Sign in to ReFon
           </h1>
           <p className="mt-2.5 leading-body text-muted">
-            Access your buyer or seller workspace securely.
+            Bago ka lang?{' '}
+            <Link to={registerHref} className="font-semibold text-accent hover:underline">
+              Create an account
+            </Link>
           </p>
         </div>
 
         {visibleError && (
           <div
-            className="mb-6 rounded-control border border-danger bg-red-50 p-4 text-sm text-danger"
+            className="mb-6 rounded-2xl border border-danger/50 bg-red-50 p-4 text-sm text-danger"
             role="alert"
             aria-live="assertive"
           >
@@ -165,7 +169,7 @@ export function LoginPage() {
           <div className="-mt-1 text-right">
             <Link
               to={AUTH_ROUTES.forgotPassword}
-              className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted underline underline-offset-4 transition hover:text-primary-950"
+              className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-muted underline underline-offset-4 transition hover:text-accent"
             >
               Forgot your password?
             </Link>
@@ -174,12 +178,12 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-primary-950 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition duration-150 hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rf-bounce group inline-flex h-14 w-full items-center justify-center gap-2 rounded-control bg-accent px-5 text-[16px] font-semibold text-page transition duration-150 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? (
               <>
-                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-                Signing in securely…
+                <LogoGlyph className="size-6" draw={false} loading />
+                Signing in…
               </>
             ) : (
               <>
@@ -197,7 +201,7 @@ export function LoginPage() {
           New to ReFon?{' '}
           <Link
             to={registerHref}
-            className="font-bold text-primary-800 transition hover:text-primary-950 hover:underline"
+            className="font-bold text-primary-800 transition hover:text-accent hover:underline"
           >
             Create an account
           </Link>

@@ -16,6 +16,7 @@ import { Badge } from '../components/ui/Badge.jsx'
 import { INSPECTION_CHECKS, CONDITION_GRADE_ORDER, getConditionGrade } from '../lib/listing-taxonomy.js'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 import { INSPECTION_STAGES } from '../content/policy-content.js'
+import { FloatingLoops } from '../components/brand/FloatingLoops.jsx'
 
 const STAGE_ICONS = [Microscope, Cpu, ClipboardCheck, Badge, ShieldCheck]
 
@@ -33,27 +34,23 @@ export function QualityCheckPage() {
 
   return (
     <>
-      <div className="relative overflow-hidden bg-primary-950 text-white">
-        <div
-          className="absolute -right-24 -top-24 size-96 rounded-full bg-primary-500/25 blur-3xl"
-          aria-hidden="true"
-        />
+      <div className="relative overflow-hidden border-b border-line bg-page text-ink">
+        <FloatingLoops />
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
           <Breadcrumb
             items={[
               { label: 'Home', to: MARKETPLACE_ROUTES.home },
               { label: 'How We Test' },
             ]}
-            className="[&_a]:text-primary-100/80 [&_a:hover]:text-white [&_span]:text-white"
           />
           <div className="mt-6 max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-300">
+            <p className="font-mono text-[12px] uppercase tracking-[0.14em] text-accent">
               Our quality process
             </p>
             <h1 className="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">
               How We Test Every Phone
             </h1>
-            <p className="mt-5 text-lg leading-body text-primary-100/85">
+            <p className="mt-5 text-lg leading-body text-muted">
               Trust in refurbished phones comes down to one question: what actually
               happened to this device? We answer it with five documented stages,
               an eleven-point functional checklist, and a published condition grade.
@@ -66,7 +63,6 @@ export function QualityCheckPage() {
                 to={MARKETPLACE_ROUTES.howItWorks}
                 variant="secondary"
                 size="lg"
-                className="border-white/20 bg-white/10 text-white hover:bg-white/20"
               >
                 How buying works
               </ButtonLink>

@@ -52,7 +52,7 @@ function Overlay({ children, className = '', ...rest }) {
 /** The closing question both tests end on, set on a card in the middle of the screen. */
 function Verdict({ question, yes, no, onAnswer }) {
   return (
-    <div className="absolute inset-0 grid place-items-center bg-dark/70 p-6">
+    <div className="absolute inset-0 grid place-items-center bg-black/75 p-6">
       <div className="w-full max-w-sm rounded-card-lg bg-card p-6 text-center shadow-pop">
         <p className="text-lg font-bold leading-snug text-ink">{question}</p>
         <div className="mt-6 grid gap-2.5">
@@ -120,7 +120,7 @@ export function DisplayTest({ onResult }) {
       onClick={() => !isDone && setIndex((value) => value + 1)}
     >
       {showHint && !isDone && (
-        <p className="pointer-events-none absolute inset-x-0 bottom-10 mx-auto w-fit rounded-control bg-dark/80 px-4 py-2 text-sm font-semibold text-white">
+        <p className="pointer-events-none absolute inset-x-0 bottom-10 mx-auto w-fit rounded-control bg-black/80 px-4 py-2 text-sm font-semibold text-chalk">
           Look closely, then tap to see the next colour
         </p>
       )}

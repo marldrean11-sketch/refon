@@ -2,6 +2,7 @@ import { ArrowLeft, SearchX } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { BrandMark } from '../components/ui/BrandMark.jsx'
+import { FloatingLoops } from '../components/brand/FloatingLoops.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { standardTransition, usePrefersReducedMotion } from '../lib/motion.ts'
 
@@ -14,10 +15,7 @@ export function NotFoundPage() {
       tabIndex={-1}
       className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-canvas px-5 py-12 focus:outline-none"
     >
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 size-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-100/70 blur-3xl"
-        aria-hidden="true"
-      />
+      <FloatingLoops />
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}

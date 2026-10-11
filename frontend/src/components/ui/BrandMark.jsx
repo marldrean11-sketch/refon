@@ -13,11 +13,12 @@ const LOOP_PATH =
  * index.css); `spin` makes it turn once when its parent is hovered, and `loading`
  * keeps it turning, which is how the same mark doubles as the spinner.
  *
+ * `inverse` swaps the tile to near-black with a lime outline, for lime panels.
  * `tile={false}` drops the lime square and draws the outline in `currentColor`,
  * for decorative uses such as the floating-loops background.
  */
-export function LogoGlyph({ className = 'size-9', tile = true, draw = true, loading = false }) {
-  const stroke = tile ? '#0a0b0d' : 'currentColor'
+export function LogoGlyph({ className = 'size-9', tile = true, draw = true, loading = false, inverse = false }) {
+  const stroke = !tile ? 'currentColor' : inverse ? '#c6ff3d' : '#0a0b0d'
   return (
     <svg
       viewBox="0 0 112 112"
@@ -25,7 +26,7 @@ export function LogoGlyph({ className = 'size-9', tile = true, draw = true, load
       fill="none"
       aria-hidden="true"
     >
-      {tile && <rect width="112" height="112" rx="30" fill="#c6ff3d" />}
+      {tile && <rect width="112" height="112" rx="30" fill={inverse ? '#0a0b0d' : '#c6ff3d'} />}
       <path
         className="rf-loop-stroke"
         d={LOOP_PATH}
@@ -67,7 +68,7 @@ export function BrandMark({
       aria-label="ReFon home"
       className={`group inline-flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page ${className}`}
     >
-      <LogoGlyph className="size-9 shrink-0 sm:size-10" />
+      <LogoGlyph className="size-9 shrink-0 sm:size-10" inverse={inverse} />
       {!compact && (
         <Wordmark inverse={inverse} className={`text-[1.35rem] sm:text-[1.5rem] ${wordmarkClassName}`} />
       )}

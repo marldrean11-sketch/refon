@@ -31,7 +31,7 @@ const TONES = {
     ring: 'focus-visible:ring-night focus-visible:ring-offset-page',
   },
   night: {
-    surface: 'bg-night text-white',
+    surface: 'bg-card text-ink ring-1 ring-inset ring-line-2',
     rule: 'border-white/30',
     priceRule: 'border-tag',
     track: 'bg-white/20',
