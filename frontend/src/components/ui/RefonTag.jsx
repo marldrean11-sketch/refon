@@ -62,7 +62,7 @@ export function RefonTag({ listing, tone = 'tag', className = '', tilt = true, l
 
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-display text-[1.6rem] font-extrabold leading-none tracking-[-0.02em] [font-stretch:112%]">
+          <p className="font-display text-[1.6rem] font-extrabold leading-none tracking-[-0.02em]">
             {listing.model}
           </p>
           {details ? <p className="mt-2 font-mono text-[12.5px] opacity-80">{details}</p> : null}
@@ -76,7 +76,7 @@ export function RefonTag({ listing, tone = 'tag', className = '', tilt = true, l
           className="grid size-16 shrink-0 rotate-[8deg] place-items-center rounded-full border-[3px] border-current"
         >
           <span className="flex flex-col items-center gap-0.5">
-            <span className="font-display text-[1.9rem] font-black leading-none [font-stretch:125%]">
+            <span className="font-display text-[1.9rem] font-black leading-none">
               {grade.id}
             </span>
             <span className="font-mono text-[7px] font-semibold uppercase tracking-[0.1em]">Grade</span>
@@ -119,7 +119,7 @@ export function RefonTag({ listing, tone = 'tag', className = '', tilt = true, l
       </dl>
 
       <div className={`mt-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t-2 ${palette.priceRule} pt-3`}>
-        <span className="font-display text-[1.9rem] font-black tracking-[-0.02em] tabular-nums [font-stretch:112%]">
+        <span className="font-display text-[1.9rem] font-black tracking-[-0.02em] tabular-nums">
           {formatPeso(listing.price)}
         </span>
         {Number.isFinite(savings) && savings > 0 ? (

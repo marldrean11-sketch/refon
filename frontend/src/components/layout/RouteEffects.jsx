@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { scrollToElement, scrollToTop } from '../../lib/scroll.js'
+import { SITE_INFO } from '../../content/site-info.js'
 
 const ROUTE_META = {
   '/': {
@@ -144,7 +145,7 @@ const DEFAULT_META = {
     'Shop quality-tested refurbished smartphones with transparent condition grades, published battery health, warranty coverage, and verified sellers.',
 }
 
-const ORIGIN = 'https://refon.ph'
+const ORIGIN = SITE_INFO.url
 
 /**
  * Resolves title, description, and canonical path for a route.

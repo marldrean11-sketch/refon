@@ -1,16 +1,14 @@
 /**
- * ReFon design tokens.
+ * ReFon design tokens: the dark "volt lime" theme.
  *
  * Raw values live here rather than `var(--…)` references on purpose: Tailwind
- * cannot resolve an alpha channel from a custom property, so a `var()`-backed
- * palette silently drops every `bg-accent/10` and `border-danger/40` in the
- * codebase. The stylesheet in `src/index.css` declares the same values as custom
- * properties for hand-written CSS; the two files are mirrors and are edited
- * together.
+ * cannot resolve an alpha channel from a custom property. `src/index.css`
+ * declares the same values as custom properties for hand-written CSS; the two
+ * files are mirrors and are edited together.
  *
- * The palette is a cool paper, Night navy for every heavy object, ReFon Cobalt
- * for the brand, and Tag Yellow for the ReFon Tag and the hero band. Green keeps
- * one meaning: verified, inspected, or cleared.
+ * Near-black surfaces, chalk text, and one brand colour, volt lime, for primary
+ * actions, "verified", and Grade A. Amber is value and Grade B; coral is Grade C
+ * and errors.
  */
 
 /** @type {import('tailwindcss').Config} */
@@ -20,184 +18,220 @@ export default {
     extend: {
       colors: {
         /**
-         * The four surfaces.
-         *
-         * `page` is the canvas and the only thing that may sit behind a whole
-         * page. `panel` is the step up from it, for a section that needs to read
-         * as a different plane without a border. `card` is white and is used for
-         * anything that holds content of its own. The gap between `page` and
-         * `panel` is deliberately narrow — 4% of luminance — because a wide step
-         * makes a page look like a stack of unrelated documents.
+         * The four surfaces, darkest first. `page` is the void behind everything,
+         * `panel` a step up for a section, `card` anything holding content, and
+         * `well` a recess inside a card.
          */
-        page: '#f3f5f9',
-        panel: '#e9edf5',
-        card: '#ffffff',
-        /** A third step down, for wells inside a panel. */
-        well: '#dfe4ee',
+        page: '#0a0b0d',
+        panel: '#121418',
+        card: '#16191e',
+        well: '#1a1d23',
 
         /**
-         * Text.
-         *
-         * `ink` is near-black rather than pure black: `#111` reads as printed
-         * ink at 17px, where `#000` reads as an error message. `muted` is
-         * secondary text and `subtle` is the floor — it is never allowed on
-         * anything a visitor has to act on.
+         * `white` is re-pointed at the card surface. The old light theme used
+         * `bg-white` for cards and `text-white` for type on heavy dark buttons;
+         * in the dark theme those buttons are lime, so both uses keep working
+         * with one value: cards stay a step above the page, and type on a lime
+         * fill is near-black.
          */
-        ink: '#0d1633',
-        muted: '#4d5672',
-        subtle: '#646c88',
+        white: '#16191e',
+
+        /** Text: chalk, then two greys. `subtle` is never used on a control. */
+        ink: '#f2f4f0',
+        muted: '#b9bec4',
+        subtle: '#9ba1a8',
 
         /** Hairlines. `line` is decorative; `line-2` is a border you can see. */
-        line: '#e1e5ee',
-        'line-2': '#c8cfdd',
+        line: '#22262d',
+        'line-2': '#3a3f48',
 
-        /** The one signal colour. Verified, inspected, cleared. */
+        /**
+         * Volt lime: the one brand colour. Primary actions, verified, Grade A.
+         * Low steps are dark tints for chips; high steps are text-safe lime.
+         */
         accent: {
-          DEFAULT: '#10b981',
-          /** The hover/active step, for controls where the default is too light. */
-          hover: '#0ea371',
-          /** Text-safe green for coloured type on a light surface. */
-          strong: '#0b8a5e',
-          /** The tint. Backgrounds, chips, and anything behind green type. */
-          tint: '#d1fae5',
-          50: '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981',
-          600: '#0ea371',
-          700: '#0b8a5e',
-          800: '#0a6e4b',
-          900: '#08583c',
-          950: '#04321f',
+          DEFAULT: '#c6ff3d',
+          hover: '#b4f03a',
+          strong: '#c6ff3d',
+          tint: '#1f2a0e',
+          50: '#161d0a',
+          100: '#1f2a0e',
+          200: '#2e3f12',
+          300: '#5c7f1a',
+          400: '#a8e02e',
+          500: '#c6ff3d',
+          600: '#b4f03a',
+          700: '#c6ff3d',
+          800: '#d7ff7a',
+          900: '#e3ff9e',
+          950: '#f0ffd0',
         },
-
-        /** The heavy dark. Buttons, the footer, and the splash panel's mark. */
-        dark: '#0d1633',
-        primary: {
-          50: '#f3f4f8',
-          100: '#e7e9f0',
-          200: '#cfd3df',
-          300: '#aeb4c7',
-          400: '#8a91aa',
-          500: '#6a7290',
-          600: '#4d5672',
-          700: '#333f6e',
-          800: '#222e5c',
-          900: '#16214a',
-          950: '#0d1633',
+        lime: {
+          DEFAULT: '#c6ff3d',
+          hover: '#b4f03a',
+          soft: '#1f2a0e',
         },
 
         /**
-         * The brand.
-         *
-         * `night` is the navy that carries every heavy object: headings, the
-         * primary button, the footer. `brand` is ReFon Cobalt, for links and the
-         * one highlighted item in a row. `tag` is Tag Yellow, the colour of the
-         * ReFon Tag and of the hero band. It is a fill only: Night text sits on
-         * it at 11.6:1, and it is never used as text on a light surface.
+         * The heavy objects of the light theme (primary buttons, the footer)
+         * were navy. They are lime now, so `dark` and `night` name the lime fill.
          */
+        dark: '#c6ff3d',
         night: {
-          DEFAULT: '#0d1633',
-          700: '#222e5c',
-          800: '#16214a',
+          DEFAULT: '#c6ff3d',
+          700: '#b4f03a',
+          800: '#a8e02e',
         },
+
+        /**
+         * The neutral ramp, inverted for a dark theme: 50 is the faintest raised
+         * tint, 600 to 900 are readable text, and 950 is the primary fill (lime).
+         */
+        primary: {
+          50: '#1c2026',
+          100: '#22262d',
+          200: '#2a2e36',
+          300: '#3a3f48',
+          400: '#5b616b',
+          500: '#8a9099',
+          600: '#b9bec4',
+          700: '#cdd1d5',
+          800: '#b4f03a',
+          900: '#e6e9ec',
+          950: '#c6ff3d',
+        },
+
         brand: {
-          DEFAULT: '#1f3fd1',
-          hover: '#1a35b3',
-          tint: '#e3e8ff',
+          DEFAULT: '#c6ff3d',
+          hover: '#b4f03a',
+          tint: '#1f2a0e',
         },
         tag: {
-          DEFAULT: '#ffc933',
-          hover: '#f5b800',
-          soft: '#fff4cc',
+          DEFAULT: '#c6ff3d',
+          hover: '#b4f03a',
+          soft: '#1f2a0e',
         },
 
-        /** Status. `red` is also the notification-badge colour. */
-        red: '#ef4444',
-        danger: '#ef4444',
-        success: '#059669',
-        warning: '#f59e0b',
-        /**
-         * Neutral, not blue. The palette has one hue that carries meaning; an
-         * informational message is set in ink rather than in a second accent.
-         */
-        info: '#0d1633',
+        /** Status. Coral rather than pure red: it reads on near-black. */
+        red: {
+          DEFAULT: '#ff6b5c',
+          50: '#2a1412',
+          100: '#3a1a17',
+          200: '#5a2620',
+          300: '#8a3a30',
+          400: '#ff8a7a',
+          500: '#ff6b5c',
+          600: '#ff6b5c',
+          700: '#ff6b5c',
+          800: '#ff9c8c',
+          900: '#ffb3a6',
+          950: '#ffc9c0',
+        },
+        danger: '#ff6b5c',
+        success: '#c6ff3d',
+        warning: '#ffb547',
+        info: '#f2f4f0',
 
-        /**
-         * The amber family, used for value: discounts, savings, and the two
-         * lower condition grades. Warm against a cool neutral reads as money
-         * without needing a gradient or a glow to sell it.
-         */
+        /** Amber: value, savings, and Grade B. */
         flare: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
-          950: '#451a03',
+          50: '#241a08',
+          100: '#33240a',
+          200: '#4a3410',
+          300: '#7a5418',
+          400: '#ffc066',
+          500: '#ffb547',
+          600: '#ffa526',
+          700: '#ffb547',
+          800: '#ffc978',
+          900: '#ffd9a0',
+          950: '#ffe8c4',
+        },
+        amber: {
+          50: '#241a08',
+          100: '#33240a',
+          200: '#4a3410',
+          300: '#7a5418',
+          400: '#ffc066',
+          500: '#ffb547',
+          600: '#ffa526',
+          700: '#ffb547',
+          800: '#ffc978',
+          900: '#ffd9a0',
+          950: '#ffe8c4',
+        },
+        orange: {
+          50: '#2a160e',
+          100: '#3a1d12',
+          200: '#5a2c1a',
+          300: '#8a4428',
+          400: '#ff9a7c',
+          500: '#ff7a5c',
+          600: '#ff7a5c',
+          700: '#ff8f74',
+          800: '#ffa890',
+          900: '#ffbfac',
+          950: '#ffd6c8',
+        },
+        green: {
+          50: '#161d0a',
+          100: '#1f2a0e',
+          200: '#2e3f12',
+          300: '#5c7f1a',
+          400: '#a8e02e',
+          500: '#c6ff3d',
+          600: '#c6ff3d',
+          700: '#c6ff3d',
+          800: '#d7ff7a',
+          900: '#e3ff9e',
+          950: '#f0ffd0',
+        },
+        violet: {
+          50: '#1d1630',
+          100: '#2a1f45',
+          700: '#c9adff',
         },
 
         verified: {
-          DEFAULT: '#10b981',
-          soft: '#d1fae5',
-          strong: '#0b8a5e',
+          DEFAULT: '#c6ff3d',
+          soft: '#1f2a0e',
+          strong: '#c6ff3d',
         },
 
-        /**
-         * Condition grading. A is the best tier and is the only grade allowed to
-         * be green — the colour means "passed", not "good".
-         */
+        /** Condition grades: lime A, amber B, coral C. */
         grade: {
-          a: '#059669',
-          'a-soft': '#d1fae5',
-          b: '#f59e0b',
-          'b-soft': '#fef3c7',
-          c: '#f97316',
-          'c-soft': '#ffedd5',
+          a: '#c6ff3d',
+          'a-soft': '#1f2a0e',
+          b: '#ffb547',
+          'b-soft': '#33240a',
+          c: '#ff7a5c',
+          'c-soft': '#3a1a12',
         },
 
-        /**
-         * Legacy aliases.
-         *
-         * `surface*` were the pre-redesign names for the same four surfaces. They
-         * are kept so no component has to change to adopt the new palette; new
-         * code uses `page` / `panel` / `card` / `well`.
-         *
-         * `canvas` is the same kind of alias, for `page`. The layouts, `Section`,
-         * and the auth shell still say `bg-canvas`; without it that class matched
-         * nothing and those surfaces were transparent.
-         */
-        canvas: '#f3f5f9',
-        surface: '#ffffff',
-        'surface-2': '#e9edf5',
-        'surface-3': '#dfe4ee',
+        /** Legacy aliases for the same surfaces. */
+        canvas: '#0a0b0d',
+        surface: '#16191e',
+        'surface-2': '#121418',
+        'surface-3': '#1a1d23',
       },
 
       fontFamily: {
         /**
          * Three families, self-hosted, one job each.
          *
-         * Archivo (display) is wide and loud like a printed shop tag; Instrument
-         * Sans (sans, body) is calm for reading; IBM Plex Mono (mono) makes every
+         * Unbounded (display) is round and loud for headlines and the wordmark;
+         * Geist (sans, body) is calm for reading; Geist Mono (mono) makes every
          * measured figure look measured. All three are bundled through
          * `@fontsource`, so the site makes no request to a font CDN and renders
          * identically offline.
          */
-        sans: ['Instrument Sans Variable', 'Instrument Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        display: ['Archivo Variable', 'Archivo', 'Arial Black', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        body: ['Instrument Sans Variable', 'Instrument Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['Geist Variable', 'Geist', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['Unbounded Variable', 'Unbounded', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['Geist Variable', 'Geist', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         /**
          * The data face: eyebrow labels, grades, spec values, and the readings
          * on the ReFon Tag.
          */
-        mono: ['IBM Plex Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        mono: ['Geist Mono Variable', 'Geist Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
 
       /**
@@ -346,21 +380,21 @@ export default {
     boxShadow: {
       none: 'none',
       /** Small chips and badges. Tight, because they are barely off the surface. */
-      sm: '0 2px 8px rgb(0 0 0 / 0.05)',
+      sm: '0 2px 8px rgb(0 0 0 / 0.4)',
       /** The soft elevation. */
-      DEFAULT: '0 10px 40px rgb(0 0 0 / 0.06)',
-      md: '0 10px 40px rgb(0 0 0 / 0.06)',
-      lg: '0 10px 40px rgb(0 0 0 / 0.06)',
+      DEFAULT: '0 10px 40px rgb(0 0 0 / 0.45)',
+      md: '0 10px 40px rgb(0 0 0 / 0.45)',
+      lg: '0 10px 40px rgb(0 0 0 / 0.45)',
       /** The hover elevation. */
-      xl: '0 20px 60px rgb(0 0 0 / 0.1)',
-      '2xl': '0 20px 60px rgb(0 0 0 / 0.1)',
+      xl: '0 20px 60px rgb(0 0 0 / 0.6)',
+      '2xl': '0 20px 60px rgb(0 0 0 / 0.6)',
       /** Dialogs and dropdowns, which genuinely do sit above the page. */
-      pop: '0 0 0 1px rgb(17 17 17 / 0.05), 0 20px 60px rgb(0 0 0 / 0.1)',
+      pop: '0 0 0 1px rgb(255 255 255 / 0.06), 0 20px 60px rgb(0 0 0 / 0.6)',
       /** The accent ring, so focus is green on every dark and light surface. */
-      focus: '0 0 0 3px rgb(16 185 129 / 0.35)',
-      inner: 'inset 0 2px 4px rgb(0 0 0 / 0.06)',
-      card: '0 10px 40px rgb(0 0 0 / 0.06)',
-      'card-hover': '0 20px 60px rgb(0 0 0 / 0.1)',
+      focus: '0 0 0 3px rgb(198 255 61 / 0.35)',
+      inner: 'inset 0 2px 4px rgb(0 0 0 / 0.45)',
+      card: '0 10px 40px rgb(0 0 0 / 0.45)',
+      'card-hover': '0 20px 60px rgb(0 0 0 / 0.6)',
     },
   },
   plugins: [],

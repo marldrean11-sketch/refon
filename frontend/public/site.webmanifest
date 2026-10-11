@@ -4,8 +4,8 @@
   "description": "Inspected secondhand phones from verified sellers. Every listing states its grade, battery health and warranty term.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F3F5F9",
-  "theme_color": "#0D1633",
+  "background_color": "#0A0B0D",
+  "theme_color": "#0A0B0D",
   "icons": [
     {
       "src": "/favicon.svg",

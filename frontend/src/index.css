@@ -13,46 +13,47 @@
    */
   :root {
     /* Surfaces */
-    --rf-bg: #f3f5f9;
-    --rf-panel: #e9edf5;
-    --rf-card: #ffffff;
-    --rf-well: #dfe4ee;
+    --rf-bg: #0a0b0d;
+    --rf-panel: #121418;
+    --rf-card: #16191e;
+    --rf-well: #1a1d23;
 
     /* Text */
-    --rf-text: #0d1633;
-    --rf-muted: #4d5672;
-    --rf-subtle: #646c88;
+    --rf-text: #f2f4f0;
+    --rf-muted: #b9bec4;
+    --rf-subtle: #9ba1a8;
 
     /* Lines */
-    --rf-border: #e1e5ee;
-    --rf-border-strong: #c8cfdd;
+    --rf-border: #22262d;
+    --rf-border-strong: #3a3f48;
 
     /* Signal */
-    --rf-accent: #10b981;
-    --rf-accent-hover: #0ea371;
-    --rf-accent-strong: #0b8a5e;
-    --rf-accent-tint: #d1fae5;
+    --rf-accent: #c6ff3d;
+    --rf-accent-hover: #b4f03a;
+    --rf-accent-strong: #c6ff3d;
+    --rf-accent-tint: #1f2a0e;
 
     /* Dark and status */
-    --rf-dark: #0d1633;
-    --rf-brand: #1f3fd1;
-    --rf-tag: #ffc933;
-    --rf-red: #ef4444;
-    --rf-grade-b: #f59e0b;
-    --rf-grade-c: #f97316;
+    --rf-dark: #c6ff3d;
+    --rf-brand: #c6ff3d;
+    --rf-tag: #c6ff3d;
+    --rf-red: #ff6b5c;
+    --rf-grade-b: #ffb547;
+    --rf-grade-c: #ff7a5c;
 
     /* Shape */
     --rf-radius-card: 20px;
     --rf-radius-panel: 28px;
     --rf-radius-pill: 999px;
-    --rf-shadow-soft: 0 10px 40px rgb(0 0 0 / 0.06);
-    --rf-shadow-hover: 0 20px 60px rgb(0 0 0 / 0.1);
+    --rf-shadow-soft: 0 10px 40px rgb(0 0 0 / 0.45);
+    --rf-shadow-hover: 0 20px 60px rgb(0 0 0 / 0.6);
 
     /* Type */
-    --rf-font-sans: 'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif, system-ui,
-      -apple-system, 'Segoe UI', sans-serif;
-    --rf-font-display: 'Archivo Variable', Archivo, 'Arial Black', ui-sans-serif, system-ui, sans-serif;
-    --rf-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    --rf-font-sans: 'Geist Variable', Geist, ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+      sans-serif;
+    --rf-font-display: 'Unbounded Variable', Unbounded, ui-sans-serif, system-ui, sans-serif;
+    --rf-font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo,
+      monospace;
 
     /* Motion. Mirrors src/lib/motion.ts. */
     --rf-ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
@@ -64,6 +65,7 @@
 
   html {
     @apply bg-page text-ink antialiased;
+    color-scheme: dark;
     scroll-padding-top: 6rem;
     -webkit-text-size-adjust: 100%;
     /* Lenis owns the scroll position. A CSS `scroll-behavior: smooth` would
@@ -108,8 +110,6 @@
   h5,
   h6 {
     @apply font-display font-bold leading-tight tracking-tight text-ink;
-    /* Archivo a step wider than normal: the printed-tag voice of the brand. */
-    font-stretch: 110%;
   }
 
   /* Digits are aligned everywhere.
@@ -222,7 +222,7 @@
     margin-left: -8px;
     border-radius: 999px;
     background: var(--tag-hole, var(--rf-bg));
-    box-shadow: inset 0 0 0 2px rgb(13 22 51 / 0.25);
+    box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.18);
   }
 
   /* Hung slightly off-true, and squared up when it is pointed at. */
@@ -241,6 +241,101 @@
     .refon-tag-tilt {
       transition: none;
     }
+  }
+
+  /**
+   * The Loop logo's motion: the outline draws itself, the arrowhead pops in,
+   * and the whole mark turns once with a bounce when its link is hovered.
+   */
+  .rf-loop-draw .rf-loop-stroke {
+    stroke-dasharray: 210;
+    animation: rf-loop-draw 1.1s cubic-bezier(0.65, 0, 0.35, 1) both;
+  }
+
+  .rf-loop-draw .rf-loop-head {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: rf-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.95s both;
+  }
+
+  .group:hover .rf-loop-hover {
+    animation: rf-spin 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .rf-loop-spin {
+    animation: rf-spin 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  }
+
+  /** Springy press for anything clickable that opts in. */
+  .rf-bounce {
+    transition: transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .rf-bounce:hover {
+    transform: scale(1.04);
+  }
+
+  .rf-bounce:active {
+    transform: scale(0.93);
+  }
+
+  /** Cards that lift and tip a little toward the visitor. */
+  .rf-lift {
+    transition:
+      transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 200ms ease;
+  }
+
+  .rf-lift:hover {
+    transform: translateY(-6px) rotate(-0.8deg);
+  }
+
+  .rf-float {
+    animation: rf-float 4s ease-in-out infinite;
+  }
+
+  /** A row that scrolls sideways forever: the Taglish ticker. */
+  .rf-marquee {
+    display: flex;
+    width: max-content;
+    animation: rf-marquee 32s linear infinite;
+  }
+
+  /** Floating loops: outlines of the logo rising over a moving neon floor. */
+  .rf-floor {
+    position: absolute;
+    left: -50%;
+    right: -50%;
+    bottom: -40px;
+    height: 300px;
+    transform: perspective(380px) rotateX(62deg);
+    background-image:
+      linear-gradient(rgb(198 255 61 / 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(198 255 61 / 0.18) 1px, transparent 1px);
+    background-size: 48px 48px;
+    animation: rf-grid-move 1.6s linear infinite;
+    -webkit-mask-image: linear-gradient(to top, #000 30%, transparent);
+    mask-image: linear-gradient(to top, #000 30%, transparent);
+  }
+
+  .rf-rising-loop {
+    position: absolute;
+    bottom: -90px;
+    animation-name: rf-rise;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  /** Confetti piece; `--dx`/`--dy` set its flight. */
+  .rf-confetti {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: rf-burst 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
   /** A row that scrolls sideways inside itself without showing a scrollbar. */
@@ -279,5 +374,73 @@
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0ms !important;
+  }
+}
+@keyframes rf-loop-draw {
+  from {
+    stroke-dashoffset: 210;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes rf-pop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rf-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes rf-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes rf-grid-move {
+  to {
+    background-position: 0 48px;
+  }
+}
+
+@keyframes rf-rise {
+  from {
+    transform: translateY(80px) rotate(var(--r, 0deg));
+  }
+  to {
+    transform: translateY(-900px) rotate(calc(var(--r, 0deg) + 40deg));
+  }
+}
+
+@keyframes rf-burst {
+  from {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--dx), var(--dy)) rotate(300deg) scale(0.4);
+    opacity: 0;
   }
 }

@@ -1,55 +1,58 @@
 import { Link } from 'react-router-dom'
 
+/** The Loop's path: a phone outline drawn as one stroke that ends in an arrow. */
+const LOOP_PATH =
+  'M62 20H66A10 10 0 0 1 76 30V82A10 10 0 0 1 66 92H46A10 10 0 0 1 36 82V30A10 10 0 0 1 46 20H48'
+
 /**
- * The glyph, on its own: the tag-phone.
+ * The glyph on its own: the Loop.
  *
- * A phone cut like a shop tag. The chamfered top corners are the tag's
- * silhouette, the earpiece is its punch hole, and the screen is a battery
- * reading with two bars lit and one faded. It reads as a phone at a glance and
- * as a measurement up close, which is the one idea the brand sells.
+ * A lime tile holding a phone whose outline is a single stroke that comes back
+ * around and ends in an arrowhead: a phone, given another round. On first paint
+ * the stroke draws itself and the arrowhead pops in (`.rf-loop-draw` in
+ * index.css); `spin` makes it turn once when its parent is hovered, and `loading`
+ * keeps it turning, which is how the same mark doubles as the spinner.
  *
- * It is exported separately from `BrandMark` because `BrandMark` is a `Link` —
- * a navigation control — and the splash screen needs the same mark without
- * something underneath it that a visitor could click. The viewBox is padded to a
- * square so the glyph drops into the same `size-*` boxes the old one did.
+ * `tile={false}` drops the lime square and draws the outline in `currentColor`,
+ * for decorative uses such as the floating-loops background.
  */
-export function LogoGlyph({ className = 'size-5' }) {
+export function LogoGlyph({ className = 'size-9', tile = true, draw = true, loading = false }) {
+  const stroke = tile ? '#0a0b0d' : 'currentColor'
   return (
-    <svg viewBox="-6 0 44 44" className={className} fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 112 112"
+      className={`${className} ${draw ? 'rf-loop-draw' : ''} ${loading ? 'rf-loop-spin' : 'rf-loop-hover'}`}
+      fill="none"
+      aria-hidden="true"
+    >
+      {tile && <rect width="112" height="112" rx="30" fill="#c6ff3d" />}
       <path
-        d="M8 1.5h16L30.5 8v30.5a4 4 0 0 1-4 4h-21a4 4 0 0 1-4-4V8Z"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinejoin="round"
+        className="rf-loop-stroke"
+        d={LOOP_PATH}
+        stroke={stroke}
+        strokeWidth="8"
+        strokeLinecap="round"
       />
-      <circle cx="16" cy="8.5" r="2.4" fill="currentColor" />
-      <rect x="8" y="31" width="16" height="4.5" rx="1" fill="currentColor" />
-      <rect x="8" y="24.5" width="16" height="4.5" rx="1" fill="currentColor" />
-      <rect x="8" y="18" width="16" height="4.5" rx="1" fill="currentColor" opacity=".28" />
+      <path className="rf-loop-head" d="M47 10L59 20L47 30Z" fill={stroke} />
+      <circle cx="56" cy="80" r="4.5" fill={stroke} />
     </svg>
   )
 }
 
-/**
- * The wordmark, without a link: "re" in the text colour and "fon" in the brand
- * colour, so the name reads as re + phone. Lowercase and set at Archivo's widest
- * width, which is what makes it look like a printed tag rather than a heading.
- */
-export function Wordmark({ inverse = false, className = 'text-[1.4rem] sm:text-[1.6rem]' }) {
+/** The wordmark: "re" in chalk and "fon" in lime, so it reads as re + phone. */
+export function Wordmark({ inverse = false, className = 'text-[1.35rem] sm:text-[1.5rem]' }) {
   return (
     <span
-      className={`font-display font-black leading-none tracking-[-0.03em] [font-stretch:125%] ${
-        inverse ? 'text-white' : 'text-ink'
+      className={`font-display font-extrabold leading-none tracking-[-0.04em] ${
+        inverse ? 'text-page' : 'text-ink'
       } ${className}`}
     >
-      re<span className={inverse ? 'text-tag' : 'text-brand'}>fon</span>
+      re<span className={inverse ? 'text-page/70' : 'text-accent'}>fon</span>
     </span>
   )
 }
 
-/**
- * The lockup: glyph beside the wordmark, as a link home.
- */
+/** The lockup: Loop beside the wordmark, as a link home. */
 export function BrandMark({
   inverse = false,
   compact = false,
@@ -62,11 +65,11 @@ export function BrandMark({
       to="/"
       onClick={onClick}
       aria-label="ReFon home"
-      className={`group inline-flex items-center gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${className}`}
+      className={`group inline-flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page ${className}`}
     >
-      <LogoGlyph className={`size-8 shrink-0 sm:size-9 ${inverse ? 'text-white' : 'text-ink'}`} />
+      <LogoGlyph className="size-9 shrink-0 sm:size-10" />
       {!compact && (
-        <Wordmark inverse={inverse} className={`text-[1.4rem] sm:text-[1.6rem] ${wordmarkClassName}`} />
+        <Wordmark inverse={inverse} className={`text-[1.35rem] sm:text-[1.5rem] ${wordmarkClassName}`} />
       )}
     </Link>
   )

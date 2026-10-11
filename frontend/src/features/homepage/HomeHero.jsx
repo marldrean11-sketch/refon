@@ -89,7 +89,7 @@ export function HomeHero({ listings = [], featured = [] }) {
               aria-label={`${index + 1} of ${count}`}
               className="min-w-0"
             >
-              <h1 className="font-display text-[clamp(2.4rem,5.4vw,4.4rem)] font-black leading-[0.98] tracking-[-0.035em] text-night [font-stretch:104%]">
+              <h1 className="font-display text-[clamp(2.4rem,5.4vw,4.4rem)] font-black leading-[0.98] tracking-[-0.035em] text-night">
                 {slide.headline.map((line) => (
                   <span key={line} className="block">
                     {line}

@@ -1,10 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ReFon">
-  <rect width="64" height="64" rx="15" fill="#0D1633" />
-  <g transform="translate(18 10)" fill="#FFC933">
-    <path d="M8 1.5h16L30.5 8v30.5a4 4 0 0 1-4 4h-21a4 4 0 0 1-4-4V8Z" fill="none" stroke="#FFC933" stroke-width="3" stroke-linejoin="round" />
-    <circle cx="16" cy="8.5" r="2.4" />
-    <rect x="8" y="31" width="16" height="4.5" rx="1" />
-    <rect x="8" y="24.5" width="16" height="4.5" rx="1" />
-    <rect x="8" y="18" width="16" height="4.5" rx="1" opacity=".28" />
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" role="img" aria-label="ReFon">
+  <rect width="112" height="112" rx="30" fill="#C6FF3D" />
+  <path d="M62 20H66A10 10 0 0 1 76 30V82A10 10 0 0 1 66 92H46A10 10 0 0 1 36 82V30A10 10 0 0 1 46 20H48" fill="none" stroke="#0A0B0D" stroke-width="8" stroke-linecap="round" />
+  <path d="M47 10L59 20L47 30Z" fill="#0A0B0D" />
+  <circle cx="56" cy="80" r="4.5" fill="#0A0B0D" />
 </svg>

@@ -1,3 +1,4 @@
+import { SITE_INFO } from '../content/site-info.js'
 import { PolicyList, StaticPageLayout } from './StaticPageLayout.jsx'
 import {
   RETURN_TERMS,
@@ -228,7 +229,7 @@ export function ContactPage() {
         <section className="rounded-card-lg border border-line bg-white p-6">
           <h2 className="font-display text-lg font-semibold text-ink">Email</h2>
           <p className="mt-2 text-sm leading-body text-muted">
-            hello@refon.ph — best for order questions and seller applications.
+            {SITE_INFO.contact.email}: best for order questions and seller applications.
           </p>
         </section>
         <section className="rounded-card-lg border border-line bg-white p-6">

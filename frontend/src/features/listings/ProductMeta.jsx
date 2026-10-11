@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { setPageMeta } from '../../components/layout/RouteEffects.jsx'
 import { formatPeso } from '../../lib/format.js'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
+import { SITE_INFO } from '../../content/site-info.js'
 
 /**
  * Per-product document metadata.
@@ -53,7 +54,7 @@ export function ProductMeta({ listing, canonicalPath }) {
     ].join(' ')
 
     const canonical = canonicalPath ?? `${MARKETPLACE_ROUTES.shop}/${listing.slug ?? listing.id}`
-    const url = `https://refon.ph${canonical}`
+    const url = `${SITE_INFO.url}${canonical}`
 
     // A real photo is a better social card than artwork. Illustration-only
     // listings get no og:image rather than an inaccurate one.
@@ -134,7 +135,7 @@ function buildProductJsonLd({ listing, canonical, image, gradeLabel }) {
   }
 
   if (image) {
-    jsonLd.image = image.startsWith('http') ? image : `https://refon.ph${image}`
+    jsonLd.image = image.startsWith('http') ? image : `${SITE_INFO.url}${image}`
   }
 
   if (listing.ratingAverage && listing.ratingCount > 0) {

@@ -10,4 +10,4 @@ Disallow: /my-inquiries
 Disallow: /cart
 Disallow: /orders
 
-Sitemap: https://refon.ph/sitemap.xml
+Sitemap: https://refon.onrender.com/sitemap.xml

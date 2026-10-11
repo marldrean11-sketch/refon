@@ -380,7 +380,7 @@ function GiantWordmark({ reduced }) {
       className="pointer-events-none mt-8 select-none"
     >
       <span
-        className="block whitespace-nowrap text-center font-display font-black leading-none tracking-[-0.04em] [font-stretch:125%]"
+        className="block whitespace-nowrap text-center font-display font-black leading-none tracking-[-0.04em]"
         style={{
           // Sized in viewport units so it spans the width at every breakpoint
           // without a media query, capped at 20rem so it cannot outgrow the

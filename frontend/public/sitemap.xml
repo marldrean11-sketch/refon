@@ -1,72 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://refon.ph/</loc>
+    <loc>https://refon.onrender.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://refon.ph/phones</loc>
+    <loc>https://refon.onrender.com/phones</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://refon.ph/categories</loc>
+    <loc>https://refon.onrender.com/categories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://refon.ph/how-it-works</loc>
+    <loc>https://refon.onrender.com/how-it-works</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://refon.ph/quality-check</loc>
+    <loc>https://refon.onrender.com/quality-check</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://refon.ph/about</loc>
+    <loc>https://refon.onrender.com/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://refon.ph/faq</loc>
+    <loc>https://refon.onrender.com/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://refon.ph/warranty</loc>
+    <loc>https://refon.onrender.com/warranty</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.ph/returns</loc>
+    <loc>https://refon.onrender.com/returns</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.ph/shipping</loc>
+    <loc>https://refon.onrender.com/shipping</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.ph/sustainability</loc>
+    <loc>https://refon.onrender.com/sustainability</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.ph/contact</loc>
+    <loc>https://refon.onrender.com/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://refon.ph/privacy</loc>
+    <loc>https://refon.onrender.com/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://refon.ph/terms</loc>
+    <loc>https://refon.onrender.com/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
