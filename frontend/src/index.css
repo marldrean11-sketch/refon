@@ -58,9 +58,9 @@
     /* Motion. Mirrors src/lib/motion.ts. */
     --rf-ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
     --rf-ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
-    --rf-duration-micro: 200ms;
-    --rf-duration-standard: 500ms;
-    --rf-duration-hero: 900ms;
+    --rf-duration-micro: 160ms;
+    --rf-duration-standard: 360ms;
+    --rf-duration-hero: 650ms;
   }
 
   html {
@@ -249,26 +249,26 @@
    */
   .rf-loop-draw .rf-loop-stroke {
     stroke-dasharray: 210;
-    animation: rf-loop-draw 1.1s cubic-bezier(0.65, 0, 0.35, 1) both;
+    animation: rf-loop-draw 0.8s cubic-bezier(0.65, 0, 0.35, 1) both;
   }
 
   .rf-loop-draw .rf-loop-head {
     transform-box: fill-box;
     transform-origin: center;
-    animation: rf-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.95s both;
+    animation: rf-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0.7s both;
   }
 
   .group:hover .rf-loop-hover {
-    animation: rf-spin 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: rf-spin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .rf-loop-spin {
-    animation: rf-spin 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+    animation: rf-spin 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
   }
 
   /** Springy press for anything clickable that opts in. */
   .rf-bounce {
-    transition: transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   .rf-bounce:hover {
@@ -282,7 +282,7 @@
   /** Cards that lift and tip a little toward the visitor. */
   .rf-lift {
     transition:
-      transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
       border-color 200ms ease;
   }
 
@@ -290,28 +290,60 @@
     transform: translateY(-6px) rotate(-0.8deg);
   }
 
+  /**
+   * Menu hover: a lime underline grows from the left and the text turns lime.
+   * The line is a pseudo-element scaled on X, so it never shifts the layout.
+   */
+  .rf-underline {
+    position: relative;
+  }
+
+  .rf-underline::after {
+    content: '';
+    position: absolute;
+    left: 0.625rem;
+    right: 0.625rem;
+    bottom: 0.125rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--rf-accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .rf-underline:hover,
+  .rf-underline:focus-visible {
+    color: var(--rf-accent);
+  }
+
+  .rf-underline:hover::after,
+  .rf-underline:focus-visible::after {
+    transform: scaleX(1);
+  }
+
   .rf-float {
-    animation: rf-float 4s ease-in-out infinite;
+    animation: rf-float 3.2s ease-in-out infinite;
   }
 
   /** Staggered entrance for a hero's lines. */
   .rf-rise {
-    animation: rf-rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: rf-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .rf-rise-2 {
-    animation: rf-rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+    animation: rf-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
   }
 
   .rf-rise-3 {
-    animation: rf-rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+    animation: rf-rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
   }
 
   /** A row that scrolls sideways forever: the Taglish ticker. */
   .rf-marquee {
     display: flex;
     width: max-content;
-    animation: rf-marquee 32s linear infinite;
+    animation: rf-marquee 24s linear infinite;
   }
 
   /** Floating loops: outlines of the logo rising over a moving neon floor. */
@@ -329,7 +361,7 @@
     /* The floor scrolls toward the viewer by moving the whole plane one cell,
        not by animating background-position, so the motion stays on the
        compositor. */
-    animation: rf-grid-move 1.6s linear infinite;
+    animation: rf-grid-move 1.2s linear infinite;
     -webkit-mask-image: linear-gradient(to top, #000 30%, transparent);
     mask-image: linear-gradient(to top, #000 30%, transparent);
   }
@@ -351,7 +383,7 @@
     height: 9px;
     border-radius: 2px;
     pointer-events: none;
-    animation: rf-burst 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: rf-burst 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
   /** A row that scrolls sideways inside itself without showing a scrollbar. */

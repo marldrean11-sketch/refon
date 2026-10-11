@@ -29,6 +29,7 @@ import { Link } from 'react-router-dom'
 import { apiRequest } from '../../lib/api-client.js'
 import { Container } from '../design/Container.jsx'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
+import { BrandLogo } from '../../components/brand/BrandLogo.jsx'
 import { fadeUp, stagger, usePrefersReducedMotion } from '../../lib/motion.ts'
 
 /** Budget entry point. Matches the backend's price filters rather than inventing a route. */
@@ -91,7 +92,7 @@ function useCategoryCounts() {
  * row that has to read as one index. The brand name, set at display size, is what
  * distinguishes the tiles — which is what the shop's own category page does.
  */
-const TILE_SURFACE = 'bg-panel hover:bg-well'
+const TILE_SURFACE = 'bg-panel group-hover:bg-well group-hover:border-accent'
 
 export function FeaturedCategoriesSection() {
   const reducedMotion = usePrefersReducedMotion()
@@ -180,10 +181,14 @@ function CategoryTile({ tile, reduced }) {
         own focus ring is still the only state change a keyboard user gets.
       */}
       <motion.div
-        variants={reduced ? undefined : { rest: { y: 0, scale: 1 }, hover: { y: -6, scale: 1.05 } }}
+        variants={reduced ? undefined : { rest: { y: 0, scale: 1 }, hover: { y: -5, scale: 1.03 } }}
         whileHover={reduced ? undefined : 'hover'}
-        className={`flex aspect-square flex-col items-center justify-center gap-2 rounded-card border border-line p-4 text-center shadow-card transition-colors duration-200 group-hover:shadow-card-hover ${TILE_SURFACE}`}
+        transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+        className={`flex aspect-square flex-col items-center justify-center gap-3 rounded-card border border-line p-4 text-center shadow-card transition-colors duration-200 group-hover:shadow-card-hover ${TILE_SURFACE}`}
       >
+        <span className="grid h-12 place-items-center text-ink transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-110 group-hover:text-accent">
+          <BrandLogo brand={tile.brand} className="size-11" />
+        </span>
         <span className="text-lg font-bold leading-tight tracking-[-0.02em] text-ink">
           {tile.label}
         </span>

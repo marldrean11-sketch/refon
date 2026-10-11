@@ -38,7 +38,7 @@ function useCountUp(target, reduced) {
 
     let frame
     const start = performance.now()
-    const duration = 1100
+    const duration = 800
     const tick = (now) => {
       const t = Math.min(1, (now - start) / duration)
       setValue(Math.round(target * (1 - Math.pow(1 - t, 3))))

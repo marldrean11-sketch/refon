@@ -324,9 +324,9 @@ export default {
         300: '300ms',
         500: '500ms',
         900: '900ms',
-        micro: '200ms',
-        standard: '500ms',
-        hero: '900ms',
+        micro: '160ms',
+        standard: '360ms',
+        hero: '650ms',
       },
 
       transitionTimingFunction: {

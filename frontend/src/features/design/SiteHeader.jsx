@@ -331,7 +331,7 @@ function Header() {
                   <Link
                     to={shortcut.to}
                     data-testid="navbar-shortcut"
-                    className="inline-flex min-h-10 items-center whitespace-nowrap rounded-lg px-2.5 text-[15px] font-medium text-ink transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    className="rf-underline inline-flex min-h-10 items-center whitespace-nowrap rounded-lg px-2.5 text-[15px] font-medium text-ink transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     {shortcut.label}
                   </Link>
@@ -379,8 +379,8 @@ function NavbarLink({ link, isActive, reduced }) {
       data-testid="navbar-link"
       data-active={isActive ? 'true' : 'false'}
       aria-current={isActive ? 'page' : undefined}
-      className={`relative inline-flex min-h-10 items-center whitespace-nowrap rounded-lg px-2.5 text-[15px] transition-colors duration-150 hover:bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-        isActive ? 'font-semibold text-ink' : 'font-medium text-ink'
+      className={`relative inline-flex min-h-10 items-center whitespace-nowrap rounded-lg px-2.5 text-[15px] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+        isActive ? 'font-semibold text-ink' : 'rf-underline font-medium text-ink'
       }`}
     >
       {link.label}

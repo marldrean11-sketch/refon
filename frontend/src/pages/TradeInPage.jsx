@@ -88,7 +88,7 @@ export function TradeInPage() {
 
   useEffect(() => {
     if (!burst) return undefined
-    const timer = window.setTimeout(() => setBurst(0), 1100)
+    const timer = window.setTimeout(() => setBurst(0), 900)
     return () => window.clearTimeout(timer)
   }, [burst])
 

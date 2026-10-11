@@ -250,7 +250,7 @@ function CheckRow({ check, number, supported, result, isActive, onStart, onFinis
   // The burst is a moment, not a state: it clears itself after its flight.
   useEffect(() => {
     if (!burst) return undefined
-    const timer = window.setTimeout(() => setBurst(0), 1100)
+    const timer = window.setTimeout(() => setBurst(0), 900)
     return () => window.clearTimeout(timer)
   }, [burst])
 

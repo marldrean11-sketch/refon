@@ -32,9 +32,9 @@ export const easings = { entrance, ui }
 
 /** Named durations. `micro` is a control, `standard` is a section, `hero` is the first paint. */
 export const durations = {
-  micro: 0.2,
-  standard: 0.5,
-  hero: 0.9,
+  micro: 0.16,
+  standard: 0.36,
+  hero: 0.65,
 }
 
 /** The stagger between siblings, in seconds. */

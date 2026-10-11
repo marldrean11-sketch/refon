@@ -6,13 +6,13 @@ import { LogoGlyph } from '../ui/BrandMark.jsx'
  * background looks the same in a screenshot as it did at the booth.
  */
 const LOOPS = Object.freeze([
-  { left: '6%', size: 44, duration: 14, delay: 0, rotate: -10, opacity: 0.45 },
-  { left: '19%', size: 28, duration: 18, delay: 4, rotate: 12, opacity: 0.3 },
-  { left: '33%', size: 54, duration: 16, delay: 9, rotate: -4, opacity: 0.35 },
-  { left: '51%', size: 34, duration: 20, delay: 2, rotate: 20, opacity: 0.25 },
-  { left: '67%', size: 48, duration: 13, delay: 6, rotate: -18, opacity: 0.4 },
-  { left: '81%', size: 30, duration: 17, delay: 11, rotate: 6, opacity: 0.3 },
-  { left: '92%', size: 40, duration: 15, delay: 3, rotate: -8, opacity: 0.35 },
+  { left: '6%', size: 44, duration: 10, delay: 0, rotate: -10, opacity: 0.45 },
+  { left: '19%', size: 28, duration: 13, delay: 3, rotate: 12, opacity: 0.3 },
+  { left: '33%', size: 54, duration: 11, delay: 6, rotate: -4, opacity: 0.35 },
+  { left: '51%', size: 34, duration: 14, delay: 1, rotate: 20, opacity: 0.25 },
+  { left: '67%', size: 48, duration: 9, delay: 4, rotate: -18, opacity: 0.4 },
+  { left: '81%', size: 30, duration: 12, delay: 8, rotate: 6, opacity: 0.3 },
+  { left: '92%', size: 40, duration: 10, delay: 2, rotate: -8, opacity: 0.35 },
 ])
 
 /**
