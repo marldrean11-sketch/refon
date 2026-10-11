@@ -39,7 +39,8 @@ export default async function globalSetup() {
   }
   await fs.writeFile(path.join(stateDir, 'emails.json'), JSON.stringify(emails, null, 2))
 
-  const browser = await chromium.launch()
+  // PW_CHROMIUM_PATH lets a machine with a preinstalled Chromium skip the download.
+  const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM_PATH || undefined })
 
   async function save(name, fn) {
     const context = await browser.newContext({ baseURL: BASE })
@@ -56,7 +57,7 @@ export default async function globalSetup() {
     await page.getByLabel('Email address').fill(email)
     await page.getByLabel('Create a password').fill('BuyerTest123!')
     if (role === 'Seller') {
-      await page.getByText("I'm a Seller").click()
+      await page.getByText('Magbebenta ako').click()
     }
     await page.getByRole('button', { name: 'Create account' }).click()
     await page.waitForFunction(() => !location.pathname.includes('/register'), null, {

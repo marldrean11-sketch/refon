@@ -352,9 +352,9 @@ test.describe('P2 navigation foundation', () => {
 
     console.log('[P2-03] at top', JSON.stringify(atTop))
     expect(atTop.scrolled).toBe('false')
-    // Solid white from the top: the search field sits over the hero and has to
-    // read as a field, so the bar is never see-through.
-    expect(atTop.background).toBe('rgb(255, 255, 255)')
+    // Near-opaque void with a blur: the search field sits over the hero and
+    // has to read as a field, so the bar is never fully see-through.
+    expect(atTop.background).toBe('rgba(10, 11, 13, 0.85)')
 
     await scrollTo(page, 200)
     await page.waitForTimeout(400)
@@ -372,7 +372,7 @@ test.describe('P2 navigation foundation', () => {
     console.log('[P2-03] scrolled', JSON.stringify(scrolled))
     expect(scrolled.scrolled).toBe('true')
     expect(Number.parseFloat(scrolled.borderBottom)).toBeGreaterThan(0)
-    expect(scrolled.background).toBe('rgb(255, 255, 255)')
+    expect(scrolled.background).toBe('rgba(10, 11, 13, 0.85)')
 
     // Scroll down: the bar leaves via transform, not via display or top.
     await scrollTo(page, 1400)

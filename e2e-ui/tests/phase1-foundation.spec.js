@@ -326,16 +326,16 @@ test.describe('P1 Phase 1 foundation', () => {
 
     console.log('[P1-03] body', JSON.stringify(computed))
 
-    // Paper `#F3F5F9` and Night `#0D1633`.
-    expect(computed.backgroundColor).toBe('rgb(243, 245, 249)')
-    expect(computed.color).toBe('rgb(13, 22, 51)')
+    // Void `#0A0B0D` and Chalk `#F2F4F0`: the dark volt-lime theme.
+    expect(computed.backgroundColor).toBe('rgb(10, 11, 13)')
+    expect(computed.color).toBe('rgb(242, 244, 240)')
     // Computed `font-family` quotes a family name containing a space, so the
-    // resolved value is `"Instrument Sans Variable", ...`. Comparing the *first*
+    // resolved value is `"Geist Variable", ...`. Comparing the *first*
     // family is what makes this an assertion about which family actually leads,
     // rather than a substring match that would equally pass on a stack with the
     // body face sitting last in the fallback list.
     const leadingFamily = computed.fontFamily.split(',')[0].trim()
-    expect(leadingFamily).toBe('"Instrument Sans Variable"')
+    expect(leadingFamily).toBe('"Geist Variable"')
     expect(computed.fontSize).toBe('17px')
     expect(computed.textTransform).toBe('none')
 
@@ -369,7 +369,7 @@ test.describe('P1 Phase 1 foundation', () => {
 
     // The body face, the display face (headings and the wordmark), and the data
     // face (the readings on the ReFon Tag) are all on the home page.
-    for (const family of ['Instrument Sans', 'Archivo', 'IBM Plex Mono']) {
+    for (const family of ['Geist', 'Unbounded', 'Geist Mono']) {
       const matching = faces.filter((face) => face.family.includes(family))
       expect(matching.length, `no ${family} face was registered`).toBeGreaterThan(0)
       expect(
