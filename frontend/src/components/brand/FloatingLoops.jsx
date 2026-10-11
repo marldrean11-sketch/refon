@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LogoGlyph } from '../ui/BrandMark.jsx'
 import { Confetti } from '../ui/Confetti.jsx'
+import { play } from '../../lib/sound.js'
 
 /**
  * Where each rising Loop starts and how it moves. Fixed rather than random so
@@ -8,42 +9,76 @@ import { Confetti } from '../ui/Confetti.jsx'
  * the same in a screenshot as it did at the booth.
  */
 const LOOPS = Object.freeze([
-  { left: '6%', size: 44, duration: 10, delay: 0, rotate: -10, opacity: 0.45 },
-  { left: '19%', size: 28, duration: 13, delay: 3, rotate: 12, opacity: 0.3 },
-  { left: '33%', size: 54, duration: 11, delay: 6, rotate: -4, opacity: 0.35 },
-  { left: '51%', size: 34, duration: 14, delay: 1, rotate: 20, opacity: 0.25 },
-  { left: '67%', size: 48, duration: 9, delay: 4, rotate: -18, opacity: 0.4 },
-  { left: '81%', size: 30, duration: 12, delay: 8, rotate: 6, opacity: 0.3 },
-  { left: '92%', size: 40, duration: 10, delay: 2, rotate: -8, opacity: 0.35 },
+  { left: '6%', size: 46, duration: 10, delay: 0, rotate: -10, opacity: 0.6 },
+  { left: '19%', size: 32, duration: 13, delay: 3, rotate: 12, opacity: 0.45 },
+  { left: '33%', size: 56, duration: 11, delay: 6, rotate: -4, opacity: 0.5 },
+  { left: '51%', size: 38, duration: 14, delay: 1, rotate: 20, opacity: 0.4 },
+  { left: '67%', size: 50, duration: 9, delay: 4, rotate: -18, opacity: 0.55 },
+  { left: '81%', size: 34, duration: 12, delay: 8, rotate: 6, opacity: 0.45 },
+  { left: '92%', size: 42, duration: 10, delay: 2, rotate: -8, opacity: 0.5 },
 ])
 
 /** Clicks on these go to the control, never to a loop drifting behind it. */
 const INTERACTIVE = 'a, button, input, select, textarea, label, [role="button"], [role="switch"]'
 
 /** A little slack around each loop so a moving target is easy to hit. */
-const HIT_SLOP = 10
+const HIT_SLOP = 12
+
+/** The surprise a popped loop can turn into. One is picked per pop. */
+const REACTIONS = ['confetti', 'split', 'word', 'spin']
+
+const WORDS = ['Sulit!', 'Legit!', 'Check mo muna!', 'Ayos!', 'Pak!', 'Walang tinatago!', 'Tested!', 'Galing!']
+
+/** Mini loops flung out by a split, as fixed directions. */
+const SPLIT = [
+  { dx: '-46px', dy: '-38px', r: '-140deg' },
+  { dx: '48px', dy: '-30px', r: '160deg' },
+  { dx: '4px', dy: '-62px', r: '220deg' },
+]
+
+/** Pops closer together than this keep a combo going. */
+const COMBO_WINDOW_MS = 1600
 
 /**
- * The floating-loops background: lime outlines of the Loop logo drifting up over
- * a neon grid floor that scrolls toward the viewer.
+ * About one loop in eleven comes back golden after a pop. Derived from the loop
+ * and how often it has been popped, so it is the same on every render and
+ * rewards a visitor who keeps popping.
+ */
+function isGolden(index, generation) {
+  return ((index + 1) * 31 + generation * 17) % 11 === 0
+}
+
+/**
+ * The floating-loops background: outlines of the Loop logo drifting up over a
+ * neon grid floor that scrolls toward the viewer, and a small toy on top.
  *
- * The loops are a small toy as well as a background. Pointing at one makes it
- * glow and wiggle; clicking or tapping it pops it into confetti, and a fresh one
- * floats up from the bottom a moment later.
+ * - Pointing at a loop makes it glow and wiggle.
+ * - Clicking or tapping one pops it into a random surprise: confetti, a split
+ *   into three mini loops, a spin-off, or a Taglish word. A new loop floats up
+ *   from the bottom a moment later.
+ * - Popping several in quick succession builds a combo ("x3 combo!").
+ * - Now and then a loop comes back golden; popping it is a jackpot.
  *
  * The layer sits *behind* the section's content, so instead of taking pointer
  * events itself it hit-tests pointer positions from its parent section: a press
  * on empty space or plain text over a loop pops it, while a press on a link or
- * button always reaches that control. It stays `aria-hidden`: it is decoration
- * with a bonus, and nothing on the page depends on it.
+ * button always reaches that control. It stays `aria-hidden`: decoration with a
+ * bonus, and nothing on the page depends on it.
  */
 export function FloatingLoops({ className = '', floor = true, density = 'full', loopClassName = 'text-accent' }) {
   const loops = density === 'light' ? LOOPS.filter((_, i) => i % 2 === 0) : LOOPS
   const layerRef = useRef(null)
   const loopRefs = useRef([])
+  const comboRef = useRef({ count: 0, at: 0 })
+  const lastKindRef = useRef(null)
   const [generation, setGeneration] = useState(() => loops.map(() => 0))
+  const generationRef = useRef(generation)
   const [hovered, setHovered] = useState(-1)
   const [bursts, setBursts] = useState([])
+
+  useEffect(() => {
+    generationRef.current = generation
+  }, [generation])
 
   useEffect(() => {
     const layer = layerRef.current
@@ -84,16 +119,37 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
       const box = node.getBoundingClientRect()
       const base = layer.getBoundingClientRect()
       node.dataset.popped = 'true'
-      const id = `${i}-${Date.now()}`
+
+      const now = Date.now()
+      const combo = now - comboRef.current.at < COMBO_WINDOW_MS ? comboRef.current.count + 1 : 1
+      comboRef.current = { count: combo, at: now }
+
+      const golden = isGolden(i, generationRef.current[i] ?? 0)
+      // A different surprise from the last one, so two pops never look alike.
+      const choices = REACTIONS.filter((reaction) => reaction !== lastKindRef.current)
+      const kind = golden ? 'jackpot' : choices[Math.floor(Math.random() * choices.length)]
+      lastKindRef.current = kind
+      const word = golden ? 'Jackpot! Sulit na sulit!' : WORDS[Math.floor(Math.random() * WORDS.length)]
+
+      const id = `${i}-${now}`
       setBursts((list) => [
         ...list,
-        { id, x: box.left - base.left + box.width / 2, y: box.top - base.top + box.height / 2 },
+        {
+          id,
+          kind,
+          word,
+          combo,
+          size: box.width,
+          x: box.left - base.left + box.width / 2,
+          y: box.top - base.top + box.height / 2,
+        },
       ])
       setHovered(-1)
       host.style.cursor = ''
+      play(kind === 'spin' ? 'click' : kind === 'jackpot' ? 'chime' : 'pop')
 
-      // Clear the confetti, then send a fresh loop up from the bottom.
-      window.setTimeout(() => setBursts((list) => list.filter((burst) => burst.id !== id)), 900)
+      // Clear the effect, then send a fresh loop up from the bottom.
+      window.setTimeout(() => setBursts((list) => list.filter((burst) => burst.id !== id)), 1300)
       window.setTimeout(() => {
         node.dataset.popped = 'false'
         setGeneration((list) => list.map((value, index) => (index === i ? value + 1 : value)))
@@ -124,40 +180,105 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
     >
       {floor && <div className="rf-floor" />}
-      {loops.map((loop, i) => (
-        <span
-          // A new key restarts the rise from the bottom after a pop.
-          key={`${loop.left}-${generation[i]}`}
-          ref={(node) => {
-            loopRefs.current[i] = node
-          }}
-          data-loop-index={i}
-          className={`rf-rising-loop ${loopClassName}`}
-          style={{
-            left: loop.left,
-            width: loop.size,
-            height: loop.size,
-            opacity: loop.opacity,
-            animationDuration: `${loop.duration}s`,
-            animationDelay: generation[i] ? '0s' : `${loop.delay}s`,
-            '--r': `${loop.rotate}deg`,
-          }}
-        >
-          <span className={`rf-loop-toy block size-full ${hovered === i ? 'is-hovered' : ''}`}>
-            <LogoGlyph tile={false} draw={false} className="block size-full" />
+      {loops.map((loop, i) => {
+        const golden = isGolden(i, generation[i])
+        return (
+          <span
+            // A new key restarts the rise from the bottom after a pop.
+            key={`${loop.left}-${generation[i]}`}
+            ref={(node) => {
+              loopRefs.current[i] = node
+            }}
+            data-loop-index={i}
+            data-golden={golden ? 'true' : undefined}
+            className={`rf-rising-loop ${golden ? 'text-[#ffd23f]' : loopClassName}`}
+            style={{
+              left: loop.left,
+              width: loop.size,
+              height: loop.size,
+              opacity: golden ? 0.95 : loop.opacity,
+              animationDuration: `${loop.duration}s`,
+              animationDelay: generation[i] ? '0s' : `${loop.delay}s`,
+              '--r': `${loop.rotate}deg`,
+            }}
+          >
+            <span
+              className={`rf-loop-toy block size-full ${hovered === i ? 'is-hovered' : ''} ${golden ? 'is-golden' : ''}`}
+            >
+              <LogoGlyph tile={false} draw={false} className="block size-full" />
+            </span>
           </span>
-        </span>
-      ))}
+        )
+      })}
       {bursts.map((burst) => (
-        <span
-          key={burst.id}
-          className="absolute size-0"
-          style={{ left: burst.x, top: burst.y }}
-        >
-          <span className="rf-loop-popped absolute -left-6 -top-6 size-12 rounded-full border-2 border-accent" />
-          <Confetti active burstKey={burst.id} sound="pop" />
-        </span>
+        <LoopBurst key={burst.id} burst={burst} loopClassName={loopClassName} />
       ))}
     </div>
+  )
+}
+
+/** What a popped loop turns into, drawn where it was. */
+function LoopBurst({ burst, loopClassName }) {
+  const { kind, word, combo, size, x, y, id } = burst
+  const showWord = kind === 'word' || kind === 'jackpot'
+
+  return (
+    <span className="absolute size-0" style={{ left: x, top: y }}>
+      {(kind === 'confetti' || kind === 'jackpot') && (
+        <>
+          <span
+            className={`rf-loop-popped absolute -left-6 -top-6 size-12 rounded-full border-2 ${
+              kind === 'jackpot' ? 'border-[#ffd23f]' : 'border-accent'
+            }`}
+          />
+          <Confetti active burstKey={id} sound={null} />
+          {kind === 'jackpot' && <Confetti active burstKey={`${id}-2`} sound={null} />}
+        </>
+      )}
+
+      {kind === 'split' &&
+        SPLIT.map((piece) => (
+          <span
+            key={piece.dx}
+            className={`rf-loop-split absolute ${loopClassName}`}
+            style={{
+              width: size * 0.45,
+              height: size * 0.45,
+              left: -(size * 0.45) / 2,
+              top: -(size * 0.45) / 2,
+              '--dx': piece.dx,
+              '--dy': piece.dy,
+              '--r': piece.r,
+            }}
+          >
+            <LogoGlyph tile={false} draw={false} className="block size-full" />
+          </span>
+        ))}
+
+      {kind === 'spin' && (
+        <span
+          className={`rf-loop-spinoff absolute ${loopClassName}`}
+          style={{ width: size, height: size, left: -size / 2, top: -size / 2 }}
+        >
+          <LogoGlyph tile={false} draw={false} className="block size-full" />
+        </span>
+      )}
+
+      {showWord && (
+        <span
+          className={`rf-loop-word absolute left-0 top-0 whitespace-nowrap rounded-full px-3 py-1 font-display text-sm font-bold ${
+            kind === 'jackpot' ? 'bg-[#ffd23f] text-page' : 'bg-accent text-page'
+          }`}
+        >
+          {word}
+        </span>
+      )}
+
+      {combo > 1 && (
+        <span className="rf-loop-combo absolute left-0 top-0 whitespace-nowrap font-mono text-base font-bold text-accent">
+          x{combo} combo!
+        </span>
+      )}
+    </span>
   )
 }
