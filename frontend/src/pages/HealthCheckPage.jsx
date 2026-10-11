@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardCopy, Info, RotateCcw, Smartphone } from 'lucide-react'
+import { ArrowRight, ClipboardCopy, Info, RotateCcw, Smartphone } from 'lucide-react'
 import QRCode from 'qrcode'
 import { Breadcrumb } from '../components/ui/Breadcrumb.jsx'
-import { Button } from '../components/ui/Button.jsx'
+import { Button, ButtonLink } from '../components/ui/Button.jsx'
+import { Confetti } from '../components/ui/Confetti.jsx'
+import { FloatingLoops } from '../components/brand/FloatingLoops.jsx'
 import { useToast } from '../components/ui/Toast.jsx'
 import { Container } from '../features/design/Container.jsx'
 import { StatusDot } from '../features/design/Surfaces.jsx'
@@ -90,8 +92,9 @@ export function HealthCheckPage() {
 
   return (
     <div className="min-h-screen bg-canvas">
-      <div className="border-b border-line bg-surface">
-        <Container className="py-8 sm:py-10">
+      <div className="relative overflow-hidden border-b border-line bg-page">
+        <FloatingLoops />
+        <Container className="relative py-8 sm:py-12">
           <Breadcrumb
             items={[
               { label: 'Home', to: MARKETPLACE_ROUTES.home },
@@ -100,15 +103,19 @@ export function HealthCheckPage() {
           />
 
           <div className="mt-5 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="min-w-0">
-              <h1 className="font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-[2.5rem] sm:leading-[1.05]">
-                Test the phone in your hand
+            <div className="flex min-w-0 flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-6">
+              <ProgressRing done={counts.done} total={HEALTH_CHECKS.length} />
+              <div className="min-w-0">
+              <p className="font-mono text-[12px] uppercase tracking-[0.14em] text-accent">Phone health check</p>
+              <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.03em] text-ink sm:text-[2.75rem] sm:leading-[1.05]">
+                {counts.done === HEALTH_CHECKS.length ? 'Ayos! All done.' : 'Check mo muna.'}
               </h1>
               <p className="mt-3 max-w-2xl leading-body text-muted">
                 Eight checks that run in your browser: screen, touch, speaker, microphone,
                 cameras, vibration, motion sensors and battery. Nothing is uploaded, and you
                 get a report you can copy at the end.
               </p>
+              </div>
             </div>
 
             <ScanPanel />
@@ -199,6 +206,17 @@ export function HealthCheckPage() {
             </dl>
           </section>
 
+          <section className="rounded-card-lg border border-line-2 bg-card p-5">
+            <h2 className="font-display text-lg font-bold text-ink">Magkano kaya ’yan?</h2>
+            <p className="mt-1 text-sm text-muted">
+              Done testing? See an honest trade-in range for this phone.
+            </p>
+            <ButtonLink to={MARKETPLACE_ROUTES.tradeIn} variant="outline" size="sm" className="mt-4">
+              Estimate my phone
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </ButtonLink>
+          </section>
+
           <p className="flex gap-2.5 rounded-card border border-line bg-panel p-4 text-[13px] leading-relaxed text-ink/80">
             <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <span>
@@ -220,19 +238,30 @@ function CheckRow({ check, number, supported, result, isActive, onStart, onFinis
   const Test = TESTS[check.id]
   const status = CHECK_STATUS[result?.status ?? 'idle']
   const inspectionLabel = check.inspectionId ? INSPECTION_LABELS[check.inspectionId] : null
+  const [burst, setBurst] = useState(0)
   const report = useCallback(
-    (nextStatus, note) => onFinish(check.id, nextStatus, note),
+    (nextStatus, note) => {
+      if (nextStatus === 'passed') setBurst((count) => count + 1)
+      onFinish(check.id, nextStatus, note)
+    },
     [check.id, onFinish],
   )
 
+  // The burst is a moment, not a state: it clears itself after its flight.
+  useEffect(() => {
+    if (!burst) return undefined
+    const timer = window.setTimeout(() => setBurst(0), 1100)
+    return () => window.clearTimeout(timer)
+  }, [burst])
+
   return (
     <li
-      className={`rounded-card border bg-card transition-shadow duration-200 ${
-        isActive ? 'border-line-2 shadow-card' : 'border-line'
+      className={`rounded-card border bg-card transition-[border-color,box-shadow] duration-200 ${
+        isActive ? 'border-accent/60 shadow-card' : result?.status === 'passed' ? 'border-accent/30' : 'border-line'
       }`}
     >
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3 p-4 sm:p-5">
-        <span className="mt-0.5 text-xs font-semibold tabular-nums text-muted" aria-hidden="true">
+        <span className="mt-0.5 font-mono text-xs font-semibold tabular-nums text-accent" aria-hidden="true">
           {String(number).padStart(2, '0')}
         </span>
 
@@ -245,7 +274,8 @@ function CheckRow({ check, number, supported, result, isActive, onStart, onFinis
           {result?.note && <p className="mt-2 text-sm text-ink">{result.note}</p>}
         </div>
 
-        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end">
+        <div className="relative flex w-full items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end">
+          <Confetti active={burst > 0} burstKey={burst} />
           <StatusDot tone={status.tone} label={status.label} className="text-ink" />
           {supported ? (
             !isActive && (
@@ -302,7 +332,7 @@ function ScanPanel() {
       type: 'svg',
       margin: 0,
       errorCorrectionLevel: 'M',
-      color: { dark: '#111111', light: '#ffffff' },
+      color: { dark: '#0a0b0d', light: '#f2f4f0' },
     })
       .then((markup) => !cancelled && setSvg(markup))
       .catch(() => {})
@@ -317,9 +347,9 @@ function ScanPanel() {
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-4 rounded-card-lg border border-line bg-card p-4">
+    <div className="flex shrink-0 items-center gap-4 rounded-card-lg border border-accent/40 bg-card/90 p-4 backdrop-blur">
       <div
-        className="size-28 shrink-0 [&>svg]:size-full"
+        className="size-32 shrink-0 rounded-xl bg-chalk p-2.5 [&>svg]:size-full"
         role="img"
         aria-label="QR code that opens this page"
         // The markup is generated locally by `qrcode` from this page's own URL.
@@ -335,5 +365,39 @@ function ScanPanel() {
         </p>
       </div>
     </div>
+  )
+}
+
+/** Progress through the checks, as a lime ring that fills with each result. */
+function ProgressRing({ done, total }) {
+  const circumference = 2 * Math.PI * 38
+  const filled = total ? (done / total) * circumference : 0
+
+  return (
+    <svg
+      viewBox="0 0 92 92"
+      className="size-24 shrink-0 sm:size-28"
+      role="img"
+      aria-label={`${done} of ${total} checks done`}
+      data-testid="health-progress"
+    >
+      <circle cx="46" cy="46" r="38" fill="none" stroke="#22262d" strokeWidth="10" />
+      <circle
+        cx="46"
+        cy="46"
+        r="38"
+        fill="none"
+        opacity={done > 0 ? 1 : 0}
+        stroke="#c6ff3d"
+        strokeWidth="10"
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circumference}`}
+        transform="rotate(-90 46 46)"
+        style={{ transition: 'stroke-dasharray 600ms cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+      />
+      <text x="46" y="52" textAnchor="middle" fontFamily="Geist Mono Variable, monospace" fontSize="18" fill="#f2f4f0">
+        {done}/{total}
+      </text>
+    </svg>
   )
 }

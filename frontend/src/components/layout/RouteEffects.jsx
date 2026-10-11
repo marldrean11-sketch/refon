@@ -29,6 +29,14 @@ const ROUTE_META = {
     description:
       'How buying and selling on ReFon works: browse, compare, inspect condition, order, receive, and enjoy.',
   },
+  '/health-check': {
+    title: 'Phone Health Check · ReFon',
+    description: 'Test the phone in your hand in your browser: screen, touch, speaker, microphone, cameras, vibration, motion sensors and battery.',
+  },
+  '/trade-in': {
+    title: 'Trade-in Estimator · ReFon',
+    description: 'Magkano kaya ’yan? Get an honest price range for your old phone in six quick taps.',
+  },
   '/quality-check': {
     title: 'How We Test Every Phone · ReFon',
     description:
