@@ -4,6 +4,7 @@ import { Check, ShoppingBag, TriangleAlert } from 'lucide-react'
 import { useCart } from '../useCart.js'
 import { cartErrorHeadline, cartErrorMessage } from '../cart-errors.js'
 import { useToast } from '../../../components/ui/Toast.jsx'
+import { Confetti } from '../../../components/ui/Confetti.jsx'
 import { useAuth } from '../../auth/useAuth.js'
 import { rememberIntent } from '../pending-intent.js'
 import { deviceName } from '../cart-state.js'
@@ -15,15 +16,14 @@ const SIZE_CLASSES = {
 }
 
 const BASE_CLASSES =
-  'inline-flex items-center justify-center gap-2 rounded-control font-mono font-semibold uppercase tracking-[0.1em] transition duration-150'
+  'rf-bounce inline-flex items-center justify-center gap-2 rounded-control font-mono font-semibold uppercase tracking-[0.1em] transition duration-150'
 
 const IDLE_CLASSES =
-  'bg-primary-950 text-white ring-1 ring-inset ring-primary-950 hover:bg-primary-800 active:bg-primary-900'
+  'bg-accent text-page ring-1 ring-inset ring-accent hover:bg-accent-hover active:bg-accent-400'
 
-// "Already held" is a state, not a warning, so it inverts rather than turning
-// green. A jade button beside an Obsidian one would read as a second offer.
-const HELD_CLASSES =
-  'bg-surface-2 text-ink ring-1 ring-inset ring-line-2 hover:bg-surface-3 hover:text-primary-950'
+// "Already held" is a state, not a second offer, so it turns chalk rather than
+// staying lime.
+const HELD_CLASSES = 'bg-chalk text-page ring-1 ring-inset ring-chalk hover:bg-primary-700'
 
 /**
  * Add a listing to the cart and hold it.
@@ -179,7 +179,8 @@ export function AddToCartButton({
   }
 
   return (
-    <div className={fullWidth ? 'w-full' : undefined}>
+    <div className={`relative ${fullWidth ? 'w-full' : ''}`}>
+      <Confetti active={justAdded} />
       {inCart && !isBusy ? (
         <Link
           to={MARKETPLACE_ROUTES.cart}
