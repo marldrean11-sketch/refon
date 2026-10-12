@@ -211,7 +211,7 @@ export function QualityCheckPage() {
             return (
               <article
                 key={gradeId}
-                className="rf-spotlight rf-lift hover:border-accent/40 flex flex-col rounded-card-lg border border-line bg-white p-6 shadow-card"
+                className={`rf-spotlight rf-lift ${grade.hoverBorder} flex flex-col rounded-card-lg border border-line bg-white p-6 shadow-card`}
               >
                 <ConditionBadge grade={gradeId} size="lg" className="self-start" />
                 <h3 className="mt-4 font-display text-xl font-semibold text-ink">

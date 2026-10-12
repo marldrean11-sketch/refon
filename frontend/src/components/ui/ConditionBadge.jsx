@@ -16,7 +16,7 @@ export function ConditionBadge({ grade, size = 'md', className = '' }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-sm font-mono font-semibold uppercase tracking-[0.08em] ring-1 ring-inset ${record.chip} ${padding} ${className}`}
     >
-      <span className="grid size-[1.15rem] shrink-0 place-items-center rounded-[2px] bg-primary-950 text-[10px] font-bold leading-none text-white">
+      <span className={`grid size-[1.15rem] shrink-0 place-items-center rounded-[2px] text-[10px] font-bold leading-none ${record.letter}`}>
         {record.id}
       </span>
       {record.label}

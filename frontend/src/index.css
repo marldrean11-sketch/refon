@@ -292,7 +292,7 @@
   .rf-spotlight {
     background-image: radial-gradient(
       320px circle at var(--mx, -999px) var(--my, -999px),
-      rgb(198 255 61 / 0.08),
+      rgb(var(--spot, 198 255 61) / 0.08),
       transparent 65%
     );
   }
@@ -428,7 +428,8 @@
   }
 
   .rf-loop-toy.is-hovered {
-    filter: drop-shadow(0 0 10px rgb(198 255 61 / 0.9));
+    /* Glows in the loop's own grade colour. */
+    filter: drop-shadow(0 0 10px currentColor);
     animation: rf-wiggle 0.5s ease-in-out infinite;
   }
 

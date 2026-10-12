@@ -19,6 +19,14 @@ const LOOPS = Object.freeze([
   { left: '92%', size: 42, duration: 10, delay: 2, rotate: -8, opacity: 0.5 },
 ])
 
+/**
+ * Loop colours follow the condition grades: lime A, amber B, coral C. A section
+ * on a coloured panel (the auth screens) passes one `loopClassName` instead.
+ */
+const GRADE_COLORS = ['text-grade-a', 'text-grade-b', 'text-grade-c']
+const GRADE_RINGS = ['border-grade-a', 'border-grade-b', 'border-grade-c']
+const GRADE_FILLS = ['bg-grade-a', 'bg-grade-b', 'bg-grade-c']
+
 /** Clicks on these go to the control, never to a loop drifting behind it. */
 const INTERACTIVE = 'a, button, input, select, textarea, label, [role="button"], [role="switch"]'
 
@@ -101,7 +109,7 @@ function isGolden(index, generation) {
  * button always reaches that control. It stays `aria-hidden`: decoration with a
  * bonus, and nothing on the page depends on it.
  */
-export function FloatingLoops({ className = '', floor = true, density = 'full', loopClassName = 'text-accent' }) {
+export function FloatingLoops({ className = '', floor = true, density = 'full', loopClassName = null }) {
   const loops = density === 'light' ? LOOPS.filter((_, i) => i % 2 === 0) : LOOPS
   const layerRef = useRef(null)
   const loopRefs = useRef([])
@@ -172,6 +180,7 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
         ...list,
         {
           id,
+          tone: i % GRADE_COLORS.length,
           kind,
           word,
           combo,
@@ -219,6 +228,7 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
       {floor && <div className="rf-floor" />}
       {loops.map((loop, i) => {
         const golden = isGolden(i, generation[i])
+        const color = loopClassName ?? GRADE_COLORS[i % GRADE_COLORS.length]
         return (
           <span
             // A new key restarts the rise from the bottom after a pop.
@@ -228,7 +238,7 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
             }}
             data-loop-index={i}
             data-golden={golden ? 'true' : undefined}
-            className={`rf-rising-loop ${golden ? 'text-[#ffd23f]' : loopClassName}`}
+            className={`rf-rising-loop ${golden ? 'text-[#ffd23f]' : color}`}
             style={{
               left: loop.left,
               width: loop.size,
@@ -255,8 +265,11 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
 }
 
 /** What a popped loop turns into, drawn where it was. */
-function LoopBurst({ burst, loopClassName }) {
-  const { kind, word, combo, size, x, y, id } = burst
+function LoopBurst({ burst, loopClassName: single }) {
+  const { kind, word, combo, size, x, y, id, tone } = burst
+  const loopClassName = single ?? GRADE_COLORS[tone]
+  const ring = single ? 'border-accent' : GRADE_RINGS[tone]
+  const fill = single ? 'bg-accent' : GRADE_FILLS[tone]
   const showWord = kind === 'word' || kind === 'jackpot'
 
   return (
@@ -265,7 +278,7 @@ function LoopBurst({ burst, loopClassName }) {
         <>
           <span
             className={`rf-loop-popped absolute -left-6 -top-6 size-12 rounded-full border-2 ${
-              kind === 'jackpot' ? 'border-[#ffd23f]' : 'border-accent'
+              kind === 'jackpot' ? 'border-[#ffd23f]' : ring
             }`}
           />
           <Confetti active burstKey={id} sound={null} />
@@ -304,7 +317,7 @@ function LoopBurst({ burst, loopClassName }) {
       {showWord && (
         <span
           className={`rf-loop-word absolute left-0 top-0 whitespace-nowrap rounded-full px-3 py-1 font-display text-sm font-bold ${
-            kind === 'jackpot' ? 'bg-[#ffd23f] text-page' : 'bg-accent text-page'
+            kind === 'jackpot' ? 'bg-[#ffd23f] text-page' : `${fill} text-page`
           }`}
         >
           {word}
