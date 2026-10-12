@@ -5,7 +5,7 @@ A short list for the booth team. Work top to bottom.
 ## A week before
 
 - [ ] **Deploy from a stable branch.** Render deploys `Ice-Cream-Cake` (or `main` once merged). Do experiments on another branch so a half-finished change never reaches the booth.
-- [ ] **Check the public address.** If Render gave you something other than `https://refon.onrender.com`, change `url` in `frontend/src/content/site-info.js` and push. The QR poster, share previews and sitemap all read it.
+- [ ] **Check the public address.** Visitors use the Vercel site `https://refon-lake.vercel.app`; it forwards `/api` to the Render server (`vercel.json`). The QR poster, kiosk, share previews and sitemap read `url` in `frontend/src/content/site-info.js`. If the Render server's address is not `https://refon.onrender.com`, change the two destinations in both `vercel.json` files and push.
 - [ ] **Booth number.** Set `booth` in `site-info.js` (e.g. `'12'`). It shows in the footer, the Contact page and the poster.
 - [ ] **Social links.** Put the real Facebook, Instagram and TikTok URLs in `socials` in `site-info.js`, or leave `href: null` to show "coming soon".
 - [ ] **Chat links.** Put your Messenger (`https://m.me/<page>`) and Viber links in `chat` in `site-info.js`. Until then the chat button shows them as "soon" and still offers email and phone.
@@ -16,7 +16,7 @@ A short list for the booth team. Work top to bottom.
 ## The morning of
 
 - [ ] **Wake the site.** The free plan sleeps after ~15 minutes idle and the first visit takes 30–50 seconds. Open the site 5 minutes before doors open, and again after any long break. (A paid plan, or an uptime pinger hitting `/api/health` every 10 minutes, keeps it awake.)
-- [ ] **Check health.** `https://<your-address>/api/health` should say `"status":"ok"`.
+- [ ] **Check health.** `https://refon-lake.vercel.app/api/health` should say `"status":"ok"` (this also proves Vercel reaches Render).
 - [ ] **HTTPS only.** The camera, microphone and motion tests need `https://`. They will not run on a `localhost` or `http://` link opened from a phone.
 - [ ] **Laptop set-up.** Put `/kiosk` on the big screen and click the full-screen button: it rotates slides on its own and shows the live "phones checked today" count and three QR codes (health check, trade-in, Rate ReFon). Keep the homepage in a second tab for the shop demo.
 - [ ] **Charge everything** and bring a spare phone for visitors who don't want to use their own.

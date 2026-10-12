@@ -1,77 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://refon.onrender.com/</loc>
+    <loc>https://refon-lake.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/phones</loc>
+    <loc>https://refon-lake.vercel.app/phones</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/categories</loc>
+    <loc>https://refon-lake.vercel.app/categories</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/how-it-works</loc>
+    <loc>https://refon-lake.vercel.app/how-it-works</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/quality-check</loc>
+    <loc>https://refon-lake.vercel.app/quality-check</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/trade-in</loc>
+    <loc>https://refon-lake.vercel.app/trade-in</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/about</loc>
+    <loc>https://refon-lake.vercel.app/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/faq</loc>
+    <loc>https://refon-lake.vercel.app/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/warranty</loc>
+    <loc>https://refon-lake.vercel.app/warranty</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/returns</loc>
+    <loc>https://refon-lake.vercel.app/returns</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/shipping</loc>
+    <loc>https://refon-lake.vercel.app/shipping</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/sustainability</loc>
+    <loc>https://refon-lake.vercel.app/sustainability</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/contact</loc>
+    <loc>https://refon-lake.vercel.app/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/privacy</loc>
+    <loc>https://refon-lake.vercel.app/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://refon.onrender.com/terms</loc>
+    <loc>https://refon-lake.vercel.app/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

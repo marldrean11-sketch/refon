@@ -10,7 +10,7 @@
 export const SITE_INFO = Object.freeze({
   name: 'ReFon',
   /** The public address of the hosted demo (Render). Change when a domain is bought. */
-  url: 'https://refon.onrender.com',
+  url: 'https://refon-lake.vercel.app',
   tagline: 'Sulit na, legit pa.',
 
   contact: Object.freeze({
