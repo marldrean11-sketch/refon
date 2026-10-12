@@ -11,7 +11,7 @@ A short list for the booth team. Work top to bottom.
 - [ ] **Chat links.** Put your Messenger (`https://m.me/<page>`) and Viber links in `chat` in `site-info.js`. Until then the chat button shows them as "soon" and still offers email and phone.
 - [ ] **Treats for the pop challenge.** Visitors who pop 10 floating loops get a "Loop Master" badge with a code. Have stickers or candy ready; the badge says "while booth supplies last".
 - [ ] **Photo storage.** On Render's free plan, uploaded photos are wiped on every redeploy. If sellers will upload photos, set `STORAGE_DRIVER=s3` with a bucket (Cloudflare R2's free tier works). See the README "Environment variables" section.
-- [ ] **Print the poster.** Open `/booth-poster` on the live site, click **Print poster**, print on A4. Test-scan both QR codes (health check and the small "Rate us" one) with two different phones.
+- [ ] **Print the poster.** Open `/booth-poster` on the live site, click **Print poster**, print on A4 in colour at 100% scale ("Actual size"). Glossy paper makes the dark background and lime look best. Test-scan both QR codes (the one in the phone opens the health check, the small "Rate us" one opens feedback) with two different phones. A ready-made PDF preview is in `docs/poster-mockups/booth-poster-final.pdf`.
 
 ## The morning of
 

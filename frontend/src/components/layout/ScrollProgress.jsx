@@ -31,7 +31,7 @@ export function ScrollProgress() {
       data-testid="scroll-progress"
       aria-hidden="true"
       style={{ scaleX: scrollYProgress }}
-      className="pointer-events-none fixed inset-x-0 top-0 z-progress h-[3px] origin-left bg-accent"
+      className="pointer-events-none fixed inset-x-0 top-0 z-progress print:hidden h-[3px] origin-left bg-accent"
     />
   )
 }
