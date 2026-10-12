@@ -109,7 +109,13 @@ function isGolden(index, generation) {
  * button always reaches that control. It stays `aria-hidden`: decoration with a
  * bonus, and nothing on the page depends on it.
  */
-export function FloatingLoops({ className = '', floor = true, density = 'full', loopClassName = null }) {
+export function FloatingLoops({
+  className = '',
+  floor = true,
+  density = 'full',
+  loopClassName = null,
+  legend = false,
+}) {
   const loops = density === 'light' ? LOOPS.filter((_, i) => i % 2 === 0) : LOOPS
   const layerRef = useRef(null)
   const loopRefs = useRef([])
@@ -219,48 +225,78 @@ export function FloatingLoops({ className = '', floor = true, density = 'full', 
   }, [])
 
   return (
-    <div
-      ref={layerRef}
-      aria-hidden="true"
-      data-testid="floating-loops"
-      className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
-    >
-      {floor && <div className="rf-floor" />}
-      {loops.map((loop, i) => {
-        const golden = isGolden(i, generation[i])
-        const color = loopClassName ?? GRADE_COLORS[i % GRADE_COLORS.length]
-        return (
-          <span
-            // A new key restarts the rise from the bottom after a pop.
-            key={`${loop.left}-${generation[i]}`}
-            ref={(node) => {
-              loopRefs.current[i] = node
-            }}
-            data-loop-index={i}
-            data-golden={golden ? 'true' : undefined}
-            className={`rf-rising-loop ${golden ? 'text-[#ffd23f]' : color}`}
-            style={{
-              left: loop.left,
-              width: loop.size,
-              height: loop.size,
-              opacity: golden ? 0.95 : loop.opacity,
-              animationDuration: `${loop.duration}s`,
-              animationDelay: generation[i] ? '0s' : `${loop.delay}s`,
-              '--r': `${loop.rotate}deg`,
-            }}
-          >
+    <>
+      <div
+        ref={layerRef}
+        aria-hidden="true"
+        data-testid="floating-loops"
+        className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
+      >
+        {floor && <div className="rf-floor" />}
+        {loops.map((loop, i) => {
+          const golden = isGolden(i, generation[i])
+          const color = loopClassName ?? GRADE_COLORS[i % GRADE_COLORS.length]
+          return (
             <span
-              className={`rf-loop-toy block size-full ${hovered === i ? 'is-hovered' : ''} ${golden ? 'is-golden' : ''}`}
+              // A new key restarts the rise from the bottom after a pop.
+              key={`${loop.left}-${generation[i]}`}
+              ref={(node) => {
+                loopRefs.current[i] = node
+              }}
+              data-loop-index={i}
+              data-golden={golden ? 'true' : undefined}
+              className={`rf-rising-loop ${golden ? 'text-[#ffd23f]' : color}`}
+              style={{
+                left: loop.left,
+                width: loop.size,
+                height: loop.size,
+                opacity: golden ? 0.95 : loop.opacity,
+                animationDuration: `${loop.duration}s`,
+                animationDelay: generation[i] ? '0s' : `${loop.delay}s`,
+                '--r': `${loop.rotate}deg`,
+              }}
             >
-              <LogoGlyph tile={false} draw={false} className="block size-full" />
+              <span
+                className={`rf-loop-toy block size-full ${hovered === i ? 'is-hovered' : ''} ${golden ? 'is-golden' : ''}`}
+              >
+                <LogoGlyph tile={false} draw={false} className="block size-full" />
+              </span>
             </span>
-          </span>
-        )
-      })}
-      {bursts.map((burst) => (
-        <LoopBurst key={burst.id} burst={burst} loopClassName={loopClassName} />
+          )
+        })}
+        {bursts.map((burst) => (
+          <LoopBurst key={burst.id} burst={burst} loopClassName={loopClassName} />
+        ))}
+      </div>
+      {legend && !loopClassName && <LoopLegend />}
+    </>
+  )
+}
+
+const LEGEND = [
+  { grade: 'A', fill: 'bg-grade-a', text: 'text-grade-a' },
+  { grade: 'B', fill: 'bg-grade-b', text: 'text-grade-b' },
+  { grade: 'C', fill: 'bg-grade-c', text: 'text-grade-c' },
+]
+
+/**
+ * A small key under the loops: the colours are the condition grades, so a
+ * visitor playing with them also learns how ReFon grades a phone.
+ */
+function LoopLegend() {
+  return (
+    <p
+      data-testid="loop-legend"
+      className="pointer-events-none absolute bottom-3 right-4 z-10 hidden items-center gap-3 rounded-full border border-line bg-page/80 px-3 py-1.5 font-mono text-[11px] text-muted backdrop-blur sm:flex"
+    >
+      <span>Loop colours:</span>
+      {LEGEND.map((item) => (
+        <span key={item.grade} className="inline-flex items-center gap-1.5">
+          <span className={`size-2 rounded-full ${item.fill}`} aria-hidden="true" />
+          <span className={item.text}>Grade {item.grade}</span>
+        </span>
       ))}
-    </div>
+    </p>
   )
 }
 

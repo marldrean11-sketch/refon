@@ -409,6 +409,12 @@
     mask-image: linear-gradient(to top, #000 30%, transparent);
   }
 
+  /** The kiosk slide timer: fills left to right over one slide. */
+  .rf-kiosk-progress {
+    transform-origin: left;
+    animation: rf-kiosk-progress 7s linear forwards;
+  }
+
   .rf-rising-loop {
     position: absolute;
     bottom: -90px;
@@ -561,6 +567,15 @@
   }
   to {
     transform: perspective(380px) rotateX(62deg) translateY(48px);
+  }
+}
+
+@keyframes rf-kiosk-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 

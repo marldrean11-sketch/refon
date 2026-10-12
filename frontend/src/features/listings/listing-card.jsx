@@ -10,7 +10,7 @@ import { ConditionBadge } from '../../components/ui/ConditionBadge.jsx'
 import { PriceDisplay } from '../../components/ui/PriceDisplay.jsx'
 import { FREE_DELIVERY_THRESHOLD } from '../../lib/delivery-policy.js'
 import { productPath } from '../../lib/routes.js'
-import { gradeFromLegacyCondition } from '../../lib/listing-taxonomy.js'
+import { getConditionGrade, gradeFromLegacyCondition } from '../../lib/listing-taxonomy.js'
 
 export { PhoneArtwork }
 
@@ -86,6 +86,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
   const reduceMotion = usePrefersReducedMotion()
   const mainPhoto = listing.mainPhoto ?? listing.photos?.[0]
   const grade = gradeFor(listing)
+  const gradeStyle = getConditionGrade(grade)
   const qualifiesForFreeDelivery = Number(listing.price) >= FREE_DELIVERY_THRESHOLD
 
   return (
@@ -96,7 +97,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
       whileHover={reduceMotion || preview ? undefined : { y: -3 }}
       whileTap={reduceMotion || preview ? undefined : { scale: 0.995 }}
       transition={standardTransition}
-      className="rf-spotlight group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:border-accent/40 hover:shadow-card-hover"
+      className={`rf-spotlight group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-card-hover ${gradeStyle.hoverBorder}`}
     >
       {!preview && (
         <Link
@@ -106,6 +107,15 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
         >
           <span className="sr-only">View listing details</span>
         </Link>
+      )}
+
+      {/* Grades B and C get a thin stripe in their colour, so they are spotted at a glance. */}
+      {gradeStyle.stripe && (
+        <span
+          aria-hidden="true"
+          data-grade-stripe={grade}
+          className={`pointer-events-none absolute inset-x-0 top-0 z-20 h-1 ${gradeStyle.stripe}`}
+        />
       )}
 
       {/* 1. The device. */}

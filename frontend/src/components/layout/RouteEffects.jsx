@@ -38,6 +38,11 @@ const ROUTE_META = {
     description: 'Printable Techno Fair poster with a QR code to the ReFon phone health check.',
     robots: 'noindex, nofollow',
   },
+  '/kiosk': {
+    title: 'Booth Screen · ReFon',
+    description: 'ReFon booth big-screen mode for Techno Fair 2026.',
+    robots: 'noindex, nofollow',
+  },
   '/feedback': {
     title: 'Rate ReFon · Feedback',
     description: 'Three quick, anonymous questions about ReFon. No sign-in needed.',

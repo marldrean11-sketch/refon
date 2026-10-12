@@ -18,7 +18,7 @@ A short list for the booth team. Work top to bottom.
 - [ ] **Wake the site.** The free plan sleeps after ~15 minutes idle and the first visit takes 30–50 seconds. Open the site 5 minutes before doors open, and again after any long break. (A paid plan, or an uptime pinger hitting `/api/health` every 10 minutes, keeps it awake.)
 - [ ] **Check health.** `https://<your-address>/api/health` should say `"status":"ok"`.
 - [ ] **HTTPS only.** The camera, microphone and motion tests need `https://`. They will not run on a `localhost` or `http://` link opened from a phone.
-- [ ] **Laptop set-up.** Open the homepage on the big screen. Open `/health-check` in a second tab; on a laptop it shows the QR code for visitors.
+- [ ] **Laptop set-up.** Put `/kiosk` on the big screen and click the full-screen button: it rotates slides on its own and shows the live "phones checked today" count and three QR codes (health check, trade-in, Rate ReFon). Keep the homepage in a second tab for the shop demo.
 - [ ] **Charge everything** and bring a spare phone for visitors who don't want to use their own.
 - [ ] **Install the app on the booth phone (optional).** On Android/Chrome tap **Install app** in the footer; on iPhone use Share → Add to Home Screen. It opens full screen with the ReFon icon.
 

@@ -133,6 +133,9 @@ const FeedbackPage = lazy(() =>
 const BoothPosterPage = lazy(() =>
   import('./pages/BoothPosterPage.jsx').then((module) => ({ default: module.BoothPosterPage })),
 )
+const KioskPage = lazy(() =>
+  import('./pages/KioskPage.jsx').then((module) => ({ default: module.KioskPage })),
+)
 const TradeInPage = lazy(() =>
   import('./pages/TradeInPage.jsx').then((module) => ({ default: module.TradeInPage })),
 )
@@ -198,6 +201,7 @@ function App() {
                 anonymous and buyer visits nothing. */}
             {/* The printable booth poster stands alone: no header, footer or cursor. */}
             <Route path={MARKETPLACE_ROUTES.boothPoster} element={<BoothPosterPage />} />
+            <Route path={MARKETPLACE_ROUTES.kiosk} element={<KioskPage />} />
 
             <Route element={<SellerInquiriesProvider />}>
               <Route element={<MarketplaceLayout />}>

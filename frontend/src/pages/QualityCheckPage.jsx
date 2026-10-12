@@ -36,7 +36,7 @@ export function QualityCheckPage() {
   return (
     <>
       <div className="relative overflow-hidden border-b border-line bg-page text-ink">
-        <FloatingLoops />
+        <FloatingLoops legend />
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
           <Breadcrumb
             items={[

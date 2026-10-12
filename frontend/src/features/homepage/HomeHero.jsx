@@ -90,7 +90,7 @@ export function HomeHero({ listings = [], featured = [] }) {
       onPointerLeave={() => setTilt({ x: 0, y: 0 })}
       className="relative overflow-hidden border-b border-line bg-page"
     >
-      <FloatingLoops />
+      <FloatingLoops legend />
 
       <Container className="relative grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.25fr_1fr] lg:gap-16 lg:py-28">
         <div className="flex flex-col items-start gap-7">

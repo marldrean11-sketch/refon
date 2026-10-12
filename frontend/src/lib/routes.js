@@ -43,6 +43,8 @@ export const MARKETPLACE_ROUTES = Object.freeze({
   healthCheck: '/health-check',
   tradeIn: '/trade-in',
   boothPoster: '/booth-poster',
+  /** The booth big-screen mode: rotating slides, live count and QR codes. */
+  kiosk: '/kiosk',
   feedback: '/feedback',
   compare: '/compare',
   cart: '/cart',

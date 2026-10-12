@@ -61,6 +61,12 @@ export function BoothPosterPage() {
           <ArrowLeft className="size-4" aria-hidden="true" />
           Back to ReFon
         </Link>
+        <Link
+          to={MARKETPLACE_ROUTES.kiosk}
+          className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-line-2 px-4 text-sm font-semibold text-ink hover:border-accent"
+        >
+          Big-screen mode
+        </Link>
         <button
           type="button"
           onClick={() => window.print()}
