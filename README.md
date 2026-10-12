@@ -622,6 +622,23 @@ docker run --rm -p 4000:4000 \
   -e SMTP_HOST=<relay> -e MAIL_FROM="ReFon <no-reply@example.com>" refon
 ```
 
+### Option D: website on Vercel, API and database on Render
+
+The address visitors open is the Vercel one; Vercel forwards every `/api/*` and
+`/uploads/*` request to the Render service (`vercel.json`), so the browser only
+ever talks to one origin and the session cookie keeps working.
+
+1. Deploy the API and database on Render exactly as in Option C.
+2. In Vercel, import the repository with **Root Directory** `frontend`
+   (framework preset Vite, build `npm run build`, output `dist`). Do not set
+   `VITE_API_URL`: the default `/api` is what gets forwarded.
+3. If the Render service is not `https://refon.onrender.com`, change the two
+   destinations in `vercel.json` (and the copy in `frontend/`) and push.
+4. On Render, set `APP_URL` and `CLIENT_URL` to the **Vercel** address, and keep
+   `TRUST_PROXY=2` so rate limits see each visitor rather than Vercel.
+5. Set `url` in `frontend/src/content/site-info.js` to the Vercel address, so the
+   poster and kiosk QR codes point at it.
+
 ### Email provider example
 
 Any SMTP relay works. For a transactional provider:

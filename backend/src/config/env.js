@@ -112,6 +112,9 @@ export const env = Object.freeze({
    * SameSite=Lax auth cookie works without a separate web server.
    */
   staticDir: process.env.STATIC_DIR ?? '',
+  // How many proxies sit in front of the API. 1 for Render alone; 2 when Vercel
+  // forwards /api to Render, so rate limits see the visitor and not Vercel.
+  trustProxy: Math.max(0, Number.parseInt(process.env.TRUST_PROXY ?? '1', 10) || 0),
   s3: {
     bucket: s3Bucket,
     region: s3Region,

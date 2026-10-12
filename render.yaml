@@ -40,6 +40,11 @@ services:
       # image itself, but uploaded photos need STORAGE_DRIVER=s3 to survive.
       - key: STORAGE_DRIVER
         value: local
+      # Vercel forwards /api to this service (see vercel.json), so there are two
+      # proxies in front of the API: Vercel, then Render. Use "1" if visitors
+      # open the Render address directly instead.
+      - key: TRUST_PROXY
+        value: "2"
 
 databases:
   - name: refon-db

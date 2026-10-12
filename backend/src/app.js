@@ -31,7 +31,7 @@ app.disable('x-powered-by')
 if (env.isProduction) {
   // Behind a reverse proxy the client IP arrives via X-Forwarded-For, which the
   // rate limiters need in order to key limits per address.
-  app.set('trust proxy', 1)
+  app.set('trust proxy', env.trustProxy)
 }
 
 app.use(
