@@ -108,12 +108,13 @@ export function FavoriteButton({
           aria-label={fullLabel}
           className={`inline-flex w-full items-center justify-center gap-2 rounded-control font-mono font-semibold uppercase tracking-[0.1em] ring-1 ring-inset transition duration-150 aria-disabled:opacity-60 ${sizing} ${
             saved
-              ? 'bg-surface-2 text-ink ring-line-2 hover:bg-surface-3'
+              ? 'bg-surface-2 text-heart ring-heart/50 hover:bg-surface-3'
               : 'bg-surface text-primary-900 ring-line-2 hover:border-primary-950 hover:bg-primary-950 hover:text-white hover:ring-primary-950'
           }`}
         >
           <Heart
-            className={`size-4.5 ${saved ? 'fill-current' : ''}`}
+            key={saved ? 'saved' : 'not-saved'}
+            className={`size-4.5 ${saved ? 'rf-heart-pop fill-current text-heart' : ''}`}
             style={{ width: 18, height: 18 }}
             aria-hidden="true"
           />
@@ -140,12 +141,15 @@ export function FavoriteButton({
       aria-pressed={canSave ? saved : undefined}
       aria-label={fullLabel}
       title={saved ? 'Remove from saved listings' : 'Save this listing'}
-      className={`relative grid size-9 place-items-center rounded-control border border-line-2 bg-surface/90 text-muted backdrop-blur transition duration-150 hover:border-primary-950 hover:bg-primary-950 hover:text-white aria-disabled:opacity-60 ${
-        saved ? 'border-primary-950 bg-primary-950 text-white' : ''
+      className={`relative grid size-9 place-items-center rounded-control border bg-surface/90 backdrop-blur transition duration-150 aria-disabled:opacity-60 ${
+        saved
+          ? 'border-heart/60 text-heart hover:border-heart'
+          : 'border-line-2 text-muted hover:border-primary-950 hover:bg-primary-950 hover:text-white'
       } ${className}`}
     >
       <Heart
-        className={`size-4 ${saved ? 'fill-current' : ''}`}
+        key={saved ? 'saved' : 'not-saved'}
+        className={`size-4 ${saved ? 'rf-heart-pop fill-current' : ''}`}
         strokeWidth={2.2}
         aria-hidden="true"
       />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowLeft, Maximize2, Printer } from 'lucide-react'
 import QRCode from 'qrcode'
 import { LogoGlyph } from '../components/ui/BrandMark.jsx'
 import { SITE_INFO, boothLabel } from '../content/site-info.js'
@@ -61,12 +61,14 @@ export function BoothPosterPage() {
           <ArrowLeft className="size-4" aria-hidden="true" />
           Back to ReFon
         </Link>
-        <Link
-          to={MARKETPLACE_ROUTES.kiosk}
+        <button
+          type="button"
+          onClick={() => document.documentElement.requestFullscreen?.().catch(() => {})}
           className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-line-2 px-4 text-sm font-semibold text-ink hover:border-accent"
         >
-          Big-screen mode
-        </Link>
+          <Maximize2 className="size-4" aria-hidden="true" />
+          Full screen
+        </button>
         <button
           type="button"
           onClick={() => window.print()}

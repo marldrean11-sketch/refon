@@ -32,6 +32,7 @@ export function getRoleHome(role) {
 }
 
 export const MARKETPLACE_ROUTES = Object.freeze({
+  home: '/',
   /** Canonical shop listing URL. */
   shop: '/phones',
   /** Legacy alias kept so existing bookmarks and tests keep working. */

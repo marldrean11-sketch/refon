@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "prisma generate && prisma migrate deploy",
     "dev": "nodemon --watch src --watch prisma src/index.js",
     "start": "node src/index.js",
     "lint": "oxlint src tests prisma scripts",

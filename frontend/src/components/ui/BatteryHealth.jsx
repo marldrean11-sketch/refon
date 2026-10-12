@@ -18,6 +18,9 @@ export function BatteryHealth({
   showLabel = true,
   tone = 'light',
   className = '',
+  /** Optional colours that replace the battery band's own, e.g. a grade colour. */
+  barClassName,
+  valueClassName,
 }) {
   const value = Number(percent)
   const safeValue = Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 0
@@ -28,8 +31,8 @@ export function BatteryHealth({
   const isInverse = tone === 'inverse'
   const labelColor = isInverse ? 'text-primary-300' : 'text-muted'
   const trackColor = isInverse ? 'bg-white/15' : 'bg-surface-3'
-  const fillColor = isInverse ? 'bg-accent-300' : band.bar
-  const valueColor = isInverse ? 'text-accent-300' : band.tone
+  const fillColor = barClassName ?? (isInverse ? 'bg-accent-300' : band.bar)
+  const valueColor = valueClassName ?? (isInverse ? 'text-accent-300' : band.tone)
 
   return (
     <div className={className}>

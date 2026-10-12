@@ -130,6 +130,8 @@ export default {
           950: '#ffc9c0',
         },
         danger: '#ff6b5c',
+        /** The saved-phone heart. */
+        heart: '#ff4d6d',
         success: '#c6ff3d',
         warning: '#ffb547',
         info: '#f2f4f0',

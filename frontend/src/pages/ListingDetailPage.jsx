@@ -46,7 +46,7 @@ import {
 } from '../components/ui/WarrantyBadge.jsx'
 import { Breadcrumb } from '../components/ui/Breadcrumb.jsx'
 import { Container } from '../features/design/Container.jsx'
-import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
+import { AUTH_ROUTES, MARKETPLACE_ROUTES } from '../features/auth/auth.routes.js'
 import { productPath } from '../lib/routes.js'
 import { explainBatteryHealth } from '../lib/listing-taxonomy.js'
 import { formatPeso } from '../lib/format.js'
@@ -258,7 +258,7 @@ export function ListingDetailPage() {
             <Breadcrumb
               items={[
                 { label: 'Home', to: AUTH_ROUTES.home },
-                { label: 'Shop Phones', to: AUTH_ROUTES.shop },
+                { label: 'Shop Phones', to: MARKETPLACE_ROUTES.shop },
                 { label: `${listing.brand} ${listing.model}` },
               ]}
             />
@@ -509,7 +509,7 @@ export function ListingDetailPage() {
                 </p>
               </div>
               <Link
-                to={AUTH_ROUTES.shop}
+                to={MARKETPLACE_ROUTES.shop}
                 className="inline-flex items-center gap-2 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-800 transition hover:text-primary-950"
               >
                 View all phones
@@ -547,7 +547,7 @@ export function ListingDetailPage() {
                   Browse the full catalog to see everything in stock.
                 </p>
                 <Link
-                  to={AUTH_ROUTES.shop}
+                  to={MARKETPLACE_ROUTES.shop}
                   className="mt-5 inline-flex h-11 items-center rounded-control bg-primary-950 px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-primary-800"
                 >
                   Shop all phones

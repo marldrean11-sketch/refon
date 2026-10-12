@@ -67,6 +67,8 @@ export function BrandMark({
   compact = false,
   className = '',
   wordmarkClassName = '',
+  glyphClassName = 'size-9 sm:size-10',
+  wordmarkSize = 'text-[1.35rem] sm:text-[1.5rem]',
   onClick,
 }) {
   // `burst` only ever counts up, so each click remounts the glyph to replay the
@@ -94,12 +96,12 @@ export function BrandMark({
     >
       <span className="relative shrink-0">
         <span key={burst} className={`block ${burst ? 'rf-logo-click' : ''}`}>
-          <LogoGlyph className="size-9 sm:size-10" inverse={inverse} draw={burst === 0} />
+          <LogoGlyph className={glyphClassName} inverse={inverse} draw={burst === 0} />
         </span>
         <Confetti active={active} burstKey={burst} />
       </span>
       {!compact && (
-        <Wordmark inverse={inverse} className={`text-[1.35rem] sm:text-[1.5rem] ${wordmarkClassName}`} />
+        <Wordmark inverse={inverse} className={`${wordmarkSize} ${wordmarkClassName}`} />
       )}
     </Link>
   )

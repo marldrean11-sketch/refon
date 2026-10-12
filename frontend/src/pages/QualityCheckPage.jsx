@@ -217,7 +217,7 @@ export function QualityCheckPage() {
                 <h3 className="mt-4 font-display text-xl font-semibold text-ink">
                   {grade.headline}
                 </h3>
-                <p className="mt-1 text-sm font-semibold text-primary-700">{grade.summary}</p>
+                <p className={`mt-1 text-sm font-semibold ${grade.text}`}>{grade.summary}</p>
                 <p className="mt-3 flex-1 text-sm leading-body text-muted">{grade.description}</p>
                 <div
                   className="mt-5 h-2 overflow-hidden rounded-pill bg-well"

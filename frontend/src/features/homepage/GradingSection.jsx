@@ -52,7 +52,7 @@ export function GradingSection() {
               <h3 className="mt-5 text-title font-bold tracking-tight text-ink">
                 {grade.label}
               </h3>
-              <p className="mt-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-accent-700">
+              <p className={`mt-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] ${grade.text}`}>
                 {grade.summary}
               </p>
               <p className="mt-4 flex-1 text-sm leading-body text-muted">
@@ -60,7 +60,12 @@ export function GradingSection() {
               </p>
 
               <div className="mt-6 border-t border-line pt-5">
-                <BatteryHealth percent={SAMPLE_BATTERY[gradeId]} size="sm" />
+                <BatteryHealth
+                  percent={SAMPLE_BATTERY[gradeId]}
+                  size="sm"
+                  barClassName={grade.bar}
+                  valueClassName={grade.text}
+                />
                 <p className="mt-2.5 text-xs leading-relaxed text-muted">
                   Typically seen in this band. Your listing shows the exact measured
                   figure for that phone.

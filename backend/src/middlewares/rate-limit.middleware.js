@@ -37,11 +37,14 @@ export const favoritesLimiter = createLimiter({ windowMs: tenMinutes, limit: 60 
 // Cart writes reserve physical inventory, so they are deliberately more generous
 // than they look: a buyer assembling several phones should not be throttled, but a
 // script hammering add/remove to probe which phones are held should be.
-/** One visitor rarely finishes more than a few health checks in ten minutes. */
-export const healthCheckLimiter = createLimiter({ windowMs: tenMinutes, limit: 10 })
+// The booth limits are per network address, and at the Techno Fair every visitor
+// on the school Wi-Fi or one hotspot shares the same address. They are sized for
+// a busy booth, not one person, while still stopping a script from flooding them.
+/** Finished health checks: a crowd of visitors, not one phone. */
+export const healthCheckLimiter = createLimiter({ windowMs: tenMinutes, limit: 150 })
 
-/** A visitor leaves feedback once or twice; five in thirty minutes is generous. */
-export const feedbackLimiter = createLimiter({ windowMs: thirtyMinutes, limit: 5 })
+/** Booth feedback: about one rating every few seconds from one network. */
+export const feedbackLimiter = createLimiter({ windowMs: tenMinutes, limit: 100 })
 
 export const cartLimiter = createLimiter({ windowMs: tenMinutes, limit: 120 })
 
