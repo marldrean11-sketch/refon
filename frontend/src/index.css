@@ -64,6 +64,8 @@
   }
 
   html {
+    /* No grey flash over tapped links and buttons on Android; the press effects replace it. */
+    -webkit-tap-highlight-color: transparent;
     @apply bg-page text-ink antialiased;
     color-scheme: dark;
     scroll-padding-top: 6rem;
@@ -276,8 +278,12 @@
     transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .rf-bounce:hover {
-    transform: scale(1.04);
+  /* Hover effects only where there is a real pointer: on a touch screen a tap
+     leaves :hover stuck, so a tapped button stayed enlarged. */
+  @media (hover: hover) {
+    .rf-bounce:hover {
+      transform: scale(1.04);
+    }
   }
 
   .rf-bounce:active {
@@ -304,8 +310,17 @@
       border-color 200ms ease;
   }
 
-  .rf-lift:hover {
-    transform: translateY(-6px) rotate(-0.8deg);
+  @media (hover: hover) {
+    .rf-lift:hover {
+      transform: translateY(-6px) rotate(-0.8deg);
+    }
+  }
+
+  /* Touch screens get a quick press instead of a hover lift. */
+  @media (hover: none) {
+    .rf-lift:active {
+      transform: scale(0.98);
+    }
   }
 
   /**

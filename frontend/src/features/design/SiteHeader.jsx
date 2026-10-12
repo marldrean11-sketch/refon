@@ -457,9 +457,12 @@ function MobileMenuOverlay() {
           ? [{ key: 'inquiries', label: 'My inquiries', to: AUTH_ROUTES.myInquiries }]
           : []),
         { key: 'account', label: 'Account', to: AUTH_ROUTES.account },
-        user.role === 'ADMIN'
-          ? { key: 'admin', label: 'Admin dashboard', to: AUTH_ROUTES.admin }
-          : { key: 'seller', label: 'Seller dashboard', to: AUTH_ROUTES.seller },
+        // Only a role with its own workspace gets a dashboard link; a buyer has none.
+        ...(user.role === 'ADMIN'
+          ? [{ key: 'admin', label: 'Admin dashboard', to: AUTH_ROUTES.admin }]
+          : user.role === 'SELLER'
+            ? [{ key: 'seller', label: 'Seller dashboard', to: AUTH_ROUTES.seller }]
+            : []),
       ]
     : [
         ...buyerLinks,

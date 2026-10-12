@@ -137,10 +137,15 @@ export function SiteFooter() {
   const accountLinks = user
     ? [
         { label: "Account settings", to: AUTH_ROUTES.account },
-        {
-          label: user.role === "ADMIN" ? "Admin dashboard" : "Seller dashboard",
-          to: user.role === "ADMIN" ? AUTH_ROUTES.admin : AUTH_ROUTES.seller,
-        },
+        // A buyer has no dashboard, so the footer offers their own pages instead.
+        ...(user.role === "ADMIN"
+          ? [{ label: "Admin dashboard", to: AUTH_ROUTES.admin }]
+          : user.role === "SELLER"
+            ? [{ label: "Seller dashboard", to: AUTH_ROUTES.seller }]
+            : [
+                { label: "Saved phones", to: AUTH_ROUTES.saved },
+                { label: "My inquiries", to: AUTH_ROUTES.myInquiries },
+              ]),
       ]
     : [
         { label: "Sign in", to: AUTH_ROUTES.login },

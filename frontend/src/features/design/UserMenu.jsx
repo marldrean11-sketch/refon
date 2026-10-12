@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, LogOut } from 'lucide-react'
+import { ChevronDown, LogOut, UserCog } from 'lucide-react'
 import { useAuth } from '../auth/useAuth.js'
 import { AUTH_ROUTES } from '../../lib/routes.js'
 import { useOptionalSellerInquiries } from '../inquiries/useSellerInquiries.js'
@@ -59,6 +59,10 @@ export function UserMenu() {
   const { unreadCount } = useOptionalSellerInquiries()
   const { savedIds } = useSavedListings()
   const [isOpen, setIsOpen] = useState(false)
+  // On a phone the menu is pinned under the header across the screen width,
+  // because the avatar is not at the right edge and an anchored panel ran off
+  // the left side. `null` on wider screens, where the anchored panel fits.
+  const [phoneTop, setPhoneTop] = useState(null)
   const containerRef = useRef(null)
   const triggerRef = useRef(null)
   const navigate = useNavigate()
@@ -118,7 +122,11 @@ export function UserMenu() {
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => {
+          const rect = triggerRef.current?.getBoundingClientRect()
+          setPhoneTop(rect && window.innerWidth < 640 ? Math.round(rect.bottom + 8) : null)
+          setIsOpen((open) => !open)
+        }}
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-controls="refon-user-menu"
@@ -147,7 +155,14 @@ export function UserMenu() {
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
             transition={quickTransition}
-            className="absolute right-0 top-[3.25rem] z-drawer w-72 origin-top-right overflow-hidden rounded-card border border-line-2 bg-surface shadow-pop"
+            style={
+              phoneTop === null
+                ? undefined
+                : { top: phoneTop, maxHeight: `calc(100dvh - ${phoneTop}px - 6rem)` }
+            }
+            className={`z-drawer origin-top-right overflow-y-auto overscroll-contain rounded-card border border-line-2 bg-surface shadow-pop ${
+              phoneTop === null ? 'absolute right-0 top-[3.25rem] w-72' : 'fixed inset-x-3'
+            }`}
           >
             <div className="border-b border-line px-4 py-3.5">
               <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
@@ -189,10 +204,7 @@ export function UserMenu() {
               )}
 
               <Link to={AUTH_ROUTES.account} className={MENU_ITEM}>
-                <span
-                  className="size-4 shrink-0 rounded-[2px] bg-primary-200"
-                  aria-hidden="true"
-                />
+                <UserCog className="size-4 shrink-0 text-subtle" aria-hidden="true" />
                 Account settings
               </Link>
             </div>
