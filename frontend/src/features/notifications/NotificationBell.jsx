@@ -10,6 +10,7 @@ import {
   ShieldAlert,
   ShoppingBag,
   TrendingDown,
+  X,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -23,6 +24,7 @@ import {
 import { subscribeToMarketplaceChanges } from '../../lib/marketplace-sync.js'
 import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import { formatRelativeTime } from '../../lib/format.js'
+import { play } from '../../lib/sound.js'
 
 const notificationPresentation = {
   NEW_INQUIRY: {
@@ -113,6 +115,36 @@ function getNotificationTarget(notification) {
   return AUTH_ROUTES.seller
 }
 
+/** How long a new-notification toast stays up. */
+const TOAST_MS = 7000
+
+/** A first visit on this device only toasts something this fresh. */
+const FRESH_MS = 30 * 60 * 1000
+
+function seenKey(userId) {
+  return `refon:notification-seen:${userId}`
+}
+
+/**
+ * The newest notification worth a toast, or null. Remembers the newest one seen
+ * on this device, so each notification pops up once, including one that arrived
+ * while the user was signed out (a seller signing back in after approval).
+ */
+function takeNewNotification(userId, notifications) {
+  const newest = notifications[0]
+  if (!userId || !newest) return null
+  let seen = null
+  try {
+    seen = window.localStorage.getItem(seenKey(userId))
+    window.localStorage.setItem(seenKey(userId), newest.id)
+  } catch {
+    // Storage blocked: fall through and judge by age alone.
+  }
+  if (newest.isRead || seen === newest.id) return null
+  if (seen === null && Date.now() - new Date(newest.createdAt).getTime() > FRESH_MS) return null
+  return newest
+}
+
 export function NotificationBell() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -122,6 +154,7 @@ export function NotificationBell() {
   const [isLoading, setIsLoading] = useState(false)
   const [isMarkingAll, setIsMarkingAll] = useState(false)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState(null)
   const panelRef = useRef(null)
   const triggerRef = useRef(null)
   const reduceMotion = usePrefersReducedMotion()
@@ -154,11 +187,19 @@ export function NotificationBell() {
       return undefined
     }
 
+    const announce = (response) => {
+      const fresh = takeNewNotification(user.id, response.notifications)
+      if (fresh) {
+        setToast(fresh)
+        play('chime')
+      }
+    }
+
     // eslint-disable-next-line react/set-state-in-effect
-    refresh().catch(() => {})
+    refresh().then(announce).catch(() => {})
 
     const refreshInBackground = () => {
-      refresh({ silent: true }).catch(() => {})
+      refresh({ silent: true }).then(announce).catch(() => {})
     }
     const unsubscribe = subscribeToMarketplaceChanges(refreshInBackground)
     const intervalId = window.setInterval(refreshInBackground, 30_000)
@@ -171,6 +212,12 @@ export function NotificationBell() {
       window.removeEventListener('focus', refreshInBackground)
     }
   }, [refresh, user?.id, user?.role])
+
+  useEffect(() => {
+    if (!toast) return undefined
+    const timer = window.setTimeout(() => setToast(null), TOAST_MS)
+    return () => window.clearTimeout(timer)
+  }, [toast])
 
   useEffect(() => {
     if (!isOpen) {
@@ -272,13 +319,32 @@ export function NotificationBell() {
         aria-controls={panelId}
         aria-haspopup="dialog"
       >
-        <Bell className="size-5" aria-hidden="true" />
+        <Bell
+          key={toast?.id ?? 'bell'}
+          className={`size-5 ${toast ? 'rf-bell-ring text-accent' : ''}`}
+          aria-hidden="true"
+        />
         {unreadCount > 0 && (
           <span className="absolute -right-1.5 -top-1.5 grid min-w-5 place-items-center rounded-full border-2 border-white bg-accent-700 px-1 text-[10px] font-bold leading-4 text-white shadow-sm">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
+
+      <AnimatePresence>
+        {toast && !isOpen && (
+          <NotificationToast
+            key={toast.id}
+            notification={toast}
+            reduceMotion={reduceMotion}
+            onView={() => {
+              setToast(null)
+              handleNotificationClick(toast)
+            }}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isOpen && (
@@ -386,5 +452,47 @@ export function NotificationBell() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+/** The pop-up for a notification that just arrived. */
+function NotificationToast({ notification, reduceMotion, onView, onClose }) {
+  const presentation = notificationPresentation[notification.type] ?? notificationPresentation.REPORT_RESOLVED
+  const Icon = presentation.icon
+
+  return (
+    <motion.div
+      role="status"
+      aria-live="polite"
+      data-testid="notification-toast"
+      initial={reduceMotion ? false : { opacity: 0, y: -12, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={reduceMotion ? undefined : { opacity: 0, y: -12, scale: 0.96 }}
+      transition={quickTransition}
+      className="fixed right-4 top-24 z-drawer flex w-[min(24rem,calc(100vw-2rem))] items-start gap-3 rounded-card-lg border border-accent/50 bg-card p-4 shadow-2xl"
+    >
+      <span className={`grid size-10 shrink-0 place-items-center rounded-2xl ${presentation.iconClass}`}>
+        <Icon className="size-5" aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">New update</p>
+        <p className="mt-1 text-sm font-semibold leading-snug text-ink">{notification.message}</p>
+        <button
+          type="button"
+          onClick={onView}
+          className="mt-2 text-xs font-bold text-accent underline-offset-4 hover:underline"
+        >
+          View
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        className="grid size-8 shrink-0 place-items-center rounded-full text-muted hover:bg-well hover:text-ink"
+        aria-label="Dismiss notification"
+      >
+        <X className="size-4" aria-hidden="true" />
+      </button>
+    </motion.div>
   )
 }

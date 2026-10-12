@@ -14,6 +14,7 @@ import {
   HEALTH_CHECKS,
   buildReportText,
   detectSupport,
+  unsupportedReason,
   readDeviceFacts,
 } from '../features/health-check/health-checks.js'
 import { DisplayTest, TouchTest } from '../features/health-check/FullscreenTests.jsx'
@@ -308,6 +309,11 @@ function CheckRow({ check, number, supported, result, isActive, onStart, onFinis
             <p className="mt-1.5 text-xs text-muted">Matches inspection step: {inspectionLabel}</p>
           )}
           {result?.note && <p className="mt-2 text-sm text-ink">{result.note}</p>}
+          {!supported && unsupportedReason(check.id) && (
+            <p className="mt-2 text-sm text-ink" data-testid={`unsupported-${check.id}`}>
+              {unsupportedReason(check.id)}
+            </p>
+          )}
         </div>
 
         <div className="relative flex w-full items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end">

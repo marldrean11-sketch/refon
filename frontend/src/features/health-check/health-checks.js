@@ -89,9 +89,41 @@ export function detectSupport() {
     microphone: media,
     camera: media,
     vibration: typeof navigator.vibrate === 'function',
-    motion: typeof window.DeviceMotionEvent !== 'undefined',
+    // Browsers only send motion and orientation readings to secure (https) pages.
+    motion:
+      window.isSecureContext !== false &&
+      (typeof window.DeviceMotionEvent !== 'undefined' ||
+        typeof window.DeviceOrientationEvent !== 'undefined'),
     battery: typeof navigator.getBattery === 'function',
   }
+}
+
+function isIphoneOrIpad() {
+  const ua = window.navigator.userAgent
+  return /iphone|ipad|ipod/i.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1)
+}
+
+/**
+ * Why a test cannot run here, in words a visitor understands. Shown under a test
+ * that `detectSupport` marked unavailable, so nobody mistakes a browser limit
+ * for a fault in their phone.
+ */
+export function unsupportedReason(id) {
+  if (typeof window === 'undefined') return ''
+  if (id === 'vibration') {
+    return isIphoneOrIpad()
+      ? "iPhones don't let websites use the vibration motor. That's an Apple rule, not a problem with your phone."
+      : "This browser can't run the vibration motor. Chrome on Android can."
+  }
+  if (id === 'motion') {
+    return window.isSecureContext === false
+      ? 'Motion sensors only work on the secure https:// address. Open the live ReFon site to test them.'
+      : "This browser doesn't share motion sensors with websites."
+  }
+  if (id === 'battery') {
+    return "This browser doesn't share battery details with websites. Chrome on Android does."
+  }
+  return ''
 }
 
 /** Facts the browser volunteers about the device, with no test to run. */

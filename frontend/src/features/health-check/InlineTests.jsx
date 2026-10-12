@@ -331,24 +331,43 @@ export function VibrationTest({ onResult }) {
   const [buzzed, setBuzzed] = useState(false)
 
   function buzz() {
-    navigator.vibrate([250, 120, 250, 120, 500])
+    // `vibrate` answers false when the browser refuses outright (a setting, a
+    // battery saver, or a page that is not in the foreground).
+    const accepted = navigator.vibrate([250, 120, 250, 120, 500])
+
+    if (accepted === false) {
+      onResult('blocked', 'The browser refused to vibrate. Check that battery saver is off, then try again.')
+      return
+    }
+
     setBuzzed(true)
   }
 
   return (
     <div className="grid gap-3">
-      <p className="text-sm text-muted">Hold the phone in your hand. Silent mode can block this.</p>
+      <p className="text-sm text-muted">Hold the phone in your hand, then tap Vibrate.</p>
       <div>
         <Button variant={buzzed ? 'secondary' : 'primary'} onClick={buzz}>
           {buzzed ? 'Vibrate again' : 'Vibrate'}
         </Button>
       </div>
       {buzzed && (
-        <Ask
-          question="Did you feel three buzzes, the last one longer?"
-          onYes={() => onResult('passed')}
-          onNo={() => onResult('failed', 'No vibration felt')}
-        />
+        <>
+          <Ask
+            question="Did you feel three buzzes, the last one longer?"
+            onYes={() => onResult('passed')}
+            onNo={() =>
+              onResult(
+                'failed',
+                'No vibration felt. If silent mode, Do Not Disturb or "Vibration & haptics" is off in Settings, turn it on and run the test again.',
+              )
+            }
+          />
+          <p className="text-xs text-muted">
+            Nothing? Silent mode, Do Not Disturb, battery saver or a vibration setting
+            that is switched off can all stop it. Turn those off and tap Vibrate again.
+          </p>
+        </>
       )}
     </div>
   )
@@ -356,69 +375,130 @@ export function VibrationTest({ onResult }) {
 
 /** How far the phone has to tilt, in m/s² of gravity shift, to count as moved. */
 const TILT_THRESHOLD = 3
-const MOTION_SECONDS = 12
+/** The same tilt measured by the orientation sensor, in degrees. */
+const TILT_DEGREES = 20
+const MOTION_SECONDS = 15
+/** If nothing has arrived by now, explain why before the test gives up. */
+const HINT_SECONDS = 3
+
+async function askMotionPermission() {
+  // iOS 13+ hides motion and orientation behind permissions that must come from
+  // a tap. Other browsers have no such call and simply start sending readings.
+  for (const Sensor of [window.DeviceMotionEvent, window.DeviceOrientationEvent]) {
+    if (typeof Sensor?.requestPermission === 'function') {
+      const answer = await Sensor.requestPermission()
+      if (answer !== 'granted') return false
+    }
+  }
+  return true
+}
 
 export function MotionTest({ onResult }) {
   const [reading, setReading] = useState(null)
+  const [progress, setProgress] = useState(0)
   const [state, setState] = useState('idle')
+  const [hint, setHint] = useState(false)
   const cleanupRef = useRef(() => {})
 
   useEffect(() => () => cleanupRef.current(), [])
 
   async function start() {
-    // iOS 13+ hides motion behind a permission that must come from a tap.
-    if (typeof DeviceMotionEvent.requestPermission === 'function') {
-      try {
-        const answer = await DeviceMotionEvent.requestPermission()
+    cleanupRef.current()
+    setHint(false)
+    setProgress(0)
+    setReading(null)
 
-        if (answer !== 'granted') {
-          onResult('blocked')
-          return
-        }
-      } catch {
-        onResult('blocked')
+    try {
+      if (!(await askMotionPermission())) {
+        onResult('blocked', 'Motion access was not allowed. Reload the page and tap Allow when asked.')
         return
       }
+    } catch {
+      onResult('blocked', 'Motion access was not allowed. Reload the page and tap Allow when asked.')
+      return
     }
 
-    let first = null
+    let firstGravity = null
+    let firstAngles = null
     let events = 0
     let hasGyro = false
+    let finished = false
+
+    function pass(detail) {
+      if (finished) return
+      finished = true
+      setProgress(1)
+      cleanupRef.current()
+      onResult('passed', detail)
+    }
 
     function onMotion(event) {
       const gravity = event.accelerationIncludingGravity
-
-      if (!gravity || gravity.x == null) {
-        return
-      }
+      if (!gravity || gravity.x == null) return
 
       events += 1
       hasGyro = hasGyro || event.rotationRate?.alpha != null
-      first = first ?? { x: gravity.x, y: gravity.y, z: gravity.z }
-      setReading({ x: gravity.x, y: gravity.y, z: gravity.z })
+      firstGravity = firstGravity ?? { x: gravity.x, y: gravity.y, z: gravity.z }
+      setReading({ x: gravity.x, y: gravity.y })
 
-      const shift = Math.hypot(gravity.x - first.x, gravity.y - first.y, gravity.z - first.z)
+      const shift = Math.hypot(
+        gravity.x - firstGravity.x,
+        gravity.y - firstGravity.y,
+        gravity.z - firstGravity.z,
+      )
+      setProgress((current) => Math.max(current, Math.min(1, shift / TILT_THRESHOLD)))
 
       if (shift > TILT_THRESHOLD) {
-        cleanupRef.current()
-        onResult('passed', hasGyro ? 'Accelerometer and gyroscope responding' : 'Accelerometer responding')
+        pass(hasGyro ? 'Accelerometer and gyroscope responding' : 'Accelerometer responding')
       }
     }
+
+    // Some phones report orientation but not motion; either one proves the
+    // sensors work.
+    function onOrientation(event) {
+      if (event.beta == null || event.gamma == null) return
+
+      events += 1
+      firstAngles = firstAngles ?? { beta: event.beta, gamma: event.gamma }
+      if (!firstGravity) {
+        setReading({ x: (event.gamma / 90) * -9.8, y: (event.beta / 90) * 9.8 })
+      }
+
+      const turned = Math.max(
+        Math.abs(event.beta - firstAngles.beta),
+        Math.abs(event.gamma - firstAngles.gamma),
+      )
+      setProgress((current) => Math.max(current, Math.min(1, turned / TILT_DEGREES)))
+
+      if (turned > TILT_DEGREES) {
+        pass('Orientation sensor responding')
+      }
+    }
+
+    const hintTimer = window.setTimeout(() => {
+      if (events === 0) setHint(true)
+    }, HINT_SECONDS * 1000)
 
     const timer = window.setTimeout(() => {
       cleanupRef.current()
 
       if (events === 0) {
-        onResult('unsupported', 'No sensor readings reached the browser')
+        onResult(
+          'unsupported',
+          'No sensor readings reached the browser. On Android, allow "Motion sensors" in the site settings (tap the icon left of the address) and try again.',
+        )
       } else {
         setState('still')
       }
     }, MOTION_SECONDS * 1000)
 
     window.addEventListener('devicemotion', onMotion)
+    window.addEventListener('deviceorientation', onOrientation)
     cleanupRef.current = () => {
       window.removeEventListener('devicemotion', onMotion)
+      window.removeEventListener('deviceorientation', onOrientation)
       window.clearTimeout(timer)
+      window.clearTimeout(hintTimer)
       cleanupRef.current = () => {}
     }
 
@@ -432,9 +512,14 @@ export function MotionTest({ onResult }) {
   return (
     <div className="grid gap-3">
       {state === 'idle' && (
-        <div>
-          <Button onClick={start}>Start sensors</Button>
-        </div>
+        <>
+          <p className="text-sm text-muted">
+            Hold the phone flat, tap Start, then tilt it toward you. On iPhone, tap Allow when asked.
+          </p>
+          <div>
+            <Button onClick={start}>Start sensors</Button>
+          </div>
+        </>
       )}
 
       {state === 'listening' && (
@@ -447,9 +532,31 @@ export function MotionTest({ onResult }) {
               }}
             />
           </div>
-          <p className="text-sm font-semibold text-ink">
-            {reading ? 'Now tilt the phone toward you.' : 'Waiting for the sensors…'}
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink">
+              {reading ? 'Now tilt the phone toward you.' : 'Waiting for the sensors…'}
+            </p>
+            <div
+              className="mt-3 h-2 overflow-hidden rounded-pill bg-well"
+              role="progressbar"
+              aria-label="How far the phone has tilted"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress * 100)}
+            >
+              <div
+                className="h-full origin-left rounded-pill bg-accent transition-transform duration-150"
+                style={{ transform: `scaleX(${progress})` }}
+              />
+            </div>
+            {hint && (
+              <p className="mt-3 text-xs text-muted">
+                No readings yet. Make sure you opened the secure https:// site. On Android,
+                tap the icon left of the address, open Site settings and allow Motion
+                sensors. On iPhone, reload and tap Allow.
+              </p>
+            )}
+          </div>
         </div>
       )}
 

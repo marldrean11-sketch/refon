@@ -50,5 +50,9 @@ Only for the hosted demo, which is seeded with your own passwords (see README, "
 
 - **Page stuck loading:** the server is waking up. Wait 30–50 seconds and refresh.
 - **Camera or mic test says "Permission denied":** the visitor tapped Block. In the browser's site settings, allow camera/microphone and reload.
-- **"Browser can't test":** that sensor is not available in that browser (e.g. vibration on iPhone). That's expected and the page says so.
+- **"Browser can't test":** that sensor is not available in that browser. The page now says why under the test.
+- **Vibration on iPhone:** never works. Apple does not let any website use the vibration motor. Show the vibration test on an Android phone instead.
+- **Vibration on Android, but nothing felt:** silent mode, Do Not Disturb, battery saver, or Settings → Sound & vibration → Vibration & haptics switched off. Turn those off and tap Vibrate again.
+- **Motion sensors, no readings:** the page must be the https:// address. On Android Chrome, tap the icon left of the address → Site settings → allow Motion sensors. On iPhone, reload and tap Allow when asked. Then tilt the phone until the bar fills.
+- **Seller can't see an approval:** a pop-up appears on the seller's screen within 30 seconds (or as soon as they switch back to the tab), and the bell rings.
 - **Nothing works:** run it locally on the laptop (`npm run dev`) and use the laptop for the shop demo. The phone health check needs the hosted HTTPS site.
