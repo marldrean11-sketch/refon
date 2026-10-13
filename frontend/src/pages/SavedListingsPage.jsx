@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Heart, RefreshCw } from 'lucide-react'
+import { Heart, RefreshCw, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ListingCard } from '../features/listings/listing-card.jsx'
-import { getMyFavoritesRequest } from '../features/favorites/favorites-api.js'
+import {
+  getMyFavoritesRequest,
+  removeFavoriteRequest,
+} from '../features/favorites/favorites-api.js'
 import { useSavedListings } from '../features/favorites/useSavedListings.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { ProductCardSkeleton } from '../components/ui/Skeleton.jsx'
@@ -19,7 +22,7 @@ import { Container } from '../features/design/Container.jsx'
  * screen, which made it feel like a different product from the shop.
  */
 export function SavedListingsPage() {
-  const { refresh } = useSavedListings()
+  const { refresh, savedIds, toggle } = useSavedListings()
   const [listings, setListings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -42,6 +45,21 @@ export function SavedListingsPage() {
     // eslint-disable-next-line react/set-state-in-effect
     load().catch(() => {})
   }, [load])
+
+  /** Drops a sold phone from the shelf; the card goes at once, the request follows. */
+  async function removeSold(id) {
+    setListings((current) => current.filter((listing) => listing.id !== id))
+    try {
+      // Through the shared toggle when the header knows the id, so its count drops too.
+      if (savedIds?.has(id)) {
+        await toggle(id)
+      } else {
+        await removeFavoriteRequest(id)
+      }
+    } catch {
+      load().catch(() => {})
+    }
+  }
 
   return (
     <div className="min-h-[calc(100vh-4.5rem)] bg-canvas">
@@ -90,7 +108,7 @@ export function SavedListingsPage() {
             description="Check your connection and try again."
             onRetry={() => {
               load().catch(() => {})
-              refresh().catch(() => {})
+              refresh?.().catch(() => {})
             }}
           />
         ) : listings.length === 0 ? (
@@ -106,12 +124,17 @@ export function SavedListingsPage() {
           <>
             <ul className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
               {listings.map((listing) => (
-                <li key={listing.id} className="relative flex">
+                <li key={listing.id} className="flex flex-col gap-2">
                   <ListingCard listing={listing} hideSaveButton />
                   {listing.status === 'SOLD' && (
-                    <span className="absolute left-3 top-3 z-40 inline-flex items-center gap-1.5 rounded-sm bg-primary-950 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-white">
-                      Sold
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeSold(listing.id)}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-control border border-line-2 px-3 py-2 text-xs font-semibold text-muted transition-colors hover:border-heart hover:text-heart focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                      Remove from saved
+                    </button>
                   )}
                 </li>
               ))}

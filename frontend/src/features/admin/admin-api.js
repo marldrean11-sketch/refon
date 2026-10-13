@@ -44,3 +44,15 @@ export function rejectListingRequest(id, feedback = '') {
     body: { feedback },
   })
 }
+
+export function getSellerDirectoryRequest({ status = '', q = '' } = {}) {
+  const params = new URLSearchParams()
+  if (status) params.set('status', status)
+  if (q.trim()) params.set('q', q.trim())
+  const query = params.toString()
+  return apiRequest(`/admin/sellers${query ? `?${query}` : ''}`)
+}
+
+export function getSellerForAdminRequest(id) {
+  return apiRequest(`/admin/sellers/${id}`)
+}

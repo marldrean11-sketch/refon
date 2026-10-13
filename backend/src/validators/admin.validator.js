@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { validate } from './auth.validator.js'
+import { validate, validateQuery } from './auth.validator.js'
 
 const rejectListingSchema = z.preprocess(
   (value) => value ?? {},
@@ -29,3 +29,12 @@ const rejectSellerSchema = z.preprocess(
 
 export const validateRejectListing = validate(rejectListingSchema)
 export const validateRejectSeller = validate(rejectSellerSchema)
+
+const sellerDirectoryQuerySchema = z
+  .object({
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+    q: z.string().trim().max(120).optional(),
+  })
+  .strict()
+
+export const validateSellerDirectoryQuery = validateQuery(sellerDirectoryQuerySchema)

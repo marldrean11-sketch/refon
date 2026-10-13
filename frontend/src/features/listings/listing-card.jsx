@@ -83,6 +83,9 @@ export function gradeFor(listing) {
  * listing carries a reference price above the selling price.
  */
 export function ListingCard({ listing, preview = false, hideSaveButton = false }) {
+  // A sold phone stays visible (a buyer's saved shelf keeps it) but can no
+  // longer be acted on, so it is marked as sold and loses its controls.
+  const sold = listing.status === 'SOLD'
   const reduceMotion = usePrefersReducedMotion()
   const mainPhoto = listing.mainPhoto ?? listing.photos?.[0]
   const grade = gradeFor(listing)
@@ -147,6 +150,20 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
           <ConditionBadge grade={grade} />
         </div>
 
+        {sold && (
+          <div
+            data-testid="listing-sold-notice"
+            className="absolute inset-0 z-20 grid place-items-center bg-page/70 backdrop-grayscale"
+          >
+            <div className="flex flex-col items-center gap-1 rounded-control bg-page/90 px-4 py-3 text-center shadow-pop">
+              <span className="font-display text-xl font-bold uppercase tracking-[0.12em] text-ink">
+                Sold
+              </span>
+              <span className="text-xs text-muted">No longer available</span>
+            </div>
+          </div>
+        )}
+
         {listing.isFeatured && (
           <span className="absolute bottom-0 left-0 bg-primary-950 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
             Featured
@@ -154,7 +171,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
         )}
 
         {/* Owns the stacking context so it paints above the z-30 full-card link. */}
-        {!preview && !hideSaveButton && (
+        {!preview && !hideSaveButton && !sold && (
           <div className="absolute right-3 top-3 z-40">
             <FavoriteButton listing={listing} />
           </div>
@@ -225,7 +242,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
                 Verified seller
               </span>
             )}
-            {!preview && <CompareToggle listing={listing} className="ml-auto -my-1" />}
+            {!preview && !sold && <CompareToggle listing={listing} className="ml-auto -my-1" />}
           </div>
         </div>
       </div>

@@ -1,6 +1,8 @@
 import { getAdminStats } from '../services/admin.service.js'
 import {
   getPendingSellers,
+  getSellerDirectory,
+  getSellerForAdmin,
   reviewSeller,
 } from '../services/seller.service.js'
 import {
@@ -17,6 +19,16 @@ export const stats = asyncHandler(async (_req, res) => {
 export const pendingSellers = asyncHandler(async (_req, res) => {
   const sellers = await getPendingSellers()
   return res.status(200).json({ sellers })
+})
+
+export const sellerDirectory = asyncHandler(async (req, res) => {
+  const sellers = await getSellerDirectory(req.validatedQuery ?? {})
+  return res.status(200).json({ sellers })
+})
+
+export const sellerDetail = asyncHandler(async (req, res) => {
+  const seller = await getSellerForAdmin(req.validatedParams.id)
+  return res.status(200).json({ seller })
 })
 
 export const approveSeller = asyncHandler(async (req, res) => {

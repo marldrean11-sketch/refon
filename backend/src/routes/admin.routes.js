@@ -6,6 +6,8 @@ import {
   pendingSellers,
   rejectListing,
   rejectSeller,
+  sellerDetail,
+  sellerDirectory,
   stats,
 } from '../controllers/admin.controller.js'
 import {
@@ -16,6 +18,7 @@ import { validateListingId } from '../validators/listing.validator.js'
 import {
   validateRejectListing,
   validateRejectSeller,
+  validateSellerDirectoryQuery,
 } from '../validators/admin.validator.js'
 import { validateSellerId } from '../validators/seller.validator.js'
 import { summary as feedbackSummary } from '../controllers/feedback.controller.js'
@@ -35,6 +38,8 @@ router.use(authenticate, requireAdmin)
 router.get('/stats', stats)
 router.get('/feedback', feedbackSummary)
 router.get('/sellers/pending', pendingSellers)
+router.get('/sellers', validateSellerDirectoryQuery, sellerDirectory)
+router.get('/sellers/:id', validateSellerId, sellerDetail)
 router.patch('/sellers/:id/approve', validateSellerId, approveSeller)
 router.patch('/sellers/:id/reject', validateSellerId, validateRejectSeller, rejectSeller)
 router.get('/reports', validateReportsQuery, reports)
