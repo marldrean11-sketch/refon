@@ -25,7 +25,11 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
-      # The API will not start in production without an SMTP relay.
+      # The API will not start in production without an SMTP relay or BREVO_API_KEY.
+      # Render's free tier blocks outbound SMTP ports, so use BREVO_API_KEY there
+      # (it takes precedence over SMTP when both are set).
+      - key: BREVO_API_KEY
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT

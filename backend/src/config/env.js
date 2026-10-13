@@ -27,11 +27,14 @@ if (!jwtSecret || jwtSecret.length < 32) {
 const nodeEnv = process.env.NODE_ENV ?? 'development'
 
 const smtpHost = process.env.SMTP_HOST ?? ''
+const brevoApiKey = process.env.BREVO_API_KEY ?? ''
 
 // Without a relay there is nowhere to send mail, so refuse to boot in production
 // rather than silently dropping password reset and verification links.
-if (nodeEnv === 'production' && !smtpHost) {
-  throw new Error('SMTP_HOST must be set in production so ReFon can send account emails.')
+if (nodeEnv === 'production' && !smtpHost && !brevoApiKey) {
+  throw new Error(
+    'SMTP_HOST or BREVO_API_KEY must be set in production so ReFon can send account emails.',
+  )
 }
 
 const storageDriver = process.env.STORAGE_DRIVER ?? 'local'
@@ -105,6 +108,7 @@ export const env = Object.freeze({
   smtpUser: process.env.SMTP_USER ?? '',
   smtpPass: process.env.SMTP_PASS ?? '',
   smtpSecure: process.env.SMTP_SECURE === 'true',
+  brevoApiKey,
   storageDriver,
   /**
    * Optional. The built frontend (`frontend/dist`) for a single-service deploy, in

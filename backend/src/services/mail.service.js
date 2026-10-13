@@ -26,6 +26,37 @@ function getTransporter() {
   return transporter
 }
 
+// "ReFon <hello@example.com>" -> { name: 'ReFon', email: 'hello@example.com' }
+function parseAddress(address) {
+  const match = address.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/)
+  return match ? { name: match[1] || undefined, email: match[2] } : { email: address.trim() }
+}
+
+// Brevo's HTTP API goes out over HTTPS, so it still works on hosts that block
+// outbound SMTP ports (Render's free tier does).
+async function sendWithBrevo({ to, subject, text, html }) {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': env.brevoApiKey,
+      'content-type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: parseAddress(env.mailFrom),
+      to: [{ email: to }],
+      subject,
+      textContent: text,
+      htmlContent: html,
+    }),
+    signal: AbortSignal.timeout(15_000),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Brevo answered ${response.status}: ${(await response.text()).slice(0, 300)}`)
+  }
+}
+
 async function appendToOutbox(message) {
   await fs.mkdir(path.dirname(mailOutboxPath), { recursive: true })
   await fs.appendFile(mailOutboxPath, `${JSON.stringify(message)}\n`, 'utf8')
@@ -50,7 +81,7 @@ function layout(heading, body, actionLabel, actionUrl) {
 // With `background`, a relay send is started but not awaited, so the caller's
 // request does not wait on the relay; failures are only logged.
 export async function sendMail({ to, subject, text, html }, { background = false } = {}) {
-  if (!env.smtpHost) {
+  if (!env.smtpHost && !env.brevoApiKey) {
     await appendToOutbox({
       to,
       subject,
@@ -63,15 +94,17 @@ export async function sendMail({ to, subject, text, html }, { background = false
     return
   }
 
-  const delivery = getTransporter()
-    .sendMail({
-      from: env.mailFrom,
-      to,
-      subject,
-      text,
-      html,
-    })
-    .then(() => console.log(`[mail] sent "${subject}" to ${to}`))
+  const delivery = (
+    env.brevoApiKey
+      ? sendWithBrevo({ to, subject, text, html })
+      : getTransporter().sendMail({
+          from: env.mailFrom,
+          to,
+          subject,
+          text,
+          html,
+        })
+  ).then(() => console.log(`[mail] sent "${subject}" to ${to}`))
 
   if (!background) {
     await delivery
