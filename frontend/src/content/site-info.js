@@ -29,13 +29,6 @@ export const SITE_INFO = Object.freeze({
     booth: '7',
   }),
 
-  /**
-   * The "Chat with us" button. Set `viber` to a viber:// chat link when ready;
-   * until then it shows as "coming soon", and email and phone always work.
-   */
-  chat: Object.freeze({
-    viber: null,
-  }),
 
   /** Placeholders until the accounts exist: set `href` to the real URL. */
   socials: Object.freeze([
