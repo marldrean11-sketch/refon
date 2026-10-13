@@ -99,3 +99,12 @@ export function getAdminTradeInsRequest(status = '') {
 export function updateTradeInRequest(id, values) {
   return apiRequest(`/admin/trade-ins/${id}`, { method: 'PATCH', body: values })
 }
+
+export function getHealthCheckCountRequest(signal) {
+  return apiRequest('/admin/health-checks', { signal })
+}
+
+/** Zeroes today's "phones checked" counter, e.g. after testing the booth setup. */
+export function resetHealthChecksTodayRequest() {
+  return apiRequest('/admin/health-checks/today', { method: 'DELETE' })
+}
