@@ -9,7 +9,6 @@ import { PageTransition } from './PageTransition.jsx'
 import { LoadingScreen } from '../ui/LoadingScreen.jsx'
 import { CustomCursor } from './CustomCursor.jsx'
 import { BackToTop } from './BackToTop.jsx'
-import { PageSlider } from './PageSlider.jsx'
 import { WelcomeBurst } from './WelcomeBurst.jsx'
 import { PopChallenge } from './PopChallenge.jsx'
 import { ChatButton } from './ChatButton.jsx'
@@ -58,7 +57,6 @@ export function MarketplaceLayout() {
       <SiteFooter />
       <CompareTray hidden={pathname === MARKETPLACE_ROUTES.compare} />
       <BackToTop />
-      <PageSlider />
       <WelcomeBurst />
       <PopChallenge />
       <ChatButton />

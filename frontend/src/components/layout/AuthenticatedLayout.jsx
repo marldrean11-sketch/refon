@@ -4,7 +4,6 @@ import { SiteFooter } from '../../features/design/SiteFooter.jsx'
 import { CustomCursor } from './CustomCursor.jsx'
 import { BackToTop } from './BackToTop.jsx'
 import { CompareTray } from '../../features/compare/CompareTray.jsx'
-import { PageSlider } from './PageSlider.jsx'
 import { WelcomeBurst } from './WelcomeBurst.jsx'
 import { PopChallenge } from './PopChallenge.jsx'
 import { ChatButton } from './ChatButton.jsx'
@@ -54,7 +53,6 @@ export function AuthenticatedLayout() {
           account pages a leftover selection would follow the visitor around. */}
       <CompareTray hidden={pathname !== AUTH_ROUTES.saved} />
       <BackToTop />
-      <PageSlider />
       <WelcomeBurst />
       <PopChallenge />
       <ChatButton />
