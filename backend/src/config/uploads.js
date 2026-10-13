@@ -75,15 +75,21 @@ export function uploadPhotoFiles(req, res, next) {
     }
 
     // A declared Content-Type proves nothing about the payload, so the real bytes are
-    // checked here. One bad file rejects the whole request.
+    // checked here, and they decide the type. A real JPG saved with a .png name (which
+    // some apps do when saving a picture) is accepted as the JPG it is; anything that
+    // is not actually a JPG, PNG or WebP rejects the whole request.
     for (const file of req.files) {
       const detected = detectImageType(file.buffer)
 
-      if (detected !== file.mimetype) {
+      if (!detected || !allowedMimeTypes.has(detected)) {
         return next(
-          invalidUpload('Only JPG, PNG, and WebP images are supported.'),
+          invalidUpload(
+            `"${file.originalname}" is not a JPG, PNG or WebP image. Choose a different photo.`,
+          ),
         )
       }
+
+      file.mimetype = detected
     }
 
     for (const file of req.files) {
