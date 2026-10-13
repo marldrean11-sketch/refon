@@ -67,9 +67,18 @@ const notificationPresentation = {
     icon: TrendingDown,
     iconClass: 'bg-accent text-page',
   },
+  INQUIRY_REPLY: {
+    icon: MessageCircle,
+    iconClass: 'bg-accent text-page',
+  },
 }
 
-function getNotificationTarget(notification) {
+function getNotificationTarget(notification, role) {
+  // A reply opens the thread: the seller's inbox, or the buyer's sent inquiries.
+  if (notification.type === 'INQUIRY_REPLY') {
+    return role === 'SELLER' ? AUTH_ROUTES.sellerInquiries : AUTH_ROUTES.myInquiries
+  }
+
   // Buyer questions belong in the seller's inbox rather than on the listing page.
   if (notification.type === 'NEW_INQUIRY') {
     return AUTH_ROUTES.sellerInquiries
@@ -280,7 +289,7 @@ export function NotificationBell() {
     }
 
     setIsOpen(false)
-    navigate(getNotificationTarget(notification))
+    navigate(getNotificationTarget(notification, user?.role))
   }
 
   async function handleMarkAllRead() {

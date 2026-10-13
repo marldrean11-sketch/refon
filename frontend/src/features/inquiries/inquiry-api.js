@@ -22,3 +22,7 @@ export function markInquiryReadRequest(id) {
 export function markAllInquiriesReadRequest() {
   return apiRequest('/inquiries/read-all', { method: 'PATCH' })
 }
+
+export function replyToInquiryRequest(id, body) {
+  return apiRequest(`/inquiries/${id}/replies`, { method: 'POST', body: { body } })
+}

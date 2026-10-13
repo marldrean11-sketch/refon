@@ -4,7 +4,7 @@ A short list for the booth team. Work top to bottom.
 
 ## A week before
 
-- [ ] **Deploy from a stable branch.** Render deploys `Ice-Cream-Cake` (or `main` once merged). Do experiments on another branch so a half-finished change never reaches the booth.
+- [ ] **Deploy from a stable branch.** Vercel (website) and Render (API) both deploy `main`. Do experiments on another branch so a half-finished change never reaches the booth.
 - [ ] **Check the public address.** Visitors use the Vercel site `https://refon-lake.vercel.app`; it forwards `/api` to the Render server (`vercel.json`). The QR poster, kiosk, share previews and sitemap read `url` in `frontend/src/content/site-info.js`. If the Render server's address is not `https://refon.onrender.com`, change the two destinations in both `vercel.json` files and push.
 - [ ] **Booth number.** Set `booth` in `site-info.js` (e.g. `'12'`). It shows in the footer, the Contact page and the poster.
 - [ ] **Social links.** Put the real Facebook, Instagram and TikTok URLs in `socials` in `site-info.js`, or leave `href: null` to show "coming soon".

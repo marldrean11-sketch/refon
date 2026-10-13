@@ -5,3 +5,7 @@ import { apiRequest } from '../../lib/api-client.js'
 export function getMySentInquiriesRequest() {
   return apiRequest('/my-inquiries')
 }
+
+export function replyToMyInquiryRequest(id, body) {
+  return apiRequest(`/my-inquiries/${id}/replies`, { method: 'POST', body: { body } })
+}

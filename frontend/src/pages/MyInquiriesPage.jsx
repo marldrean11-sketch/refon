@@ -11,7 +11,11 @@ import {
 import { Link } from 'react-router-dom'
 import { isImageReference } from '../features/listings/image-reference.js'
 import { productPath } from '../lib/routes.js'
-import { getMySentInquiriesRequest } from '../features/inquiries/my-inquiries-api.js'
+import {
+  getMySentInquiriesRequest,
+  replyToMyInquiryRequest,
+} from '../features/inquiries/my-inquiries-api.js'
+import { InquiryThread } from '../features/inquiries/InquiryThread.jsx'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { Skeleton } from '../components/ui/Skeleton.jsx'
 
@@ -91,6 +95,13 @@ export function MyInquiriesPage() {
     load().catch(() => {})
   }, [load])
 
+  async function handleReply(id, body) {
+    const response = await replyToMyInquiryRequest(id, body)
+    setInquiries((current) =>
+      current.map((inquiry) => (inquiry.id === id ? response.inquiry : inquiry)),
+    )
+  }
+
   return (
     <div className="min-h-[calc(100vh-4.5rem)] bg-canvas">
       <section className="border-b border-line bg-white">
@@ -103,8 +114,8 @@ export function MyInquiriesPage() {
             My Inquiries
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-body text-muted">
-            Every question you sent to a seller, with the current status of the phone
-            you asked about.
+            Every question you sent to a seller, their replies, and the current status
+            of the phone you asked about.
           </p>
         </div>
       </section>
@@ -210,7 +221,16 @@ export function MyInquiriesPage() {
                       <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-muted">
                         <Clock3 className="size-3.5" aria-hidden="true" />
                         Sent {dateFormatter.format(new Date(inquiry.createdAt))}
+                        {inquiry.replies?.some((reply) => reply.fromSeller) && (
+                          <span className="ml-2 text-accent">· Seller replied</span>
+                        )}
                       </p>
+
+                      <InquiryThread
+                        replies={inquiry.replies}
+                        viewer="buyer"
+                        onSend={(body) => handleReply(inquiry.id, body)}
+                      />
                     </div>
                   </div>
                 </article>

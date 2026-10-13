@@ -38,3 +38,12 @@ const sellerDirectoryQuerySchema = z
   .strict()
 
 export const validateSellerDirectoryQuery = validateQuery(sellerDirectoryQuerySchema)
+
+const adminListingsQuerySchema = z
+  .object({
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'SOLD']).optional(),
+    q: z.string().trim().max(120).optional(),
+  })
+  .strict()
+
+export const validateAdminListingsQuery = validateQuery(adminListingsQuerySchema)

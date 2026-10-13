@@ -2,6 +2,7 @@ import {
   getSellerInquiries,
   markAllSellerInquiriesRead,
   markInquiryRead,
+  replyToInquiryAsSeller,
 } from '../services/inquiry.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
 
@@ -21,4 +22,13 @@ export const markRead = asyncHandler(async (req, res) => {
 export const markAllRead = asyncHandler(async (req, res) => {
   const data = await markAllSellerInquiriesRead(req.user.id)
   return res.status(200).json(data)
+})
+
+export const reply = asyncHandler(async (req, res) => {
+  const inquiry = await replyToInquiryAsSeller(
+    req.validatedParams.id,
+    req.user.id,
+    req.validatedBody.body,
+  )
+  return res.status(201).json({ inquiry })
 })

@@ -1,4 +1,4 @@
-import { getAdminStats } from '../services/admin.service.js'
+import { getAdminStats, getListingsForAdmin } from '../services/admin.service.js'
 import {
   getPendingSellers,
   getSellerDirectory,
@@ -62,4 +62,9 @@ export const rejectListing = asyncHandler(async (req, res) => {
     req.validatedBody.feedback,
   )
   return res.status(200).json({ listing })
+})
+
+export const allListings = asyncHandler(async (req, res) => {
+  const listings = await getListingsForAdmin(req.validatedQuery ?? {})
+  return res.status(200).json({ listings })
 })

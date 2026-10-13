@@ -14,6 +14,19 @@ const inquiryInclude = {
       price: true,
     },
   },
+  replies: {
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, fromSeller: true, body: true, createdAt: true },
+  },
+}
+
+export function presentReplies(replies = []) {
+  return replies.map((reply) => ({
+    id: reply.id,
+    fromSeller: reply.fromSeller,
+    body: reply.body,
+    createdAt: reply.createdAt.toISOString(),
+  }))
 }
 
 function presentInquiry(inquiry) {
@@ -27,6 +40,8 @@ function presentInquiry(inquiry) {
     message: inquiry.message,
     isRead: inquiry.isRead,
     createdAt: inquiry.createdAt.toISOString(),
+    buyerHasAccount: Boolean(inquiry.buyerId),
+    replies: presentReplies(inquiry.replies),
     listing: {
       id: listing.id,
       brand: listing.brand,
@@ -103,4 +118,45 @@ export async function markAllSellerInquiriesRead(userId) {
   })
 
   return { updatedCount: result.count }
+}
+
+/**
+ * The seller answers an inquiry on one of their own listings. The buyer is
+ * notified in the app when they asked while signed in; either way the seller
+ * still has the contact details the buyer left.
+ */
+export async function replyToInquiryAsSeller(id, userId, body) {
+  const inquiry = await prisma.inquiry.findFirst({
+    where: { id, listing: { seller: { userId } } },
+    select: { id: true, buyerId: true, listing: { select: { id: true, brand: true, model: true } } },
+  })
+
+  if (!inquiry) {
+    throw new ApiError(404, 'Inquiry not found.', 'INQUIRY_NOT_FOUND')
+  }
+
+  const updated = await prisma.$transaction(async (transaction) => {
+    await transaction.inquiryReply.create({
+      data: { inquiryId: inquiry.id, authorId: userId, fromSeller: true, body },
+    })
+
+    if (inquiry.buyerId) {
+      await transaction.notification.create({
+        data: {
+          userId: inquiry.buyerId,
+          type: 'INQUIRY_REPLY',
+          message: `The seller replied about the ${inquiry.listing.brand} ${inquiry.listing.model}.`,
+          relatedListingId: inquiry.listing.id,
+        },
+      })
+    }
+
+    return transaction.inquiry.update({
+      where: { id: inquiry.id },
+      data: { isRead: true },
+      include: inquiryInclude,
+    })
+  })
+
+  return presentInquiry(updated)
 }

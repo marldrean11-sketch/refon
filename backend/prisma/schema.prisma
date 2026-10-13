@@ -37,6 +37,7 @@ enum NotificationType {
   LISTING_TAKEN_DOWN
   REPORT_RESOLVED
   PRICE_DROP
+  INQUIRY_REPLY
 }
 
 enum ReportReason {
@@ -76,6 +77,7 @@ model User {
   seller         Seller?
   notifications  Notification[]
   buyerInquiries Inquiry[]      @relation("BuyerInquiries")
+  inquiryReplies InquiryReply[] @relation("InquiryReplyAuthor")
   favorites      Favorite[]
   reportsMade    Report[]        @relation("ReportReporter")
   reportsHandled Report[]        @relation("ReportResolver")
@@ -230,11 +232,29 @@ model Inquiry {
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   buyerId String? @map("buyer_id") @db.Uuid
   buyer   User?   @relation("BuyerInquiries", fields: [buyerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  replies InquiryReply[]
 
   @@index([listingId, createdAt])
   @@index([listingId, isRead])
   @@index([buyerId])
   @@map("inquiries")
+}
+
+/// A message in an inquiry's thread after the buyer's first question: the seller
+/// answering, or a signed-in buyer following up.
+model InquiryReply {
+  id         String   @id @default(uuid()) @db.Uuid
+  inquiryId  String   @map("inquiry_id") @db.Uuid
+  authorId   String?  @map("author_id") @db.Uuid
+  fromSeller Boolean  @map("from_seller")
+  body       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  author  User?   @relation("InquiryReplyAuthor", fields: [authorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([inquiryId, createdAt])
+  @@map("inquiry_replies")
 }
 
 model Favorite {

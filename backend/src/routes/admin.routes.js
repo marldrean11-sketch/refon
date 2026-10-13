@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  allListings,
   approveListing,
   approveSeller,
   pendingListings,
@@ -18,6 +19,7 @@ import { validateListingId } from '../validators/listing.validator.js'
 import {
   validateRejectListing,
   validateRejectSeller,
+  validateAdminListingsQuery,
   validateSellerDirectoryQuery,
 } from '../validators/admin.validator.js'
 import { validateSellerId } from '../validators/seller.validator.js'
@@ -50,6 +52,7 @@ router.patch(
   resolve,
 )
 router.get('/listings/pending', pendingListings)
+router.get('/listings', validateAdminListingsQuery, allListings)
 router.patch('/listings/:id/approve', validateListingId, approveListing)
 router.patch(
   '/listings/:id/reject',

@@ -17,6 +17,7 @@ import { useSellerListings } from '../features/seller/useSellerListings.js'
 import { isImageReference } from '../features/listings/image-reference.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { Skeleton } from '../components/ui/Skeleton.jsx'
+import { InquiryThread } from '../features/inquiries/InquiryThread.jsx'
 
 const currencyFormatter = new Intl.NumberFormat('en-PH', {
   style: 'currency',
@@ -157,7 +158,7 @@ function ContactActions({ inquiry, onAct, onCopy, isCopied }) {
   )
 }
 
-function InquiryCard({ inquiry, onMarkRead, onCopy, isCopied }) {
+function InquiryCard({ inquiry, onMarkRead, onCopy, isCopied, onReply }) {
   const { listing } = inquiry
 
   return (
@@ -210,6 +211,18 @@ function InquiryCard({ inquiry, onMarkRead, onCopy, isCopied }) {
             onCopy={() => onCopy(inquiry)}
             isCopied={isCopied}
           />
+
+          <InquiryThread
+            replies={inquiry.replies}
+            viewer="seller"
+            onSend={(body) => onReply(inquiry, body)}
+          />
+          {!inquiry.buyerHasAccount && (
+            <p className="mt-2 text-xs text-muted">
+              This buyer asked without an account, so they will not see your reply in the
+              app. Reach them through the contact details above too.
+            </p>
+          )}
         </div>
       </div>
     </article>
@@ -225,6 +238,7 @@ export function SellerInquiriesPage() {
     refresh,
     markRead,
     markAllRead,
+    reply,
   } = useSellerInquiries()
   const { listings } = useSellerListings()
   const [statusFilter, setStatusFilter] = useState('all')
@@ -498,6 +512,7 @@ export function SellerInquiriesPage() {
                   onMarkRead={handleMarkRead}
                   onCopy={handleCopy}
                   isCopied={copiedId === inquiry.id}
+                  onReply={(target, body) => reply(target.id, body, !target.isRead)}
                 />
               ))}
             </div>
