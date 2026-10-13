@@ -81,10 +81,14 @@ export async function registerUser({ name, email, password, role }) {
       })
     })
 
-    // Registration must succeed even if the verification email cannot be sent.
+    // Registration must succeed even if the verification email cannot be sent,
+    // and must not wait on the mail relay, which can be slow or unreachable.
     try {
       const { token } = await issueAuthToken(user.id, 'EMAIL_VERIFY')
-      await sendEmailVerificationEmail({ to: user.email, name: user.name, token })
+      await sendEmailVerificationEmail(
+        { to: user.email, name: user.name, token },
+        { background: true },
+      )
     } catch (error) {
       console.error('Could not send the verification email:', error.message)
     }

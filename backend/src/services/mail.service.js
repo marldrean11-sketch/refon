@@ -16,6 +16,11 @@ function getTransporter() {
     port: env.smtpPort,
     secure: env.smtpSecure,
     auth: env.smtpUser ? { user: env.smtpUser, pass: env.smtpPass } : undefined,
+    // Nodemailer waits up to two minutes for a relay that never answers (for
+    // example when the host blocks SMTP ports), which would hang the request.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
   })
 
   return transporter
@@ -42,7 +47,9 @@ function layout(heading, body, actionLabel, actionUrl) {
     .replace(/\n\s+/g, '\n')
 }
 
-export async function sendMail({ to, subject, text, html }) {
+// With `background`, a relay send is started but not awaited, so the caller's
+// request does not wait on the relay; failures are only logged.
+export async function sendMail({ to, subject, text, html }, { background = false } = {}) {
   if (!env.smtpHost) {
     await appendToOutbox({
       to,
@@ -56,14 +63,22 @@ export async function sendMail({ to, subject, text, html }) {
     return
   }
 
-  await getTransporter().sendMail({
-    from: env.mailFrom,
-    to,
-    subject,
-    text,
-    html,
-  })
-  console.log(`[mail] sent "${subject}" to ${to}`)
+  const delivery = getTransporter()
+    .sendMail({
+      from: env.mailFrom,
+      to,
+      subject,
+      text,
+      html,
+    })
+    .then(() => console.log(`[mail] sent "${subject}" to ${to}`))
+
+  if (!background) {
+    await delivery
+    return
+  }
+
+  delivery.catch((error) => console.error(`[mail] could not send "${subject}" to ${to}:`, error.message))
 }
 
 export async function sendPasswordResetEmail({ to, name, token }) {
@@ -91,7 +106,7 @@ export async function sendPasswordResetEmail({ to, name, token }) {
   })
 }
 
-export async function sendEmailVerificationEmail({ to, name, token }) {
+export async function sendEmailVerificationEmail({ to, name, token }, options) {
   const url = `${env.appUrl}/verify-email?token=${encodeURIComponent(token)}`
   const heading = 'Verify your ReFon email'
 
@@ -113,5 +128,5 @@ export async function sendEmailVerificationEmail({ to, name, token }) {
       'Verify my email',
       url,
     ),
-  })
+  }, options)
 }
