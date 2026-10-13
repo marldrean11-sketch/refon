@@ -36,6 +36,9 @@ const HIT_SLOP = 12
 /** The surprise a popped loop can turn into. One is picked per pop. */
 const REACTIONS = ['confetti', 'split', 'word', 'spin']
 
+/** How often a pop turns into a word rather than another surprise. */
+const WORD_CHANCE = 0.9
+
 /**
  * Taglish shop-talk for the word pops, in four groups: value, trust, hype and
  * hustle. Nothing here promises a discount, a deadline or limited stock: ReFon
@@ -121,6 +124,7 @@ export function FloatingLoops({
   const loopRefs = useRef([])
   const comboRef = useRef({ count: 0, at: 0 })
   const lastKindRef = useRef(null)
+  const lastWordRef = useRef(null)
   const [generation, setGeneration] = useState(() => loops.map(() => 0))
   const generationRef = useRef(generation)
   const [hovered, setHovered] = useState(-1)
@@ -175,11 +179,19 @@ export function FloatingLoops({
       comboRef.current = { count: combo, at: now }
 
       const golden = isGolden(i, generationRef.current[i] ?? 0)
-      // A different surprise from the last one, so two pops never look alike.
-      const choices = REACTIONS.filter((reaction) => reaction !== lastKindRef.current)
-      const kind = golden ? 'jackpot' : choices[Math.floor(Math.random() * choices.length)]
+      // Most pops (WORD_CHANCE) turn into a word; the rest pick another surprise,
+      // different from the last one so two of those never look alike.
+      const others = REACTIONS.filter((reaction) => reaction !== 'word' && reaction !== lastKindRef.current)
+      const kind = golden
+        ? 'jackpot'
+        : Math.random() < WORD_CHANCE
+          ? 'word'
+          : others[Math.floor(Math.random() * others.length)]
       lastKindRef.current = kind
-      const word = golden ? 'Jackpot! Sulit na sulit!' : WORDS[Math.floor(Math.random() * WORDS.length)]
+      // Never the same word twice in a row.
+      const words = WORDS.filter((candidate) => candidate !== lastWordRef.current)
+      const word = golden ? 'Jackpot! Sulit na sulit!' : words[Math.floor(Math.random() * words.length)]
+      if (kind === 'word') lastWordRef.current = word
 
       const id = `${i}-${now}`
       setBursts((list) => [

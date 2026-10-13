@@ -27,6 +27,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   BatteryFull,
+  Heart,
   Menu,
   Search,
   ShoppingBag,
@@ -237,9 +238,18 @@ function Header() {
                 to={AUTH_ROUTES.saved}
                 data-testid="navbar-saved"
                 aria-label={`Saved phones, ${savedCount} saved`}
-                className={`${ICON_BUTTON} hidden lg:grid`}
+                className={`${ICON_BUTTON} rf-bounce relative hidden lg:grid`}
               >
-                <CountBadge count={savedCount} srLabel="saved phones" />
+                {/* Keyed on the count, so the heart pops again on every save. */}
+                <Heart
+                  key={savedCount}
+                  className={`size-5 fill-current text-heart ${reducedMotion ? '' : 'rf-heart-pop'}`}
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+                <span className="absolute -right-0.5 -top-0.5">
+                  <CountBadge count={savedCount} srLabel="saved phones" />
+                </span>
               </Link>
             )}
 
