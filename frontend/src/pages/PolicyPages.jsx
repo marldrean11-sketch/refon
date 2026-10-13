@@ -272,7 +272,7 @@ export function ContactPage() {
         <p className="mt-2 text-sm leading-body text-muted">
           {socials.some((social) => social.href)
             ? 'Follow ReFon for new drops and booth updates.'
-            : 'Our Facebook, Instagram and TikTok pages are coming soon.'}
+            : 'Our Facebook and Instagram pages are coming soon.'}
         </p>
         <ul className="mt-4 flex flex-wrap gap-2">
           {socials.map((social) => (
