@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getOptions, getQuote } from '../controllers/checkout.controller.js'
+import { getOptions, getQuote, placeOrder } from '../controllers/checkout.controller.js'
 import { authenticate, requireBuyer } from '../middlewares/auth.middleware.js'
 import { checkoutLimiter } from '../middlewares/rate-limit.middleware.js'
 import {
@@ -33,6 +33,16 @@ router.post(
   requireBuyer,
   validateCheckoutQuote,
   getQuote,
+)
+
+// Places the order. Same request body as /quote.
+router.post(
+  '/place-order',
+  checkoutLimiter,
+  authenticate,
+  requireBuyer,
+  validateCheckoutQuote,
+  placeOrder,
 )
 
 export default router

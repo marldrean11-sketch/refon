@@ -116,19 +116,19 @@ export async function resetTestData(prisma = new PrismaClient()) {
   const reportsBySuite = await prisma.report.deleteMany({ where: { reporterId: { in: suiteUserIds } } })
   const notifications = await prisma.notification.deleteMany({ where: { userId: { in: suiteUserIds } } })
   const authTokens = await prisma.authToken.deleteMany({ where: { userId: { in: suiteUserIds } } })
-  // Once commerce ships, order rows will hold a restrictive relation to users
-  // and cannot be deleted with the account. Fail loudly rather than silently
-  // leaving a suite account behind.
+  // Orders restrict both their buyer and their seller, so a suite account's
+  // orders (as buyer or as seller) go before the account. Order items cascade.
   const orders =
     typeof prisma.order === 'object' && prisma.order
-      ? await prisma.order.count({ where: { userId: { in: suiteUserIds } } })
-      : 0
-
-  if (orders > 0) {
-    throw new Error(
-      `Refusing to reset: ${orders} order(s) exist for suite accounts. Delete them manually, or re-seed, before running the suite.`,
-    )
-  }
+      ? await prisma.order.deleteMany({
+          where: {
+            OR: [
+              { buyerId: { in: suiteUserIds } },
+              { sellerId: { in: suiteSellers.map((entry) => entry.id) } },
+            ],
+          },
+        })
+      : { count: 0 }
 
   await prisma.seller.deleteMany({ where: { id: { in: suiteSellers.map((entry) => entry.id) } } })
   const users = await prisma.user.deleteMany({ where: { id: { in: suiteUserIds } } })
@@ -172,6 +172,15 @@ export async function resetTestData(prisma = new PrismaClient()) {
     data: { status: 'APPROVED', moderatorFeedback: null },
   })
 
+  // A seeded phone sold through a test order has its stock at zero.
+  await prisma.listing.updateMany({
+    where: {
+      id: { gte: SEEDED_LISTING_ID_RANGE[0], lte: SEEDED_LISTING_ID_RANGE[1] },
+      quantity: { lt: 1 },
+    },
+    data: { quantity: 1 },
+  })
+
   return {
     users: users.count,
     sellers: suiteSellers.length,
@@ -181,6 +190,7 @@ export async function resetTestData(prisma = new PrismaClient()) {
     reviews: fixtureReviews.count,
     notifications: notifications.count,
     authTokens: authTokens.count,
+    orders: orders.count,
     listingsRestored: listings.count,
     cartsEmptied: carts.count,
     cartItemsRemoved: cartItems.count,

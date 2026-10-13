@@ -25,6 +25,7 @@ import { MetricStrip, Panel } from '../features/design/Surfaces.jsx'
 import { FeedbackSummaryPanel } from '../features/feedback/FeedbackSummaryPanel.jsx'
 import { SellerDirectoryPanel } from '../features/admin/SellerDirectoryPanel.jsx'
 import { AdminListingsPanel } from '../features/admin/AdminListingsPanel.jsx'
+import { AdminOrdersPanel } from '../features/admin/AdminOrdersPanel.jsx'
 import {
   approveListingRequest,
   approveSellerRequest,
@@ -999,6 +1000,8 @@ export function AdminDashboardPage() {
             </Panel>
 
             <SellerDirectoryPanel />
+
+            <AdminOrdersPanel />
 
             <AdminListingsPanel />
 

@@ -16,6 +16,7 @@ import { cartErrorFields, cartErrorMessage } from '../features/cart/cart-errors.
 import {
   getCheckoutOptionsRequest,
   getCheckoutQuoteRequest,
+  placeOrderRequest,
 } from '../features/checkout/checkout-api.js'
 import {
   emptyCheckoutDetails,
@@ -124,6 +125,32 @@ export function CheckoutPage() {
   useEffect(() => {
     loadOptions()
   }, [loadOptions])
+
+  /** Places the order the buyer just reviewed, then shows the confirmation. */
+  async function handlePlaceOrder() {
+    if (submitInFlight.current) return
+    submitInFlight.current = true
+    setIsSubmitting(true)
+    setFormError(null)
+
+    try {
+      const response = await placeOrderRequest({ deliveryMethodId, paymentMethodId, details })
+      // The cart is empty now; refresh it so the header count drops.
+      await refresh({ silent: true }).catch(() => {})
+      navigate(MARKETPLACE_ROUTES.checkoutConfirmed, {
+        replace: true,
+        state: { quote, orders: response.orders },
+      })
+    } catch (error) {
+      setFormError(cartErrorMessage(error))
+      setQuote(null)
+      await refresh({ silent: true }).catch(() => {})
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      submitInFlight.current = false
+      setIsSubmitting(false)
+    }
+  }
 
   const blocked = useMemo(() => blockingItems(cart.items), [cart.items])
   const priceChanges = useMemo(() => changedPriceItems(cart.items), [cart.items])
@@ -578,22 +605,16 @@ export function CheckoutPage() {
               size="lg"
               loading={isSubmitting}
               disabled={isSubmitting}
-              onClick={() => navigate(MARKETPLACE_ROUTES.checkoutConfirmed, {
-                state: {
-                  quote,
-                  deliveryMethodId,
-                  paymentMethodId,
-                },
-              })}
+              onClick={handlePlaceOrder}
               data-testid="checkout-confirm-button"
             >
-              Confirm Checkout
+              Place order
             </Button>
           </div>
 
           <p className="mt-5 text-center text-xs leading-relaxed text-muted">
-            No payment is processed in this build and no order is created — you will see
-            exactly what would have been placed on the next screen.
+            Placing the order reserves these phones for you and notifies the seller. No
+            payment is taken online: you pay with the method above when you receive them.
           </p>
         </div>
       )}

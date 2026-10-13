@@ -15,7 +15,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
-import { AUTH_ROUTES } from '../auth/auth.routes.js'
+import { AUTH_ROUTES, DASHBOARD_ROUTES } from '../auth/auth.routes.js'
 import {
   getMyNotificationsRequest,
   markAllNotificationsReadRequest,
@@ -71,9 +71,22 @@ const notificationPresentation = {
     icon: MessageCircle,
     iconClass: 'bg-accent text-page',
   },
+  ORDER_PLACED: {
+    icon: ShoppingBag,
+    iconClass: 'bg-accent text-page',
+  },
+  ORDER_UPDATED: {
+    icon: ShoppingBag,
+    iconClass: 'bg-accent-tint text-accent',
+  },
 }
 
 function getNotificationTarget(notification, role) {
+  // Orders open the seller's order list, or the buyer's own orders.
+  if (notification.type === 'ORDER_PLACED' || notification.type === 'ORDER_UPDATED') {
+    return role === 'SELLER' ? DASHBOARD_ROUTES.sellerOrders : DASHBOARD_ROUTES.orders
+  }
+
   // A reply opens the thread: the seller's inbox, or the buyer's sent inquiries.
   if (notification.type === 'INQUIRY_REPLY') {
     return role === 'SELLER' ? AUTH_ROUTES.sellerInquiries : AUTH_ROUTES.myInquiries

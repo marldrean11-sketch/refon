@@ -15,7 +15,39 @@ import { ConditionBadge } from '../components/ui/ConditionBadge.jsx'
 import { BatteryHealth } from '../components/ui/BatteryHealth.jsx'
 import { deviceName, deviceVariant } from '../features/cart/cart-state.js'
 import { DeviceThumb } from '../features/cart/components/DeviceThumb.jsx'
-import { MARKETPLACE_ROUTES } from '../lib/routes.js'
+import { DASHBOARD_ROUTES, MARKETPLACE_ROUTES, orderPath } from '../lib/routes.js'
+
+/** Shown once the order exists: the order numbers, and what happens next. */
+function OrderPlacedNotice({ orders, payment }) {
+  return (
+    <div
+      className="rounded-card-lg border border-accent/40 bg-accent-tint p-5 sm:p-6"
+      role="status"
+      data-testid="order-placed-notice"
+    >
+      <p className="text-sm font-bold text-ink">
+        {orders.length === 1 ? 'Your order was placed' : `${orders.length} orders were placed`}
+      </p>
+      <ul className="mt-2 space-y-1">
+        {orders.map((order) => (
+          <li key={order.id} className="text-sm text-ink">
+            <Link to={orderPath(order.orderNumber)} className="font-mono font-semibold text-accent underline underline-offset-2">
+              {order.orderNumber}
+            </Link>
+            {order.seller?.businessName && (
+              <span className="text-muted"> · from {order.seller.businessName}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-sm leading-relaxed text-ink">
+        The seller has been notified and will confirm your order. You can follow it, or
+        cancel it until the seller confirms, from My Orders.
+        {payment?.instructions ? ` ${payment.instructions}` : ''}
+      </p>
+    </div>
+  )
+}
 
 /**
  * Post-checkout summary.
@@ -82,7 +114,8 @@ export function CheckoutConfirmedPage() {
     return <Navigate to={MARKETPLACE_ROUTES.cart} replace />
   }
 
-  const { quote } = state
+  const { quote, orders } = state
+  const placed = Array.isArray(orders) && orders.length > 0
   const total = Number(quote.quote.subtotal) + Number(quote.quote.deliveryFee ?? 0)
 
   return (
@@ -95,15 +128,21 @@ export function CheckoutConfirmedPage() {
           Step 3 of 3
         </p>
         <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-          Your checkout summary
+          {placed ? 'Order placed' : 'Your checkout summary'}
         </h1>
         <p className="mx-auto mt-3 max-w-xl leading-body text-muted">
-          Here is everything you entered, with the total ReFon calculated.
+          {placed
+            ? 'Thank you! Here is what you ordered and where it is going.'
+            : 'Here is everything you entered, with the total ReFon calculated.'}
         </p>
       </header>
 
       <div className="mt-10 space-y-5">
-        <DemoBoundaryNotice payment={quote.payment} reference={quote.quote.reference} />
+        {placed ? (
+          <OrderPlacedNotice orders={orders} payment={quote.payment} />
+        ) : (
+          <DemoBoundaryNotice payment={quote.payment} reference={quote.quote.reference} />
+        )}
 
         {/* Devices */}
         <section className="rounded-card-lg border border-line bg-white shadow-card">
@@ -250,7 +289,7 @@ export function CheckoutConfirmedPage() {
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t border-line pt-4">
               <dt className="font-display text-base font-bold text-ink">
-                Total (no payment taken)
+                {placed ? 'Total to pay' : 'Total (no payment taken)'}
               </dt>
               <dd data-testid="confirmation-total">
                 <PriceInline value={total} className="text-2xl" />
@@ -261,9 +300,15 @@ export function CheckoutConfirmedPage() {
       </div>
 
       <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-        <ButtonLink to={MARKETPLACE_ROUTES.cart} variant="secondary" size="md">
-          Back to your cart
-        </ButtonLink>
+        {placed ? (
+          <ButtonLink to={DASHBOARD_ROUTES.orders} variant="secondary" size="md">
+            View my orders
+          </ButtonLink>
+        ) : (
+          <ButtonLink to={MARKETPLACE_ROUTES.cart} variant="secondary" size="md">
+            Back to your cart
+          </ButtonLink>
+        )}
         <ButtonLink to={MARKETPLACE_ROUTES.shop} variant="primary" size="md">
           Continue shopping
           <ArrowRight className="size-4" aria-hidden="true" />

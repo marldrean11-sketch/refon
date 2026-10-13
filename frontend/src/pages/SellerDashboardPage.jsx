@@ -5,6 +5,7 @@ import {
   Clock3,
   Edit3,
   Inbox,
+  Package,
   ListChecks,
   LockKeyhole,
   MessageCircleWarning,
@@ -24,7 +25,7 @@ import { useSellerInquiries } from '../features/inquiries/useSellerInquiries.js'
 import { ConfirmDialog } from '../features/seller/components/ConfirmDialog.jsx'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
 import { LowerPriceDialog } from '../features/seller/components/LowerPriceDialog.jsx'
-import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
+import { AUTH_ROUTES, DASHBOARD_ROUTES } from '../features/auth/auth.routes.js'
 import { StatStripSkeleton, Skeleton } from '../components/ui/Skeleton.jsx'
 import { EmptyState, ErrorState } from '../components/ui/StateViews.jsx'
 import { Container } from '../features/design/Container.jsx'
@@ -402,6 +403,14 @@ export function SellerDashboardPage() {
                     {unreadCount}
                   </span>
                 )}
+              </Link>
+
+              <Link
+                to={DASHBOARD_ROUTES.sellerOrders}
+                className="relative inline-flex h-11 items-center justify-center gap-2 rounded-control border border-line-2 bg-surface px-5 font-mono text-[12px] font-semibold uppercase tracking-[0.1em] text-primary-900 transition hover:border-primary-950 hover:bg-primary-950 hover:text-white"
+              >
+                <Package className="size-4" aria-hidden="true" />
+                Orders
               </Link>
             </div>
           </div>

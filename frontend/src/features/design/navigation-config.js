@@ -7,8 +7,9 @@ import {
   Store,
   UserCog,
   MessagesSquare,
+  Package,
 } from 'lucide-react'
-import { AUTH_ROUTES, MARKETPLACE_ROUTES } from '../../lib/routes.js'
+import { AUTH_ROUTES, DASHBOARD_ROUTES, MARKETPLACE_ROUTES } from '../../lib/routes.js'
 
 /**
  * One definition of where ReFon's navigation can go.
@@ -109,6 +110,14 @@ export const ACCOUNT_NAV = [
     to: AUTH_ROUTES.saved,
     icon: Heart,
     activePaths: ['/saved'],
+    requiresBuyerRole: true,
+  },
+  {
+    key: 'myOrders',
+    label: 'My Orders',
+    to: DASHBOARD_ROUTES.orders,
+    icon: Package,
+    activePaths: ['/account/orders', '/orders/*'],
     requiresBuyerRole: true,
   },
   {

@@ -45,7 +45,7 @@ import { useAuth } from '../auth/useAuth.js'
 import { useCartSummary } from '../cart/useCartSummary.js'
 import { useSavedListings } from '../favorites/useSavedListings.js'
 import { useOptionalSellerInquiries } from '../inquiries/useSellerInquiries.js'
-import { AUTH_ROUTES, MARKETPLACE_ROUTES } from '../../lib/routes.js'
+import { AUTH_ROUTES, DASHBOARD_ROUTES, MARKETPLACE_ROUTES } from '../../lib/routes.js'
 import { easings, stagger, usePrefersReducedMotion } from '../../lib/motion.ts'
 import {
   canSeeBuyerDestinations,
@@ -238,9 +238,12 @@ function Header() {
                 to={AUTH_ROUTES.saved}
                 data-testid="navbar-saved"
                 aria-label={`Saved phones, ${savedCount} saved`}
-                className={`${ICON_BUTTON} rf-bounce relative hidden min-[360px]:grid`}
+                className={`${ICON_BUTTON} rf-bounce relative hidden sm:grid`}
               >
-                {/* Keyed on the count, so the heart pops again on every save. */}
+                {/* Keyed on the count, so the heart pops again on every save. From
+                    `sm` up only: a phone's header row is full (a 44px heart scrolled
+                    every page 35px sideways at 390px), and phones have the Saved
+                    tab in the bottom bar instead. */}
                 <Heart
                   key={savedCount}
                   className={`size-5 fill-current text-heart ${reducedMotion ? '' : 'rf-heart-pop'}`}
@@ -464,7 +467,10 @@ function MobileMenuOverlay() {
     ? [
         ...buyerLinks,
         ...(user.role === 'BUYER'
-          ? [{ key: 'inquiries', label: 'My inquiries', to: AUTH_ROUTES.myInquiries }]
+          ? [
+              { key: 'orders', label: 'My orders', to: DASHBOARD_ROUTES.orders },
+              { key: 'inquiries', label: 'My inquiries', to: AUTH_ROUTES.myInquiries },
+            ]
           : []),
         { key: 'account', label: 'Account', to: AUTH_ROUTES.account },
         // Only a role with its own workspace gets a dashboard link; a buyer has none.

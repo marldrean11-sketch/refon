@@ -23,6 +23,8 @@ import {
   validateSellerDirectoryQuery,
 } from '../validators/admin.validator.js'
 import { validateSellerId } from '../validators/seller.validator.js'
+import { adminOrders } from '../controllers/order.controller.js'
+import { validateOrderQuery } from '../validators/order.validator.js'
 import { summary as feedbackSummary } from '../controllers/feedback.controller.js'
 import {
   reports,
@@ -53,6 +55,7 @@ router.patch(
 )
 router.get('/listings/pending', pendingListings)
 router.get('/listings', validateAdminListingsQuery, allListings)
+router.get('/orders', validateOrderQuery, adminOrders)
 router.patch('/listings/:id/approve', validateListingId, approveListing)
 router.patch(
   '/listings/:id/reject',

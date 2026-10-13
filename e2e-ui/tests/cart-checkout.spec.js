@@ -719,7 +719,7 @@ test.describe('F5 checkout', () => {
     expect(body).not.toMatch(/CART_EMPTY|\b409\b|Prisma|VALIDATION_ERROR/i)
   })
 
-  test('F5 the confirmation states plainly that no order was placed', async ({
+  test('F5 placing the order creates a real order and empties the cart', async ({
     page,
     request,
   }) => {
@@ -737,19 +737,29 @@ test.describe('F5 checkout', () => {
 
     await expect.poll(() => new URL(page.url()).pathname).toBe('/checkout/confirmed')
 
-    const notice = page.getByTestId('checkout-boundary-notice')
+    // A real order number from the server, not a quote reference.
+    const notice = page.getByTestId('order-placed-notice')
     await expect(notice).toBeVisible()
-    await expect(notice).toContainText(/no order was placed/i)
-    await expect(notice).toContainText(/no payment was taken/i)
-
-    // A quote reference, not a fabricated order number.
-    await expect(notice).toContainText(/quote reference/i)
-    await expect(notice).toContainText(/QT-[A-Z0-9]+-[A-Z0-9]+/)
+    await expect(notice).toContainText(/order was placed/i)
+    const orderNumber = (await notice.innerText()).match(/RF-\d{6}-[0-9A-Z]{6}/)?.[0]
+    expect(orderNumber, 'the notice names the order').toBeTruthy()
     await expect(page.getByTestId('confirmation-total')).toContainText('₱')
 
-    // Nothing claims a receipt was sent or a delivery scheduled.
-    const body = await page.locator('body').innerText()
-    expect(body).not.toMatch(/order number|receipt has been sent|we'?ll email your/i)
+    // The order is the buyer's, and the cart it came from is now empty.
+    const mine = await page.request.get(`${API}/orders/mine`)
+    expect(mine.ok()).toBe(true)
+    const placed = (await mine.json()).orders.find((order) => order.orderNumber === orderNumber)
+    expect(placed?.status).toBe('PLACED')
+    const cart = await (await page.request.get(`${API}/cart`)).json()
+    expect(cart.cart?.items?.length ?? cart.items?.length ?? 0).toBe(0)
+
+    // Cancelling while still placed puts the phone back on sale, so later tests
+    // that use this seeded listing find it available.
+    const cancelled = await page.request.patch(`${API}/orders/mine/${orderNumber}/cancel`, {
+      data: {},
+    })
+    expect(cancelled.ok()).toBe(true)
+    expect((await cancelled.json()).order.status).toBe('CANCELLED')
   })
 
   test('F5 the confirmation is unreachable without a quote', async ({ page }) => {
