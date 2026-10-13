@@ -16,11 +16,13 @@ import {
   ShieldCheck,
   Star,
   Smartphone,
+  ImageOff,
   Trash2,
   UploadCloud,
 } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ListingCard } from '../features/listings/listing-card.jsx'
+import { ListingPhoto } from '../features/listings/ListingPhoto.jsx'
 import { uploadPhotosRequest } from '../features/listings/listing-api.js'
 import { useSellerListings } from '../features/seller/useSellerListings.js'
 import { useSellerProfile } from '../features/seller/useSellerProfile.js'
@@ -819,12 +821,25 @@ function SellerListingFormEditor({ mode, existingListing }) {
                       {photos.map((photo, index) => (
                         <div key={photo.id} className="overflow-hidden rounded-2xl border border-line bg-canvas">
                           <div className="relative">
-                            <img
+                            <ListingPhoto
                               src={photo.url}
                               alt={photo.name}
                               loading="lazy"
                               decoding="async"
                               className="aspect-[4/3] w-full object-cover"
+                              fallback={
+                                // The file is gone (e.g. wiped from a host's temporary
+                                // disk): say so, instead of a broken image icon.
+                                <div className="grid aspect-[4/3] w-full place-items-center bg-surface-2 p-4 text-center">
+                                  <div>
+                                    <ImageOff className="mx-auto size-7 text-subtle" aria-hidden="true" />
+                                    <p className="mt-2 text-sm font-semibold text-ink">Photo missing</p>
+                                    <p className="mt-1 text-xs text-muted">
+                                      Use Replace to upload it again.
+                                    </p>
+                                  </div>
+                                </div>
+                              }
                             />
                             {index === 0 && (
                               <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1.5 text-[11px] font-bold text-page shadow-sm">
