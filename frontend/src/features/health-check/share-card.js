@@ -1,5 +1,5 @@
 import QRCode from 'qrcode'
-import { HEALTH_CHECKS } from './health-checks.js'
+import { CHECK_STATUS, HEALTH_CHECKS } from './health-checks.js'
 import { SITE_INFO, boothLabel } from '../../content/site-info.js'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
 
@@ -205,4 +205,50 @@ export function downloadCard(href) {
   document.body.append(link)
   link.click()
   link.remove()
+}
+
+/**
+ * Messenger, Facebook, Instagram and similar apps open links in their own
+ * browser, which ignores downloads and cannot save images the page made.
+ */
+export function isInAppBrowser(userAgent = navigator.userAgent) {
+  return /FBAN|FBAV|FB_IAB|FBIOS|Messenger|Instagram|MicroMessenger|Line\/|musical_ly|TikTok/i.test(
+    userAgent,
+  )
+}
+
+export function isAndroid(userAgent = navigator.userAgent) {
+  return /Android/i.test(userAgent)
+}
+
+/** The search param that carries results into another browser. */
+export const RESULTS_PARAM = 'card'
+
+/** Packs results as `display:passed,touch:failed` for a URL; notes are dropped. */
+export function encodeResults(results) {
+  return HEALTH_CHECKS.filter((check) => results[check.id])
+    .map((check) => `${check.id}:${results[check.id].status}`)
+    .join(',')
+}
+
+/** Reads results back from `encodeResults`, ignoring anything it does not know. */
+export function decodeResults(value) {
+  const ids = new Set(HEALTH_CHECKS.map((check) => check.id))
+  const results = {}
+  for (const pair of (value ?? '').split(',')) {
+    const [id, status] = pair.split(':')
+    if (ids.has(id) && status !== 'idle' && CHECK_STATUS[status]) results[id] = { status }
+  }
+  return results
+}
+
+/**
+ * An Android link that reopens this page in Chrome with the results attached,
+ * falling back to the default browser when Chrome is not installed.
+ */
+export function chromeIntentUrl(results, location = window.location) {
+  const url = new URL(MARKETPLACE_ROUTES.healthCheck, location.origin)
+  url.searchParams.set(RESULTS_PARAM, encodeResults(results))
+  const fallback = encodeURIComponent(url.href)
+  return `intent://${url.host}${url.pathname}${url.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`
 }

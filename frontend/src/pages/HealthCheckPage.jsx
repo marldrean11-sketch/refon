@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, ClipboardCopy, Download, Info, RotateCcw, Share2, Smartphone } from 'lucide-react'
+import { ArrowRight, ClipboardCopy, Download, ExternalLink, Info, RotateCcw, Share2, Smartphone } from 'lucide-react'
 import QRCode from 'qrcode'
 import { Breadcrumb } from '../components/ui/Breadcrumb.jsx'
 import { Button, ButtonLink } from '../components/ui/Button.jsx'
@@ -30,9 +30,14 @@ import {
 import { INSPECTION_CHECKS } from '../lib/listing-taxonomy.js'
 import { UpgradePicks } from '../features/health-check/UpgradePicks.jsx'
 import {
+  RESULTS_PARAM,
   canShareCard,
+  chromeIntentUrl,
+  decodeResults,
   downloadCard,
   drawShareCard,
+  isAndroid,
+  isInAppBrowser,
   shareCard,
 } from '../features/health-check/share-card.js'
 import {
@@ -75,7 +80,13 @@ export function HealthCheckPage() {
   const toast = useToast()
   const [support] = useState(detectSupport)
   const [facts] = useState(readDeviceFacts)
-  const [results, setResults] = useState({})
+  // Results arrive in the URL when a visitor reopens the page from Messenger in
+  // Chrome to save the card; they were already counted in the first browser.
+  const [restored] = useState(() =>
+    decodeResults(new URLSearchParams(window.location.search).get(RESULTS_PARAM)),
+  )
+  const [results, setResults] = useState(restored)
+  const [inApp] = useState(() => isInAppBrowser())
   const [active, setActive] = useState(null)
   const [isSharing, setIsSharing] = useState(false)
   // The finished card, shown on the page so it can be seen and saved even in
@@ -105,7 +116,7 @@ export function HealthCheckPage() {
   // Count this phone once, after three checks (or every check this browser can
   // run, when that is fewer). One visit is one phone, however often it reruns.
   const stats = useHealthCheckStats()
-  const recorded = useRef(false)
+  const recorded = useRef(Object.keys(restored).length > 0)
   const runnable = HEALTH_CHECKS.filter((check) => support[check.id]).length
   useEffect(() => {
     if (recorded.current || counts.done < Math.min(3, Math.max(1, runnable))) return
@@ -143,6 +154,22 @@ export function HealthCheckPage() {
       setIsSharing(false)
     }
   }
+
+  // Opened from Messenger with results: show the card straight away, and drop
+  // the param so a reload starts a fresh check.
+  const openedRestored = useRef(false)
+  useEffect(() => {
+    if (openedRestored.current || Object.keys(restored).length === 0) return
+    openedRestored.current = true
+    const url = new URL(window.location.href)
+    url.searchParams.delete(RESULTS_PARAM)
+    window.history.replaceState(window.history.state, '', url)
+    drawShareCard(restored)
+      .then((blob) =>
+        setCard({ blob, url: URL.createObjectURL(blob), canShare: canShareCard(blob) }),
+      )
+      .catch(() => {})
+  }, [restored])
 
   async function sendCard() {
     try {
@@ -329,7 +356,19 @@ export function HealthCheckPage() {
         description="Show it to a buyer, post it, or send it to a friend."
         size="sm"
         footer={
-          card && (
+          card &&
+          (inApp ? (
+            isAndroid() && (
+              <ButtonLink
+                variant="primary"
+                href={chromeIntentUrl(results)}
+                data-testid="open-in-chrome"
+              >
+                <ExternalLink className="size-4" aria-hidden="true" />
+                Open in Chrome to save
+              </ButtonLink>
+            )
+          ) : (
             <>
               <Button variant="outline" onClick={saveCard} data-testid="download-health-card">
                 <Download className="size-4" aria-hidden="true" />
@@ -342,7 +381,7 @@ export function HealthCheckPage() {
                 </Button>
               )}
             </>
-          )
+          ))
         }
       >
         {card && (
@@ -353,10 +392,22 @@ export function HealthCheckPage() {
               data-testid="health-card-preview"
               className="mx-auto w-full rounded-card border border-line"
             />
-            <figcaption className="text-center text-xs text-muted">
-              Download not working? Long-press the card and choose Save image, or take a
-              screenshot.
-            </figcaption>
+            {inApp ? (
+              <figcaption
+                className="rounded-card border border-line bg-surface-2 p-3 text-center text-sm text-muted"
+                data-testid="in-app-save-help"
+              >
+                This app&rsquo;s browser can&rsquo;t save pictures.{' '}
+                {isAndroid()
+                  ? 'Tap Open in Chrome to save, or take a screenshot.'
+                  : 'Tap ⋯ then Open in browser, or take a screenshot.'}
+              </figcaption>
+            ) : (
+              <figcaption className="text-center text-xs text-muted">
+                Download not working? Long-press the card and choose Save image, or take a
+                screenshot.
+              </figcaption>
+            )}
           </figure>
         )}
       </Modal>
