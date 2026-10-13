@@ -163,3 +163,36 @@ export async function sendEmailVerificationEmail({ to, name, token }, options) {
     ),
   }, options)
 }
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(
+    /[&<>"']/g,
+    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
+  )
+}
+
+/**
+ * An order update by email: a heading, a few lines, and a button to the order.
+ * `lines` are plain text and escaped here. Sent in the background, so a slow or
+ * failing relay never holds up the order itself.
+ */
+export function sendOrderEmail({ to, subject, heading, lines, actionLabel, path: actionPath }) {
+  const url = `${env.appUrl}${actionPath}`
+  const html = `
+    <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.6;color:#0f1f33">
+      <h1 style="font-size:20px;margin:0 0 16px">${escapeHtml(heading)}</h1>
+      ${lines.map((line) => `<p style="margin:0 0 10px">${escapeHtml(line)}</p>`).join('')}
+      <p style="margin:18px 0 24px">
+        <a href="${url}" style="background:#2563eb;color:#ffffff;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600;display:inline-block">${escapeHtml(actionLabel)}</a>
+      </p>
+      <p style="margin:0;font-size:13px;color:#64748b">ReFon · You get this email because of an order on your account.</p>
+    </div>
+  `
+    .trim()
+    .replace(/\n\s+/g, '\n')
+
+  return sendMail(
+    { to, subject, text: [heading, '', ...lines, '', url].join('\n'), html },
+    { background: true },
+  ).catch((error) => console.error(`[mail] order email "${subject}" failed:`, error.message))
+}

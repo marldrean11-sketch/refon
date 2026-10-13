@@ -164,6 +164,11 @@ function SellerOrderCard({ order, onUpdated }) {
             <OrderStatusBadge status={order.status} />
           </p>
           <p className="mt-1 text-xs text-muted">Placed {formatDateTime(order.createdAt)}</p>
+          {order.status === 'PLACED' && (
+            <p className="mt-1 text-xs font-semibold text-amber-700">
+              Confirm within 48 hours, or the order is cancelled automatically.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           {order.nextStatuses.map((next) => (

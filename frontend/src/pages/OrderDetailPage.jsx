@@ -167,7 +167,8 @@ export function OrderDetailPage() {
               {order.status === 'PLACED' && (
                 <section className={card}>
                   <p className="text-sm text-muted">
-                    Changed your mind? You can cancel until the seller confirms the order.
+                    Changed your mind? You can cancel until the seller confirms the order. If the
+                    seller does not confirm it within 48 hours, it is cancelled automatically.
                   </p>
                   <button
                     type="button"

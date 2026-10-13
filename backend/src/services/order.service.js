@@ -3,6 +3,7 @@ import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
 import { quoteCheckout } from './checkout.service.js'
 import { reviewedListingIds } from './review.service.js'
+import { sendOrderEmail } from './mail.service.js'
 import {
   databaseNow,
   findActiveReservation,
@@ -49,7 +50,15 @@ const MAX_ORDERS = 200
 
 const orderInclude = {
   items: true,
-  seller: { select: { id: true, businessName: true, contactInfo: true } },
+  seller: {
+    select: {
+      id: true,
+      businessName: true,
+      contactInfo: true,
+      userId: true,
+      user: { select: { email: true } },
+    },
+  },
   buyer: { select: { id: true, name: true, email: true } },
 }
 
@@ -280,7 +289,48 @@ export async function placeOrder({ userId, deliveryMethodId, paymentMethodId, de
     { timeout: 20_000 },
   )
 
+  emailPlacedOrders(orders)
   return { orders: orders.map((order) => presentOrder(order)) }
+}
+
+function emailPlacedOrders(orders) {
+  const buyerEmail = orders[0]?.buyer?.email
+  if (buyerEmail) {
+    sendOrderEmail({
+      to: buyerEmail,
+      subject:
+        orders.length === 1
+          ? `Order ${orders[0].orderNumber} placed`
+          : `${orders.length} orders placed on ReFon`,
+      heading: 'Thank you for your order!',
+      lines: [
+        ...orders.map(
+          (order) =>
+            `${order.orderNumber} from ${order.seller.businessName}: ${phonesOf(order)}. Total ₱${Number(order.total).toLocaleString('en-PH')} (${order.paymentLabel}).`,
+        ),
+        'The seller will confirm your order. You can cancel it until they do.',
+      ],
+      actionLabel: 'View my orders',
+      path: '/account/orders',
+    })
+  }
+
+  for (const order of orders) {
+    const sellerEmail = order.seller?.user?.email
+    if (!sellerEmail) continue
+    sendOrderEmail({
+      to: sellerEmail,
+      subject: `New order ${order.orderNumber}`,
+      heading: `New order ${order.orderNumber}`,
+      lines: [
+        `Phones: ${phonesOf(order)}`,
+        `Total ₱${Number(order.total).toLocaleString('en-PH')}, paid by ${order.paymentLabel}, ${order.deliveryLabel}.`,
+        `Please confirm it within ${ORDER_CONFIRM_HOURS} hours, or it will be cancelled automatically.`,
+      ],
+      actionLabel: 'Open your orders',
+      path: '/seller/orders',
+    })
+  }
 }
 
 export async function getBuyerOrders(userId) {
@@ -337,7 +387,7 @@ export async function getOrdersForAdmin({ status } = {}) {
  * 'buyer'; a buyer may only cancel, and only before the seller confirms.
  */
 async function transitionOrder(where, nextStatus, { actor, reason = '' }) {
-  return prisma.$transaction(async (transaction) => {
+  const result = await prisma.$transaction(async (transaction) => {
     const order = await transaction.order.findFirst({ where, include: orderInclude })
 
     if (!order) {
@@ -345,9 +395,11 @@ async function transitionOrder(where, nextStatus, { actor, reason = '' }) {
     }
 
     const allowed = STATUS_FLOW[order.status] ?? []
-    const buyerMayCancel = actor === 'buyer' && order.status === 'PLACED' && nextStatus === 'CANCELLED'
+    // A buyer, and the system's auto-cancel, may only cancel an order still PLACED.
+    const limitedActor = actor === 'buyer' || actor === 'system'
+    const mayCancelPlaced = order.status === 'PLACED' && nextStatus === 'CANCELLED'
 
-    if (!allowed.includes(nextStatus) || (actor === 'buyer' && !buyerMayCancel)) {
+    if (!allowed.includes(nextStatus) || (limitedActor && !mayCancelPlaced)) {
       throw new ApiError(
         409,
         `An order that is ${order.status.toLowerCase()} cannot be changed to ${nextStatus.toLowerCase()}.`,
@@ -394,24 +446,131 @@ async function transitionOrder(where, nextStatus, { actor, reason = '' }) {
       include: orderInclude,
     })
 
-    // Tell the other side.
-    const sellerUser = await transaction.seller.findUnique({
-      where: { id: order.sellerId },
-      select: { userId: true },
-    })
-    const recipient = actor === 'buyer' ? sellerUser.userId : order.buyerId
-    const who = actor === 'buyer' ? 'The buyer cancelled' : `Order ${order.orderNumber} ${STATUS_MESSAGE[nextStatus]}`
-    await transaction.notification.create({
-      data: {
-        userId: recipient,
-        type: 'ORDER_UPDATED',
-        message: actor === 'buyer' ? `${who} order ${order.orderNumber}.` : `${who}.`,
-        relatedListingId: order.items[0]?.listingId ?? null,
-      },
+    // Tell the other side (both sides when the system cancels).
+    const relatedListingId = order.items[0]?.listingId ?? null
+    const notices =
+      actor === 'buyer'
+        ? [{ userId: order.seller.userId, message: `The buyer cancelled order ${order.orderNumber}.` }]
+        : actor === 'system'
+          ? [
+              {
+                userId: order.buyerId,
+                message: `Order ${order.orderNumber} was cancelled because the seller did not confirm it in time.`,
+              },
+              {
+                userId: order.seller.userId,
+                message: `Order ${order.orderNumber} was cancelled automatically: it was not confirmed in time.`,
+              },
+            ]
+          : [{ userId: order.buyerId, message: `Order ${order.orderNumber} ${STATUS_MESSAGE[nextStatus]}.` }]
+
+    await transaction.notification.createMany({
+      data: notices.map((notice) => ({ ...notice, type: 'ORDER_UPDATED', relatedListingId })),
     })
 
-    return presentOrder(updated, { forSeller: actor === 'seller' })
+    return { order: updated }
   })
+
+  emailStatusChange(result.order, actor)
+  return presentOrder(result.order, { forSeller: actor === 'seller' })
+}
+
+const BUYER_STATUS_LINES = {
+  CONFIRMED: 'Good news: the seller confirmed your order and is preparing it.',
+  SHIPPED: 'Your phone is on its way.',
+  COMPLETED: 'Your order is complete. Enjoy your phone! You can now leave a review.',
+}
+
+function phonesOf(order) {
+  return order.items.map((item) => `${item.brand} ${item.model} (${item.storage})`).join(', ')
+}
+
+/** Emails the party that did not make the change. Never blocks the change itself. */
+function emailStatusChange(order, actor) {
+  const buyerEmail = order.buyer?.email
+  const sellerEmail = order.seller?.user?.email
+  const phones = phonesOf(order)
+
+  if (order.status === 'CANCELLED') {
+    const reason = order.cancelReason ? `Reason: ${order.cancelReason}` : null
+    if (actor !== 'buyer' && buyerEmail) {
+      sendOrderEmail({
+        to: buyerEmail,
+        subject: `Order ${order.orderNumber} was cancelled`,
+        heading: `Order ${order.orderNumber} was cancelled`,
+        lines: [
+          actor === 'system'
+            ? 'The seller did not confirm your order in time, so it was cancelled and nothing is owed.'
+            : 'The seller cancelled your order. Nothing is owed.',
+          `Phones: ${phones}`,
+          ...(reason ? [reason] : []),
+        ],
+        actionLabel: 'View the order',
+        path: `/orders/${order.orderNumber}`,
+      })
+    }
+    if (actor !== 'seller' && sellerEmail) {
+      sendOrderEmail({
+        to: sellerEmail,
+        subject: `Order ${order.orderNumber} was cancelled`,
+        heading: `Order ${order.orderNumber} was cancelled`,
+        lines: [
+          actor === 'system'
+            ? 'It was not confirmed in time, so it was cancelled automatically.'
+            : 'The buyer cancelled the order.',
+          `Phones: ${phones}. They are back on sale.`,
+        ],
+        actionLabel: 'Open your orders',
+        path: '/seller/orders',
+      })
+    }
+    return
+  }
+
+  if (actor === 'seller' && buyerEmail && BUYER_STATUS_LINES[order.status]) {
+    sendOrderEmail({
+      to: buyerEmail,
+      subject: `Order ${order.orderNumber}: ${order.status.toLowerCase()}`,
+      heading: `Order ${order.orderNumber} ${STATUS_MESSAGE[order.status]}`,
+      lines: [BUYER_STATUS_LINES[order.status], `Phones: ${phones}`],
+      actionLabel: 'View the order',
+      path: `/orders/${order.orderNumber}`,
+    })
+  }
+}
+
+/** Hours a PLACED order may wait for the seller before it is cancelled. */
+export const ORDER_CONFIRM_HOURS = 48
+
+/**
+ * Cancels orders the seller never confirmed, putting the phones back on sale.
+ * Runs on a timer in the API process; each order goes through the normal
+ * cancel path, so stock, notifications and emails behave the same way.
+ */
+export async function cancelStaleOrders(now = new Date()) {
+  const cutoff = new Date(now.getTime() - ORDER_CONFIRM_HOURS * 60 * 60 * 1000)
+  const stale = await prisma.order.findMany({
+    where: { status: 'PLACED', createdAt: { lt: cutoff } },
+    select: { id: true },
+    take: 50,
+  })
+
+  let cancelled = 0
+  for (const { id } of stale) {
+    try {
+      await transitionOrder({ id, status: 'PLACED' }, 'CANCELLED', {
+        actor: 'system',
+        reason: `Not confirmed by the seller within ${ORDER_CONFIRM_HOURS} hours.`,
+      })
+      cancelled += 1
+    } catch (error) {
+      // Already moved on by the seller in the meantime: nothing to do.
+      if (error?.code !== 'ORDER_STATUS_INVALID' && error?.statusCode !== 404) {
+        console.error(`[orders] auto-cancel of ${id} failed:`, error.message)
+      }
+    }
+  }
+  return cancelled
 }
 
 export function updateOrderStatusAsSeller(userId, orderId, nextStatus, reason) {
