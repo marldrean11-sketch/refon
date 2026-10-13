@@ -25,8 +25,8 @@ export const SITE_INFO = Object.freeze({
     venue: 'Taguig City University',
     city: 'Taguig City',
     country: 'Philippines',
-    /** Fill in when the booth is assigned, e.g. '12'. */
-    booth: null,
+    /** The Techno Fair booth number. */
+    booth: '7',
   }),
 
   /**
