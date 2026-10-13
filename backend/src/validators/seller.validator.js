@@ -80,3 +80,24 @@ export function validatePublicSellerId(req, _res, next) {
   req.validatedParams = result.data
   return next()
 }
+
+const mobileOrEmpty = z
+  .string()
+  .trim()
+  .regex(/^((\+?63|0)9\d{9})?$/, 'Enter a Philippine mobile number, e.g. 09171234567.')
+
+const paymentDetailsSchema = z
+  .object({
+    gcash: mobileOrEmpty.optional(),
+    maya: mobileOrEmpty.optional(),
+    bank: z.string().trim().max(300, 'Bank details must be 300 characters or fewer.').optional(),
+    qr: z
+      .string()
+      .trim()
+      .regex(/^(\/uploads\/[A-Za-z0-9._-]+)?$/, 'Upload the QR code as a photo.')
+      .optional(),
+    note: z.string().trim().max(300, 'Note must be 300 characters or fewer.').optional(),
+  })
+  .strict()
+
+export const validatePaymentDetails = validate(paymentDetailsSchema)

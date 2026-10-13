@@ -6,6 +6,7 @@ import { PriceInline } from '../components/ui/PriceDisplay.jsx'
 import { EmptyCartState, ErrorState } from '../components/ui/StateViews.jsx'
 import { useToast } from '../components/ui/Toast.jsx'
 import { useAuth } from '../features/auth/useAuth.js'
+import { updateProfileRequest } from '../features/account/account-api.js'
 import { useCart } from '../features/cart/useCart.js'
 import {
   blockingItems,
@@ -61,8 +62,16 @@ import { MARKETPLACE_ROUTES } from '../lib/routes.js'
  * that one call with an order write; the form, the review, and the price breakdown
  * above it do not change.
  */
+/** `+63 917…`, `(917) 123-4567` and `0917…` all become `0917…`. */
+function localMobile(value) {
+  const digits = value.replace(/\D/g, '')
+  if (digits.startsWith('63')) return `0${digits.slice(2)}`
+  if (digits.startsWith('9')) return `0${digits}`
+  return digits
+}
+
 export function CheckoutPage() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const { cart, isLoading: isCartLoading, refresh } = useCart()
   const toast = useToast()
   const navigate = useNavigate()
@@ -135,6 +144,24 @@ export function CheckoutPage() {
 
     try {
       const response = await placeOrderRequest({ deliveryMethodId, paymentMethodId, details })
+      // A buyer's first order also saves their delivery details, so the next
+      // checkout is already filled in. They can change them under Account.
+      if (user && !user.defaultAddress) {
+        updateProfileRequest({
+          ...(!user.phone && details.mobile ? { phone: localMobile(details.mobile) } : {}),
+          defaultAddress: {
+            region: details.region ?? '',
+            province: details.province ?? '',
+            city: details.city ?? '',
+            barangay: details.barangay ?? '',
+            street: details.street ?? '',
+            postalCode: details.postalCode ?? '',
+            deliveryNotes: details.deliveryNotes ?? '',
+          },
+        })
+          .then((profile) => updateUser(profile.user))
+          .catch(() => {})
+      }
       // The cart is empty now; refresh it so the header count drops.
       await refresh({ silent: true }).catch(() => {})
       navigate(MARKETPLACE_ROUTES.checkoutConfirmed, {
@@ -614,7 +641,8 @@ export function CheckoutPage() {
 
           <p className="mt-5 text-center text-xs leading-relaxed text-muted">
             Placing the order reserves these phones for you and notifies the seller. No
-            payment is taken online: you pay with the method above when you receive them.
+            payment is taken online: for GCash, Maya or bank, the seller&rsquo;s payment details
+            appear on your order once they confirm it.
           </p>
         </div>
       )}

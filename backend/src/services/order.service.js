@@ -4,6 +4,7 @@ import { ApiError } from '../utils/api-error.js'
 import { quoteCheckout } from './checkout.service.js'
 import { reviewedListingIds } from './review.service.js'
 import { sendOrderEmail } from './mail.service.js'
+import { presentPaymentDetails } from './seller.service.js'
 import {
   databaseNow,
   findActiveReservation,
@@ -57,6 +58,11 @@ const orderInclude = {
       contactInfo: true,
       userId: true,
       user: { select: { email: true } },
+      paymentGcash: true,
+      paymentMaya: true,
+      paymentBank: true,
+      paymentQr: true,
+      paymentNote: true,
     },
   },
   buyer: { select: { id: true, name: true, email: true } },
@@ -95,6 +101,14 @@ function presentOrder(order, { forSeller = false, reviewed = null } = {}) {
           businessName: order.seller.businessName,
           // The seller's contact is shared with their own buyer once an order exists.
           contactInfo: order.seller.contactInfo,
+          // How to pay, once the seller has confirmed a non-COD order: shown to the
+          // buyer only (the seller already knows their own details).
+          paymentDetails:
+            !forSeller &&
+            order.paymentMethodId !== 'cod' &&
+            ['CONFIRMED', 'SHIPPED', 'COMPLETED'].includes(order.status)
+              ? presentPaymentDetails(order.seller)
+              : null,
         }
       : null,
     buyer: forSeller && order.buyer ? { name: order.buyer.name, email: order.buyer.email } : undefined,
@@ -485,6 +499,23 @@ function phonesOf(order) {
   return order.items.map((item) => `${item.brand} ${item.model} (${item.storage})`).join(', ')
 }
 
+/** How to pay the seller, for the confirmation email of a non-COD order. */
+function paymentLines(order) {
+  if (order.paymentMethodId === 'cod') {
+    return [`Pay ₱${Number(order.total).toLocaleString('en-PH')} in cash when the phone arrives.`]
+  }
+  const details = presentPaymentDetails(order.seller)
+  const lines = [
+    details.gcash && `GCash: ${details.gcash}`,
+    details.maya && `Maya: ${details.maya}`,
+    details.bank && `Bank: ${details.bank}`,
+    details.note,
+  ].filter(Boolean)
+  return lines.length
+    ? [`Pay ₱${Number(order.total).toLocaleString('en-PH')} to the seller:`, ...lines]
+    : ['The seller will send you their payment details.']
+}
+
 /** Emails the party that did not make the change. Never blocks the change itself. */
 function emailStatusChange(order, actor) {
   const buyerEmail = order.buyer?.email
@@ -532,7 +563,11 @@ function emailStatusChange(order, actor) {
       to: buyerEmail,
       subject: `Order ${order.orderNumber}: ${order.status.toLowerCase()}`,
       heading: `Order ${order.orderNumber} ${STATUS_MESSAGE[order.status]}`,
-      lines: [BUYER_STATUS_LINES[order.status], `Phones: ${phones}`],
+      lines: [
+        BUYER_STATUS_LINES[order.status],
+        `Phones: ${phones}`,
+        ...(order.status === 'CONFIRMED' ? paymentLines(order) : []),
+      ],
       actionLabel: 'View the order',
       path: `/orders/${order.orderNumber}`,
     })

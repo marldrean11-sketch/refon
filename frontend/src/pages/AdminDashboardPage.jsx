@@ -26,6 +26,8 @@ import { FeedbackSummaryPanel } from '../features/feedback/FeedbackSummaryPanel.
 import { SellerDirectoryPanel } from '../features/admin/SellerDirectoryPanel.jsx'
 import { AdminListingsPanel } from '../features/admin/AdminListingsPanel.jsx'
 import { AdminOrdersPanel } from '../features/admin/AdminOrdersPanel.jsx'
+import { AdminUsersPanel } from '../features/admin/AdminUsersPanel.jsx'
+import { AdminTradeInsPanel } from '../features/admin/AdminTradeInsPanel.jsx'
 import {
   approveListingRequest,
   approveSellerRequest,
@@ -1004,6 +1006,10 @@ export function AdminDashboardPage() {
             <AdminOrdersPanel />
 
             <AdminListingsPanel />
+
+            <AdminUsersPanel />
+
+            <AdminTradeInsPanel />
 
             <FeedbackSummaryPanel />
           </>

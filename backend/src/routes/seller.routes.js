@@ -5,10 +5,12 @@ import {
   getStorefrontListings,
   getStorefrontProfile,
   getStorefrontReviews,
+  updateMyPaymentDetails,
 } from '../controllers/seller.controller.js'
 import { authenticate, requireRole } from '../middlewares/auth.middleware.js'
 import {
   validateApplySeller,
+  validatePaymentDetails,
   validatePublicSellerId,
   validateStorefrontQuery,
 } from '../validators/seller.validator.js'
@@ -26,6 +28,13 @@ const router = Router()
  * gate has to be declared after them rather than wrapping the whole router.
  */
 router.get('/me', authenticate, getMySellerProfile)
+router.patch(
+  '/me/payment',
+  authenticate,
+  requireRole('SELLER'),
+  validatePaymentDetails,
+  updateMyPaymentDetails,
+)
 
 router.get('/:id', validatePublicSellerId, getStorefrontProfile)
 router.get(

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertCircle, Flag, Heart, MessageCircle, Search } from 'lucide-react'
+import { AlertCircle, Flag, Heart, MessageCircle, Search, ShieldOff } from 'lucide-react'
 import { Panel, PanelHeader } from '../design/Surfaces.jsx'
 import { Skeleton } from '../../components/ui/Skeleton.jsx'
 import { formatDate, formatPeso } from '../../lib/format.js'
 import { productPath } from '../../lib/routes.js'
-import { getAdminListingsRequest } from './admin-api.js'
+import { getAdminListingsRequest, takeDownListingRequest } from './admin-api.js'
 
 const STATUS_FILTERS = [
   { value: '', label: 'All' },
@@ -39,6 +39,8 @@ export function AdminListingsPanel() {
   const [listings, setListings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [busyId, setBusyId] = useState(null)
+  const [actionError, setActionError] = useState('')
 
   const load = useCallback(async (filters) => {
     setIsLoading(true)
@@ -59,6 +61,24 @@ export function AdminListingsPanel() {
     }, SEARCH_DELAY_MS)
     return () => window.clearTimeout(timer)
   }, [load, status, query])
+
+  async function handleTakeDown(listing) {
+    const feedback = window.prompt(
+      `Take down ${listing.brand} ${listing.model}? It leaves the shop and the seller is told why.\n\nReason for the seller:`,
+      '',
+    )
+    if (feedback === null) return
+    setActionError('')
+    setBusyId(listing.id)
+    try {
+      await takeDownListingRequest(listing.id, feedback)
+      await load({ status, q: query })
+    } catch (requestError) {
+      setActionError(requestError.errors?.feedback ?? requestError.message ?? 'The listing could not be taken down.')
+    } finally {
+      setBusyId(null)
+    }
+  }
 
   return (
     <Panel className="mt-6" data-testid="admin-all-listings">
@@ -103,6 +123,11 @@ export function AdminListingsPanel() {
       </div>
 
       <div className="px-5 py-4 sm:px-6">
+        {actionError && (
+          <p role="alert" className="mb-3 text-sm text-danger">
+            {actionError}
+          </p>
+        )}
         {error ? (
           <p role="alert" className="flex gap-2 text-sm text-danger">
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -166,6 +191,17 @@ export function AdminListingsPanel() {
                     <span className="w-20 text-right text-sm font-semibold tabular-nums text-ink">
                       {formatPeso(listing.price)}
                     </span>
+                    {(listing.status === 'APPROVED' || listing.status === 'PENDING') && (
+                      <button
+                        type="button"
+                        onClick={() => handleTakeDown(listing)}
+                        disabled={busyId === listing.id}
+                        className="inline-flex h-8 items-center gap-1 rounded-control border border-danger/60 px-2.5 text-xs font-semibold text-danger transition hover:bg-red-50 disabled:opacity-50"
+                      >
+                        <ShieldOff className="size-3.5" aria-hidden="true" />
+                        {busyId === listing.id ? 'Removing…' : 'Take down'}
+                      </button>
+                    )}
                   </div>
                 </li>
               )

@@ -71,6 +71,39 @@ export async function applyAsSeller(userId, values) {
   })
 }
 
+/** The seller's own payment details, as buyers will see them on a confirmed order. */
+export function presentPaymentDetails(seller) {
+  return {
+    gcash: seller.paymentGcash ?? null,
+    maya: seller.paymentMaya ?? null,
+    bank: seller.paymentBank ?? null,
+    qr: seller.paymentQr ?? null,
+    note: seller.paymentNote ?? null,
+  }
+}
+
+export async function updatePaymentDetails(userId, values) {
+  const existing = await prisma.seller.findUnique({ where: { userId }, select: { id: true } })
+  if (!existing) {
+    throw new ApiError(404, 'No seller profile exists for this account.', 'SELLER_NOT_FOUND')
+  }
+
+  const clean = (value) => (value === undefined ? undefined : value.trim() || null)
+  const seller = await prisma.seller.update({
+    where: { userId },
+    data: {
+      paymentGcash: clean(values.gcash),
+      paymentMaya: clean(values.maya),
+      paymentBank: clean(values.bank),
+      paymentQr: clean(values.qr),
+      paymentNote: clean(values.note),
+    },
+    include: { user: { select: { id: true, name: true, email: true } } },
+  })
+
+  return { ...presentSeller(seller), paymentDetails: presentPaymentDetails(seller) }
+}
+
 export async function getSellerProfile(userId) {
   const seller = await prisma.seller.findUnique({
     where: { userId },
@@ -81,7 +114,7 @@ export async function getSellerProfile(userId) {
     throw new ApiError(404, 'No seller profile exists for this account.', 'SELLER_NOT_FOUND')
   }
 
-  return presentSeller(seller)
+  return { ...presentSeller(seller), paymentDetails: presentPaymentDetails(seller) }
 }
 
 export async function getPendingSellers() {

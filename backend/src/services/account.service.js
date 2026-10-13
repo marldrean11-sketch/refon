@@ -1,12 +1,23 @@
 import bcrypt from 'bcryptjs'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
 import { hashPassword, publicUserSelect, toPublicUser } from './auth.service.js'
 
-export async function updateProfile(userId, { name }) {
+export async function updateProfile(userId, { name, phone, defaultAddress }) {
+  const data = {}
+  if (name !== undefined) data.name = name.trim()
+  if (phone !== undefined) data.phone = phone.replace(/[\s()-]/g, '') || null
+  if (defaultAddress !== undefined) {
+    // An address with nothing filled in is stored as no address.
+    const filled =
+      defaultAddress && Object.values(defaultAddress).some((value) => String(value ?? '').trim())
+    data.defaultAddress = filled ? defaultAddress : Prisma.DbNull
+  }
+
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { name: name.trim() },
+    data,
     select: publicUserSelect,
   })
 

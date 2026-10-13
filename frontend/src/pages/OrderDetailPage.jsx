@@ -15,6 +15,59 @@ import { OrderReviewForm } from '../features/orders/OrderReviewForm.jsx'
 import { formatDateTime } from '../lib/format.js'
 import { DASHBOARD_ROUTES, sellerPath } from '../lib/routes.js'
 
+/**
+ * Where to send the money for a GCash, Maya or bank order. The seller's details
+ * arrive once they confirm the order; until then the buyer is told to wait.
+ */
+function PaymentInstructions({ order }) {
+  if (order.payment.id === 'cod' || order.status === 'CANCELLED') return null
+  if (order.status === 'PLACED') {
+    return (
+      <p className="mt-2 text-xs leading-relaxed text-subtle">
+        Don&rsquo;t pay yet. The seller&rsquo;s payment details appear here once they confirm
+        your order.
+      </p>
+    )
+  }
+
+  const details = order.seller?.paymentDetails
+  const rows = [
+    ['GCash', details?.gcash],
+    ['Maya', details?.maya],
+    ['Bank', details?.bank],
+  ].filter(([, value]) => value)
+
+  if (!details || (rows.length === 0 && !details.qr)) {
+    return (
+      <p className="mt-2 text-xs leading-relaxed text-subtle">
+        The seller has not added payment details yet. Message them to ask how to pay.
+      </p>
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-control border border-accent/40 bg-panel p-3" data-testid="seller-payment-details">
+      <p className="text-xs font-bold uppercase tracking-[0.08em] text-accent">Pay the seller</p>
+      <dl className="mt-2 space-y-1.5 text-sm">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex gap-2">
+            <dt className="w-12 shrink-0 text-muted">{label}</dt>
+            <dd className="break-words font-semibold text-ink">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      {details.qr && (
+        <img
+          src={details.qr}
+          alt="Seller payment QR code"
+          className="mt-3 size-36 rounded-xl border border-line bg-white object-contain"
+        />
+      )}
+      {details.note && <p className="mt-2 text-xs leading-relaxed text-muted">{details.note}</p>}
+    </div>
+  )
+}
+
 /** One of the buyer's orders: progress, phones, money, address, and cancel. */
 export function OrderDetailPage() {
   const { orderNumber } = useParams()
@@ -127,6 +180,7 @@ export function OrderDetailPage() {
                       Payment
                     </h2>
                     <p className="mt-1 text-sm text-muted">{order.payment.label}</p>
+                    <PaymentInstructions order={order} />
                   </div>
                 </section>
               </div>

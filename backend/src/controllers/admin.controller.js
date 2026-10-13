@@ -1,4 +1,10 @@
-import { getAdminStats, getListingsForAdmin } from '../services/admin.service.js'
+import {
+  getAdminStats,
+  getListingsForAdmin,
+  getUsersForAdmin,
+  setUserSuspension,
+  takeDownListing,
+} from '../services/admin.service.js'
 import {
   getPendingSellers,
   getSellerDirectory,
@@ -67,4 +73,24 @@ export const rejectListing = asyncHandler(async (req, res) => {
 export const allListings = asyncHandler(async (req, res) => {
   const listings = await getListingsForAdmin(req.validatedQuery ?? {})
   return res.status(200).json({ listings })
+})
+
+export const users = asyncHandler(async (req, res) => {
+  const list = await getUsersForAdmin(req.validatedQuery ?? {})
+  return res.status(200).json({ users: list })
+})
+
+export const suspendUser = asyncHandler(async (req, res) => {
+  const user = await setUserSuspension(req.user.id, req.validatedParams.id, true, req.validatedBody?.reason)
+  return res.status(200).json({ user })
+})
+
+export const unsuspendUser = asyncHandler(async (req, res) => {
+  const user = await setUserSuspension(req.user.id, req.validatedParams.id, false)
+  return res.status(200).json({ user })
+})
+
+export const takeDown = asyncHandler(async (req, res) => {
+  const listing = await takeDownListing(req.validatedParams.id, req.validatedBody.feedback)
+  return res.status(200).json({ listing })
 })

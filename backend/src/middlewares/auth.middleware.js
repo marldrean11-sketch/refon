@@ -2,6 +2,7 @@ import { env } from '../config/env.js'
 import { ApiError } from '../utils/api-error.js'
 import { clearAuthCookie } from '../utils/auth-cookie.js'
 import { verifyAccessToken } from '../utils/jwt.js'
+import { isSuspended } from '../utils/suspension.js'
 
 export function authenticate(req, res, next) {
   const token = req.cookies?.[env.authCookieName]
@@ -22,17 +23,32 @@ export function authenticate(req, res, next) {
     req.user = {
       id: payload.sub,
       role: payload.role,
-      // Copied claim only; this middleware stays free of database access.
       issuedAt: typeof payload.iat === 'number' ? payload.iat : null,
     }
-
-    return next()
   } catch {
     clearAuthCookie(res)
     return next(
       new ApiError(401, 'Your session has expired. Please sign in again.', 'SESSION_EXPIRED'),
     )
   }
+
+  // The only database access here: a cached suspension check, so an account an
+  // admin suspends is locked out of every action straight away.
+  return isSuspended(req.user.id)
+    .then((suspended) => {
+      if (suspended) {
+        clearAuthCookie(res)
+        return next(
+          new ApiError(
+            403,
+            'This account is suspended. Contact ReFon if you think this is a mistake.',
+            'ACCOUNT_SUSPENDED',
+          ),
+        )
+      }
+      return next()
+    })
+    .catch(next)
 }
 
 export function optionalAuthenticate(req, res, next) {

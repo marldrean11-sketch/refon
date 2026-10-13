@@ -4,6 +4,7 @@ import {
   getPublicSellerListings,
   getPublicSellerReviews,
   getSellerProfile,
+  updatePaymentDetails,
 } from '../services/seller.service.js'
 import { getUserById } from '../services/auth.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
@@ -16,6 +17,11 @@ export const applySeller = asyncHandler(async (req, res) => {
 
   setAuthCookie(res, createAccessToken(user))
   return res.status(200).json({ seller, user })
+})
+
+export const updateMyPaymentDetails = asyncHandler(async (req, res) => {
+  const seller = await updatePaymentDetails(req.user.id, req.validatedBody)
+  return res.status(200).json({ seller })
 })
 
 export const getMySellerProfile = asyncHandler(async (req, res) => {

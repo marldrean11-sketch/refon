@@ -19,6 +19,7 @@ import {
 import { formatPeso } from '../lib/format.js'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 import { usePrefersReducedMotion } from '../lib/motion.ts'
+import { TradeInRequestForm } from '../features/trade-in/TradeInRequestForm.jsx'
 
 const EMPTY = { brand: null, model: null, storage: null, grade: null, battery: null, working: null }
 
@@ -57,7 +58,8 @@ function useTweened(target, reduced) {
  *
  * Five quick questions (model, storage, condition, battery, does it work) and an
  * honest price range: 55–65% of what the same phone sells for on ReFon. It runs
- * entirely in the browser, needs no account, and submits nothing. The page says
+ * entirely in the browser and needs no account; once the range shows, the
+ * visitor can choose to send it to the team as a trade-in request. The page says
  * plainly that it is an estimate and that the final figure follows a hands-on
  * check at the booth.
  */
@@ -118,6 +120,9 @@ export function TradeInPage() {
   ]
 
   const answered = steps.filter((step) => answers[step.key]).length
+  const labels = Object.fromEntries(
+    steps.map((step) => [step.key, step.options.find((option) => option.id === answers[step.key])?.label ?? '']),
+  )
   const brandForShop = answers.brand === 'Google' ? 'Google' : answers.brand
 
   return (
@@ -133,8 +138,8 @@ export function TradeInPage() {
             Magkano kaya ’yan?
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-            Six quick taps and you get an honest price range for your old phone. No account, nothing
-            submitted: it is worked out right here in your browser.
+            Six quick taps and you get an honest price range for your old phone. No account needed.
+            Like the offer? Send it to us and we&rsquo;ll check the phone at the booth.
           </p>
         </Container>
       </div>
@@ -229,6 +234,15 @@ export function TradeInPage() {
               </>
             )}
           </section>
+
+          {estimate && (
+            <TradeInRequestForm
+              key={`${answers.model}-${estimate.low}-${estimate.high}`}
+              answers={answers}
+              labels={labels}
+              estimate={estimate}
+            />
+          )}
 
           <div className="grid gap-2">
             <ButtonLink to={MARKETPLACE_ROUTES.healthCheck} variant="outline">

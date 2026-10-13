@@ -25,6 +25,7 @@ import { useSellerInquiries } from '../features/inquiries/useSellerInquiries.js'
 import { ConfirmDialog } from '../features/seller/components/ConfirmDialog.jsx'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
 import { LowerPriceDialog } from '../features/seller/components/LowerPriceDialog.jsx'
+import { PaymentDetailsCard } from '../features/seller/components/PaymentDetailsCard.jsx'
 import { AUTH_ROUTES, DASHBOARD_ROUTES } from '../features/auth/auth.routes.js'
 import { StatStripSkeleton, Skeleton } from '../components/ui/Skeleton.jsx'
 import { EmptyState, ErrorState } from '../components/ui/StateViews.jsx'
@@ -550,6 +551,15 @@ export function SellerDashboardPage() {
                   <EmptyFirstListing canCreateListing={canCreateListing} verificationStatus={verificationStatus} />
                 )}
               </div>
+
+              {verificationStatus === 'APPROVED' && (
+                <div className="mt-8">
+                  <PaymentDetailsCard
+                    seller={seller}
+                    onSaved={() => refreshProfile({ silent: true }).catch(() => {})}
+                  />
+                </div>
+              )}
 
               <div className="mt-6 flex gap-3 rounded-control border border-line bg-surface px-4 py-3.5 text-sm">
                 <ListChecks className="mt-0.5 size-4 shrink-0 text-subtle" aria-hidden="true" />

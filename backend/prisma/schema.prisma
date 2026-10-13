@@ -80,6 +80,13 @@ model User {
   emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz(3)
   /// Used to invalidate sessions issued before a password change.
   passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz(3)
+  /// Mobile number, used to prefill checkout.
+  phone             String?   @db.VarChar(20)
+  /// The buyer's saved delivery address (the checkout address fields).
+  defaultAddress    Json?     @map("default_address")
+  /// Set by an admin: a suspended account cannot sign in or act.
+  suspendedAt       DateTime? @map("suspended_at") @db.Timestamptz(3)
+  suspendedReason   String?   @map("suspended_reason") @db.VarChar(500)
   role              UserRole  @default(BUYER)
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -89,6 +96,7 @@ model User {
   buyerInquiries Inquiry[]      @relation("BuyerInquiries")
   inquiryReplies InquiryReply[] @relation("InquiryReplyAuthor")
   orders         Order[]        @relation("BuyerOrders")
+  tradeIns       TradeInRequest[]
   favorites      Favorite[]
   reportsMade    Report[]        @relation("ReportReporter")
   reportsHandled Report[]        @relation("ReportResolver")
@@ -115,6 +123,13 @@ model Seller {
   ratingAverage      Decimal                  @default(0) @map("rating_average") @db.Decimal(3, 2)
   ratingCount        Int                      @default(0) @map("rating_count")
   completedSales     Int                      @default(0) @map("completed_sales")
+  /// How buyers pay this seller for non-COD orders. Shown to a buyer only on
+  /// their own order, once the seller has confirmed it.
+  paymentGcash       String?                  @map("payment_gcash") @db.VarChar(40)
+  paymentMaya        String?                  @map("payment_maya") @db.VarChar(40)
+  paymentBank        String?                  @map("payment_bank") @db.VarChar(300)
+  paymentQr          String?                  @map("payment_qr") @db.VarChar(500)
+  paymentNote        String?                  @map("payment_note") @db.VarChar(300)
   createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime                 @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -499,4 +514,35 @@ model OrderItem {
   @@index([orderId])
   @@index([listingId])
   @@map("order_items")
+}
+
+enum TradeInStatus {
+  NEW
+  CONTACTED
+  DONE
+  DECLINED
+}
+
+/// A trade-in estimate a visitor sent to ReFon to follow up.
+model TradeInRequest {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String?       @map("user_id") @db.Uuid
+  name         String        @db.VarChar(120)
+  contact      String        @db.VarChar(320)
+  brand        String        @db.VarChar(80)
+  model        String        @db.VarChar(120)
+  /// The estimator's answers (storage, grade, battery, working), as chosen.
+  answers      Json
+  estimateLow  Int           @map("estimate_low")
+  estimateHigh Int           @map("estimate_high")
+  note         String?       @db.VarChar(1000)
+  status       TradeInStatus @default(NEW)
+  adminNote    String?       @map("admin_note") @db.VarChar(1000)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([status, createdAt])
+  @@map("trade_in_requests")
 }

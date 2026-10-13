@@ -24,6 +24,7 @@ import myInquiryRoutes from './routes/my-inquiry.routes.js'
 import cartRoutes from './routes/cart.routes.js'
 import checkoutRoutes from './routes/checkout.routes.js'
 import orderRoutes from './routes/order.routes.js'
+import tradeInRoutes from './routes/trade-in.routes.js'
 
 const app = express()
 
@@ -100,6 +101,7 @@ app.use('/api/my-inquiries', myInquiryRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/checkout', checkoutRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api/trade-ins', tradeInRoutes)
 app.use('/api/health-checks', healthCheckRoutes)
 app.use('/api/feedback', feedbackRoutes)
 

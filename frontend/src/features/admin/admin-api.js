@@ -64,3 +64,38 @@ export function getAdminListingsRequest({ status = '', q = '' } = {}) {
   const query = params.toString()
   return apiRequest(`/admin/listings${query ? `?${query}` : ''}`)
 }
+
+export function takeDownListingRequest(id, feedback) {
+  return apiRequest(`/admin/listings/${id}/take-down`, {
+    method: 'PATCH',
+    body: { feedback },
+  })
+}
+
+export function getAdminUsersRequest({ role = '', status = '', q = '' } = {}) {
+  const params = new URLSearchParams()
+  if (role) params.set('role', role)
+  if (status) params.set('status', status)
+  if (q.trim()) params.set('q', q.trim())
+  const query = params.toString()
+  return apiRequest(`/admin/users${query ? `?${query}` : ''}`)
+}
+
+export function suspendUserRequest(id, reason = '') {
+  return apiRequest(`/admin/users/${id}/suspend`, {
+    method: 'PATCH',
+    body: reason.trim() ? { reason } : {},
+  })
+}
+
+export function unsuspendUserRequest(id) {
+  return apiRequest(`/admin/users/${id}/unsuspend`, { method: 'PATCH' })
+}
+
+export function getAdminTradeInsRequest(status = '') {
+  return apiRequest(`/admin/trade-ins${status ? `?status=${status}` : ''}`)
+}
+
+export function updateTradeInRequest(id, values) {
+  return apiRequest(`/admin/trade-ins/${id}`, { method: 'PATCH', body: values })
+}

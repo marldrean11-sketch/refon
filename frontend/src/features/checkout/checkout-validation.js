@@ -68,6 +68,13 @@ export function prefillFromUser(details, user) {
     ...details,
     fullName: details.fullName || user.name || '',
     email: details.email || user.email || '',
+    mobile: details.mobile || user.phone || '',
+    // The saved address fills only the fields still empty.
+    ...Object.fromEntries(
+      ['region', 'province', 'city', 'barangay', 'street', 'postalCode', 'deliveryNotes'].map(
+        (field) => [field, details[field] || user.defaultAddress?.[field] || ''],
+      ),
+    ),
   }
 }
 

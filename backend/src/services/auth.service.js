@@ -25,7 +25,18 @@ export const publicUserSelect = {
   role: true,
   emailVerifiedAt: true,
   passwordChangedAt: true,
+  phone: true,
+  defaultAddress: true,
+  suspendedAt: true,
   seller: { select: publicSellerSelect },
+}
+
+export function suspendedError() {
+  return new ApiError(
+    403,
+    'This account is suspended. Contact ReFon if you think this is a mistake.',
+    'ACCOUNT_SUSPENDED',
+  )
 }
 
 function normalizeEmail(email) {
@@ -45,6 +56,8 @@ export function toPublicUser(user) {
     role: user.role,
     emailVerified: Boolean(user.emailVerifiedAt),
     sellerVerificationStatus: user.seller?.verificationStatus ?? null,
+    phone: user.phone ?? null,
+    defaultAddress: user.defaultAddress ?? null,
     createdAt: user.createdAt,
   }
 }
@@ -126,6 +139,12 @@ export async function authenticateUser({ email, password }) {
     )
   }
 
+  // Checked only after the password, so a suspension is not revealed to someone
+  // guessing an email address.
+  if (user.suspendedAt) {
+    throw suspendedError()
+  }
+
   return toPublicUser(user)
 }
 
@@ -137,6 +156,10 @@ export async function getUserById(id, issuedAt) {
 
   if (!user) {
     throw new ApiError(401, 'Your session is no longer valid.', 'SESSION_INVALID')
+  }
+
+  if (user.suspendedAt) {
+    throw suspendedError()
   }
 
   // JWT iat is whole seconds, so compare in seconds to keep a cookie issued in
