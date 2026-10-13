@@ -518,7 +518,7 @@ test.describe('F5 checkout', () => {
 
     // The demo methods say so, and no credentials are ever collected.
     await expect(page.getByTestId('demo-payment-notice')).toContainText(/no payment is processed/i)
-    await expect(page.getByText(/demo payment method/i).first()).toBeVisible()
+    await expect(page.getByText(/pay seller directly/i).first()).toBeVisible()
     await expect(page.locator('input[type="password"]')).toHaveCount(0)
     await expect(page.locator('input[name*="gcash" i]')).toHaveCount(0)
     await expect(page.locator('input[name*="bank" i]')).toHaveCount(0)

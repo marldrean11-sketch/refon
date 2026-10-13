@@ -224,6 +224,13 @@ function SellerOrderCard({ order, onUpdated }) {
             <Wallet className="size-4" aria-hidden="true" />
             {order.payment.label}
           </p>
+          {order.payment.id !== 'cod' && ['PLACED', 'CONFIRMED'].includes(order.status) && (
+            <p className="rounded-control border border-amber-300/40 bg-amber-50 p-3 text-xs leading-relaxed text-amber-800">
+              The buyer pays you by {order.payment.label}. After confirming, send them your{' '}
+              {order.payment.label} details using their mobile or email above, and ship once
+              you have received the payment.
+            </p>
+          )}
         </div>
       </div>
     </article>
