@@ -3,6 +3,7 @@ import {
   cancelMyOrder,
   myOrder,
   myOrders,
+  reviewMyOrder,
   sellerOrders,
   updateSellerOrder,
 } from '../controllers/order.controller.js'
@@ -17,7 +18,9 @@ import {
   validateOrderNumber,
   validateOrderQuery,
   validateOrderStatusBody,
+  validateReviewBody,
 } from '../validators/order.validator.js'
+import { reportLimiter } from '../middlewares/rate-limit.middleware.js'
 
 const router = Router()
 
@@ -32,6 +35,16 @@ router.patch(
   validateOrderNumber,
   validateCancelBody,
   cancelMyOrder,
+)
+
+// A review of a phone from a completed order.
+router.post(
+  '/mine/:orderNumber/reviews',
+  reportLimiter,
+  requireBuyer,
+  validateOrderNumber,
+  validateReviewBody,
+  reviewMyOrder,
 )
 
 // The seller's incoming orders.

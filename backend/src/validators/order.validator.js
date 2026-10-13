@@ -36,3 +36,27 @@ export const validateOrderNumber = validateParams(orderNumberSchema)
 export const validateOrderStatusBody = validate(orderStatusBodySchema)
 export const validateCancelBody = validate(cancelBodySchema)
 export const validateOrderQuery = validateQuery(orderQuerySchema)
+
+const stars = (label) =>
+  z
+    .number({ error: `Choose a ${label} from 1 to 5 stars.` })
+    .int()
+    .min(1, `Choose a ${label} from 1 to 5 stars.`)
+    .max(5, `Choose a ${label} from 1 to 5 stars.`)
+
+const reviewBodySchema = z
+  .object({
+    listingId: z.string().uuid('Choose the phone you are reviewing.'),
+    rating: stars('rating'),
+    conditionRating: stars('condition rating').optional(),
+    sellerRating: stars('seller rating').optional(),
+    title: z.string().trim().max(160, 'Title must be 160 characters or fewer.').optional(),
+    comment: z
+      .string()
+      .trim()
+      .min(10, 'Write at least 10 characters about the phone.')
+      .max(2000, 'Review must be 2000 characters or fewer.'),
+  })
+  .strict()
+
+export const validateReviewBody = validate(reviewBodySchema)

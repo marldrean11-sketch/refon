@@ -106,6 +106,10 @@ export function MyOrdersPage() {
                       <p className="mt-0.5 text-xs text-muted">
                         {formatDate(order.createdAt)} · {order.seller?.businessName}
                       </p>
+                      {order.status === 'COMPLETED' &&
+                        order.items.some((item) => item.listingId && !item.reviewed) && (
+                          <p className="mt-1 text-xs font-semibold text-accent">★ Leave a review</p>
+                        )}
                     </div>
                     <span className="shrink-0 text-right">
                       <span className="block font-semibold tabular-nums text-ink">{formatPeso(order.total)}</span>

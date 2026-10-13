@@ -6,6 +6,7 @@ import {
   getSellerOrders,
   updateOrderStatusAsSeller,
 } from '../services/order.service.js'
+import { createOrderReview } from '../services/review.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
 
 export const myOrders = asyncHandler(async (req, res) => {
@@ -42,4 +43,9 @@ export const updateSellerOrder = asyncHandler(async (req, res) => {
 
 export const adminOrders = asyncHandler(async (req, res) => {
   return res.status(200).json(await getOrdersForAdmin(req.validatedQuery ?? {}))
+})
+
+export const reviewMyOrder = asyncHandler(async (req, res) => {
+  const review = await createOrderReview(req.user.id, req.validatedParams.orderNumber, req.validatedBody)
+  return res.status(201).json({ review })
 })

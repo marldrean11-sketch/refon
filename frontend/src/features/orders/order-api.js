@@ -29,3 +29,10 @@ export function updateSellerOrderStatusRequest(id, status, reason = '') {
 export function getAdminOrdersRequest(status = '') {
   return apiRequest(`/admin/orders${status ? `?status=${status}` : ''}`)
 }
+
+export function createOrderReviewRequest(orderNumber, review) {
+  return apiRequest(`/orders/mine/${encodeURIComponent(orderNumber)}/reviews`, {
+    method: 'POST',
+    body: review,
+  })
+}

@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
 import { quoteCheckout } from './checkout.service.js'
+import { reviewedListingIds } from './review.service.js'
 import {
   databaseNow,
   findActiveReservation,
@@ -59,7 +60,7 @@ function newReference(prefix) {
   return `${prefix}-${date}-${random}`
 }
 
-function presentOrder(order, { forSeller = false } = {}) {
+function presentOrder(order, { forSeller = false, reviewed = null } = {}) {
   return {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -99,6 +100,8 @@ function presentOrder(order, { forSeller = false } = {}) {
       unitPrice: Number(item.unitPrice),
       quantity: item.quantity,
       lineTotal: Number((Number(item.unitPrice) * item.quantity).toFixed(2)),
+      // Buyer view only: whether this buyer has reviewed the phone.
+      ...(reviewed ? { reviewed: Boolean(item.listingId && reviewed.has(item.listingId)) } : {}),
     })),
   }
 }
@@ -287,7 +290,11 @@ export async function getBuyerOrders(userId) {
     take: MAX_ORDERS,
     include: orderInclude,
   })
-  return { orders: orders.map((order) => presentOrder(order)) }
+  const reviewed = await reviewedListingIds(
+    userId,
+    orders.flatMap((order) => order.items.map((item) => item.listingId).filter(Boolean)),
+  )
+  return { orders: orders.map((order) => presentOrder(order, { reviewed })) }
 }
 
 export async function getBuyerOrder(userId, orderNumber) {
@@ -298,7 +305,11 @@ export async function getBuyerOrder(userId, orderNumber) {
   if (!order) {
     throw new ApiError(404, 'Order not found.', 'ORDER_NOT_FOUND')
   }
-  return presentOrder(order)
+  const reviewed = await reviewedListingIds(
+    userId,
+    order.items.map((item) => item.listingId).filter(Boolean),
+  )
+  return presentOrder(order, { reviewed })
 }
 
 export async function getSellerOrders(userId, { status } = {}) {

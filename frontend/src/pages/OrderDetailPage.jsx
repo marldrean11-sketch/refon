@@ -11,6 +11,7 @@ import {
   OrderTimeline,
   OrderTotals,
 } from '../features/orders/OrderParts.jsx'
+import { OrderReviewForm } from '../features/orders/OrderReviewForm.jsx'
 import { formatDateTime } from '../lib/format.js'
 import { DASHBOARD_ROUTES, sellerPath } from '../lib/routes.js'
 
@@ -129,6 +130,39 @@ export function OrderDetailPage() {
                   </div>
                 </section>
               </div>
+
+              {order.status === 'COMPLETED' && (
+                <section className={card} data-testid="order-reviews">
+                  <h2 className="font-display text-lg font-bold text-ink">Review your phones</h2>
+                  <p className="mt-1 text-sm text-muted">
+                    Help other buyers: tell them how the phone and the seller turned out.
+                  </p>
+                  <ul className="mt-3 divide-y divide-line">
+                    {order.items.map((item) => (
+                      <li key={item.id} className="py-3">
+                        <p className="text-sm font-semibold text-ink">
+                          {item.brand} {item.model}
+                          <span className="font-normal text-muted"> · {item.storage}</span>
+                        </p>
+                        <div className="mt-2">
+                          <OrderReviewForm
+                            orderNumber={order.orderNumber}
+                            item={item}
+                            onReviewed={(listingId) =>
+                              setOrder((current) => ({
+                                ...current,
+                                items: current.items.map((entry) =>
+                                  entry.listingId === listingId ? { ...entry, reviewed: true } : entry,
+                                ),
+                              }))
+                            }
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {order.status === 'PLACED' && (
                 <section className={card}>
