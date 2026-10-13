@@ -39,6 +39,10 @@ import {
   validateTradeInUpdate,
 } from '../validators/trade-in.validator.js'
 import { validateOrderQuery } from '../validators/order.validator.js'
+import {
+  resetToday as resetHealthChecksToday,
+  stats as healthCheckStats,
+} from '../controllers/health-check.controller.js'
 import { summary as feedbackSummary } from '../controllers/feedback.controller.js'
 import {
   reports,
@@ -55,6 +59,8 @@ const router = Router()
 router.use(authenticate, requireAdmin)
 router.get('/stats', stats)
 router.get('/feedback', feedbackSummary)
+router.get('/health-checks', healthCheckStats)
+router.delete('/health-checks/today', resetHealthChecksToday)
 router.get('/sellers/pending', pendingSellers)
 router.get('/sellers', validateSellerDirectoryQuery, sellerDirectory)
 router.get('/sellers/:id', validateSellerId, sellerDetail)

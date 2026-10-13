@@ -23,6 +23,7 @@ import { Skeleton } from '../components/ui/Skeleton.jsx'
 import { Container } from '../features/design/Container.jsx'
 import { MetricStrip, Panel } from '../features/design/Surfaces.jsx'
 import { FeedbackSummaryPanel } from '../features/feedback/FeedbackSummaryPanel.jsx'
+import { HealthCheckCounterPanel } from '../features/admin/HealthCheckCounterPanel.jsx'
 import { SellerDirectoryPanel } from '../features/admin/SellerDirectoryPanel.jsx'
 import { AdminListingsPanel } from '../features/admin/AdminListingsPanel.jsx'
 import { AdminOrdersPanel } from '../features/admin/AdminOrdersPanel.jsx'
@@ -1010,6 +1011,8 @@ export function AdminDashboardPage() {
             <AdminUsersPanel />
 
             <AdminTradeInsPanel />
+
+            <HealthCheckCounterPanel />
 
             <FeedbackSummaryPanel />
           </>

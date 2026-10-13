@@ -15,6 +15,15 @@ export async function recordHealthCheckRun({ completed, passed }) {
   return getHealthCheckStats()
 }
 
+/**
+ * Clears today's runs so the booth counter starts from zero after the team has
+ * tested its own phones while setting up. Earlier days are left alone.
+ */
+export async function resetTodayHealthChecks() {
+  await prisma.healthCheckRun.deleteMany({ where: { createdAt: { gte: startOfManilaDay() } } })
+  return getHealthCheckStats()
+}
+
 export async function getHealthCheckStats() {
   const [today, total] = await Promise.all([
     prisma.healthCheckRun.count({ where: { createdAt: { gte: startOfManilaDay() } } }),
