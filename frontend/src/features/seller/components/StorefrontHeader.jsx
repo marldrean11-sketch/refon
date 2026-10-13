@@ -9,7 +9,7 @@ import { MetricStrip } from '../../design/Surfaces.jsx'
 import { Breadcrumb } from '../../../components/ui/Breadcrumb.jsx'
 import { formatNumber } from '../../../lib/format.js'
 import { MARKETPLACE_ROUTES } from '../../../lib/routes.js'
-import { SellerAvatar, brandColorFor } from '../brand.jsx'
+import { BANNER_LOGO, SellerAvatar, brandColorFor } from '../brand.jsx'
 import { getFollowStateRequest } from '../storefront-api.js'
 import { FollowStoreButton } from './FollowStoreButton.jsx'
 
@@ -105,10 +105,7 @@ export function StorefrontHeader({ seller }) {
         />
 
         <div className="mt-7 flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-7">
-          <SellerAvatar
-            seller={seller}
-            className="size-20 border-4 border-surface text-2xl shadow-pop sm:size-24 sm:text-3xl"
-          />
+          <SellerAvatar seller={seller} rounded="rounded-2xl" className={`${BANNER_LOGO} border-surface`} />
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">

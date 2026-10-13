@@ -6,7 +6,7 @@ import { Panel } from '../../design/Surfaces.jsx'
 import { uploadPhotosRequest } from '../../listings/listing-api.js'
 import { sellerPath } from '../../../lib/routes.js'
 import { updateStorefrontRequest } from '../seller-api.js'
-import { BRAND_COLORS, SellerAvatar } from '../brand.jsx'
+import { BANNER_LOGO, BRAND_COLORS, SellerAvatar } from '../brand.jsx'
 
 const EMPTY = { tagline: '', city: '', region: '', logoUrl: '', bannerUrl: '', brandColor: '' }
 
@@ -164,7 +164,7 @@ export function StorefrontSettingsCard({ seller, onSaved }) {
           {values.bannerUrl && <img src={values.bannerUrl} alt="" className="absolute inset-0 size-full object-cover" />}
         </div>
         <div className="flex items-end gap-3 px-4 pb-4">
-          <SellerAvatar seller={preview} className="-mt-8 size-16 border-4 border-surface text-xl" />
+          <SellerAvatar seller={preview} rounded="rounded-2xl" className={`${BANNER_LOGO} -mt-9 border-surface`} />
           <div className="min-w-0 pb-1">
             <p className="truncate font-display text-base font-bold text-ink">{seller?.businessName}</p>
             <p className="truncate text-xs text-muted">

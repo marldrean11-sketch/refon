@@ -5,7 +5,7 @@ import { RatingStars } from '../../../components/ui/RatingStars.jsx'
 import { ListingPhoto } from '../../listings/ListingPhoto.jsx'
 import { formatNumber } from '../../../lib/format.js'
 import { productPath, sellerPath } from '../../../lib/routes.js'
-import { SellerAvatar, brandColorFor } from '../brand.jsx'
+import { BANNER_LOGO, SellerAvatar, brandColorFor } from '../brand.jsx'
 import { FollowStoreButton } from './FollowStoreButton.jsx'
 
 /**
@@ -37,8 +37,8 @@ export function StoreCard({ store, onFollowChange }) {
       </div>
 
       <div className="flex flex-1 flex-col px-5 pb-5">
-        <div className="-mt-8 flex items-end justify-between gap-3">
-          <SellerAvatar seller={store} className="size-16 border-4 border-card text-xl" />
+        <div className="-mt-9 flex items-end justify-between gap-3">
+          <SellerAvatar seller={store} rounded="rounded-2xl" className={`${BANNER_LOGO} border-card`} />
           <FollowStoreButton
             sellerId={store.id}
             following={follow.following}

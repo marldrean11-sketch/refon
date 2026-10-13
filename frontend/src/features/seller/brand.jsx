@@ -28,7 +28,15 @@ export function monogramFor(name) {
  * The store's logo, or its monogram on the store's colour when there is no
  * logo (or the logo fails to load).
  */
-export function SellerAvatar({ seller, name, className = 'size-12 text-base' }) {
+/**
+ * The logo where it sits over a banner (store cards, the store page header,
+ * the Store look preview): 72px rounded square, lifted above the banner so a
+ * banner photo can never cover it, with a soft shadow to stand out on bright
+ * banners. Pair it with a border in the colour of the surface below it.
+ */
+export const BANNER_LOGO = 'relative z-10 size-[72px] border-4 text-2xl shadow-[0_8px_24px_rgba(0,0,0,0.35)]'
+
+export function SellerAvatar({ seller, name, className = 'size-12 text-base', rounded = 'rounded-control' }) {
   const [failed, setFailed] = useState(null)
   const color = brandColorFor(seller)
   const logo = seller?.logoUrl
@@ -39,7 +47,7 @@ export function SellerAvatar({ seller, name, className = 'size-12 text-base' }) 
         src={logo}
         alt=""
         onError={() => setFailed(logo)}
-        className={`shrink-0 rounded-control bg-white object-cover ${className}`}
+        className={`shrink-0 ${rounded} bg-white object-cover ${className}`}
       />
     )
   }
@@ -47,7 +55,7 @@ export function SellerAvatar({ seller, name, className = 'size-12 text-base' }) 
   return (
     <span
       aria-hidden="true"
-      className={`grid shrink-0 place-items-center rounded-control font-display font-bold ${className}`}
+      className={`grid shrink-0 place-items-center ${rounded} font-display font-bold ${className}`}
       style={{ backgroundColor: color.hex, color: color.ink }}
     >
       {monogramFor(name ?? seller?.businessName)}
