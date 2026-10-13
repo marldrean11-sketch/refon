@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { BadgeCheck, Clock3, MapPin, Store } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { RatingStars } from '../../../components/ui/RatingStars.jsx'
@@ -9,6 +10,31 @@ import { Breadcrumb } from '../../../components/ui/Breadcrumb.jsx'
 import { formatNumber } from '../../../lib/format.js'
 import { MARKETPLACE_ROUTES } from '../../../lib/routes.js'
 import { SellerAvatar, brandColorFor } from '../brand.jsx'
+import { getFollowStateRequest } from '../storefront-api.js'
+import { FollowStoreButton } from './FollowStoreButton.jsx'
+
+/** The store's Follow button, loading whether this shopper already follows it. */
+function StoreFollowControl({ sellerId }) {
+  const [state, setState] = useState(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getFollowStateRequest(sellerId, controller.signal)
+      .then(setState)
+      .catch(() => {})
+    return () => controller.abort()
+  }, [sellerId])
+
+  if (!state) return null
+  return (
+    <FollowStoreButton
+      sellerId={sellerId}
+      following={state.following}
+      followerCount={state.followerCount}
+      onChange={setState}
+    />
+  )
+}
 
 /** The header skeleton. Mirrors the real header so nothing jumps on load. */
 export function StorefrontHeaderSkeleton() {
@@ -73,7 +99,7 @@ export function StorefrontHeader({ seller }) {
         <Breadcrumb
           items={[
             { label: 'Home', to: MARKETPLACE_ROUTES.home },
-            { label: 'Shop Phones', to: MARKETPLACE_ROUTES.shop },
+            { label: 'Phone Stores', to: MARKETPLACE_ROUTES.stores },
             { label: seller.businessName },
           ]}
         />
@@ -92,6 +118,7 @@ export function StorefrontHeader({ seller }) {
                   Verified seller
                 </span>
               )}
+              <StoreFollowControl sellerId={seller.id} />
             </div>
 
             {/* The `h1` is the store's name, not the page's purpose. A shopper who

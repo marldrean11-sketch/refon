@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma.js'
 import { storage } from './storage.service.js'
 import { ApiError } from '../utils/api-error.js'
+import { notifyStoreFollowers } from './store.service.js'
 import { presentListing, presentPagination } from '../utils/listing-presenter.js'
 import { RAM_GB, STORAGE_GB, categoryWhere } from '../utils/catalog-taxonomy.js'
 
@@ -1030,7 +1031,8 @@ export async function reviewListing(id, decision, feedback = '') {
         status: true,
         brand: true,
         model: true,
-        seller: { select: { userId: true } },
+        storage: true,
+        seller: { select: { id: true, userId: true, businessName: true } },
       },
     })
 
@@ -1070,6 +1072,15 @@ export async function reviewListing(id, decision, feedback = '') {
         relatedListingId: existingListing.id,
       },
     })
+
+    if (decision === 'APPROVED') {
+      await notifyStoreFollowers(transaction, {
+        sellerId: existingListing.seller.id,
+        listingId: existingListing.id,
+        label: `${existingListing.brand} ${existingListing.model} ${existingListing.storage}`,
+        storeName: existingListing.seller.businessName,
+      })
+    }
 
     return presentListing(listing)
   })

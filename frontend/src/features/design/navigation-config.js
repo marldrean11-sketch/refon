@@ -138,6 +138,18 @@ export const ACCOUNT_NAV = [
  * nobody can link to, and a signed-in shopper should be able to see where
  * "Account" is without hovering anything.
  */
+/**
+ * The phone stores a signed-in buyer or seller follows. Admins don't follow
+ * stores, so the user menu shows it to buyers and sellers only.
+ */
+export const FOLLOWING_STORES_LINK = {
+  key: 'followingStores',
+  label: 'Stores I follow',
+  to: `${MARKETPLACE_ROUTES.stores}?following=1`,
+  icon: Store,
+  activePaths: ['/stores'],
+}
+
 export const ACCOUNT_LINK = {
   key: 'account',
   label: 'Account',
@@ -326,6 +338,7 @@ export const FOOTER_GROUPS = Object.freeze([
     links: [
       { label: 'Shop all phones', to: MARKETPLACE_ROUTES.shop },
       { label: 'Browse by category', to: MARKETPLACE_ROUTES.categories },
+      { label: 'Visit Stores', to: MARKETPLACE_ROUTES.stores },
       { label: CART_LINK.label, to: CART_LINK.to },
     ],
   },

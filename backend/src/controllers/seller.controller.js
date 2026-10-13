@@ -8,6 +8,7 @@ import {
   updateStorefrontSettings,
 } from '../services/seller.service.js'
 import { getUserById } from '../services/auth.service.js'
+import { followStore, getFollowState, getStoreDirectory, unfollowStore } from '../services/store.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
 import { setAuthCookie } from '../utils/auth-cookie.js'
 import { createAccessToken } from '../utils/jwt.js'
@@ -59,4 +60,21 @@ export const getStorefrontListings = asyncHandler(async (req, res) => {
 export const getStorefrontReviews = asyncHandler(async (req, res) => {
   const data = await getPublicSellerReviews(req.validatedParams.id, req.validatedQuery)
   return res.status(200).json(data)
+})
+/** The "Phone Stores" directory and following stores. */
+export const getStoreDirectoryHandler = asyncHandler(async (req, res) => {
+  const data = await getStoreDirectory(req.validatedQuery ?? {}, req.user?.id ?? null)
+  return res.status(200).json(data)
+})
+
+export const getFollowStateHandler = asyncHandler(async (req, res) => {
+  return res.status(200).json(await getFollowState(req.validatedParams.id, req.user?.id ?? null))
+})
+
+export const followStoreHandler = asyncHandler(async (req, res) => {
+  return res.status(200).json(await followStore(req.user.id, req.validatedParams.id))
+})
+
+export const unfollowStoreHandler = asyncHandler(async (req, res) => {
+  return res.status(200).json(await unfollowStore(req.user.id, req.validatedParams.id))
 })

@@ -9,6 +9,7 @@ import {
   Send,
   ShieldAlert,
   ShoppingBag,
+  Store,
   TrendingDown,
   X,
 } from 'lucide-react'
@@ -79,6 +80,10 @@ const notificationPresentation = {
     icon: ShoppingBag,
     iconClass: 'bg-accent-tint text-accent',
   },
+  NEW_FROM_FOLLOWED_STORE: {
+    icon: Store,
+    iconClass: 'bg-accent text-page',
+  },
 }
 
 function getNotificationTarget(notification, role) {
@@ -106,6 +111,11 @@ function getNotificationTarget(notification, role) {
     notification.relatedListingId &&
     notification.type === 'LISTING_APPROVED'
   ) {
+    return `/listings/${notification.relatedListingId}`
+  }
+
+  // A followed store's new phone opens that phone.
+  if (notification.type === 'NEW_FROM_FOLLOWED_STORE' && notification.relatedListingId) {
     return `/listings/${notification.relatedListingId}`
   }
 

@@ -344,7 +344,7 @@ export async function reviewSeller(sellerId, decision, feedback = '') {
 // ---------------------------------------------------------------------------
 
 /** Columns the storefront may expose. Deliberately an allowlist. */
-const publicSellerSelect = {
+export const publicSellerSelect = {
   id: true,
   businessName: true,
   verificationStatus: true,
@@ -391,7 +391,7 @@ function toIso(value) {
   return value instanceof Date ? value.toISOString() : value
 }
 
-function presentPublicSeller(seller) {
+export function presentPublicSeller(seller) {
   const ratingCount = Number(seller.ratingCount ?? 0)
   const location = [seller.city, seller.region].filter(Boolean).join(', ')
 

@@ -154,6 +154,9 @@ const ComparePage = lazy(() =>
 const SellerApplyPage = lazy(() =>
   import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.SellerApplyPage })),
 )
+const StoresPage = lazy(() =>
+  import('./pages/StoresPage.jsx').then((module) => ({ default: module.StoresPage })),
+)
 const SellerStorefrontPage = lazy(() =>
   import('./pages/SellerStorefrontPage.jsx').then((module) => ({
     default: module.SellerStorefrontPage,
@@ -238,6 +241,7 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.terms} element={<TermsPage />} />
                 <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
                 <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
+                <Route path={MARKETPLACE_ROUTES.stores} element={<StoresPage />} />
                 <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
 
                 {/* Purchasing is buyer-only. The guard sits *inside* the marketplace

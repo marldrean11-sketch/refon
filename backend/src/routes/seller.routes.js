@@ -1,6 +1,10 @@
 import { Router } from 'express'
 import {
   applySeller,
+  followStoreHandler,
+  getFollowStateHandler,
+  getStoreDirectoryHandler,
+  unfollowStoreHandler,
   getMySellerProfile,
   getStorefrontListings,
   getStorefrontProfile,
@@ -8,9 +12,11 @@ import {
   updateMyPaymentDetails,
   updateMyStorefront,
 } from '../controllers/seller.controller.js'
-import { authenticate, requireRole } from '../middlewares/auth.middleware.js'
+import { authenticate, optionalAuthenticate, requireRole } from '../middlewares/auth.middleware.js'
+import { favoritesLimiter } from '../middlewares/rate-limit.middleware.js'
 import {
   validateApplySeller,
+  validateDirectoryQuery,
   validatePaymentDetails,
   validateStorefrontSettings,
   validatePublicSellerId,
@@ -29,6 +35,7 @@ const router = Router()
  * a shopper lands on a storefront from a listing while signed out - so the auth
  * gate has to be declared after them rather than wrapping the whole router.
  */
+router.get('/', optionalAuthenticate, validateDirectoryQuery, getStoreDirectoryHandler)
 router.get('/me', authenticate, getMySellerProfile)
 router.patch(
   '/me/payment',
@@ -46,6 +53,16 @@ router.patch(
 )
 
 router.get('/:id', validatePublicSellerId, getStorefrontProfile)
+router.get('/:id/follow', validatePublicSellerId, optionalAuthenticate, getFollowStateHandler)
+router.post(
+  '/:id/follow',
+  validatePublicSellerId,
+  authenticate,
+  requireRole('BUYER', 'SELLER'),
+  favoritesLimiter,
+  followStoreHandler,
+)
+router.delete('/:id/follow', validatePublicSellerId, authenticate, favoritesLimiter, unfollowStoreHandler)
 router.get(
   '/:id/listings',
   validatePublicSellerId,

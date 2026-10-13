@@ -19,6 +19,12 @@ export const NAVBAR_LINKS = [
     activePaths: ['/phones', '/browse', '/phones/*', '/listings/*', '/compare'],
   },
   {
+    key: 'stores',
+    label: 'Visit Stores',
+    to: '/stores',
+    activePaths: ['/stores', '/sellers/*'],
+  },
+  {
     key: 'healthCheck',
     label: 'Health check',
     to: '/health-check',

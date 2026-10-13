@@ -40,6 +40,7 @@ enum NotificationType {
   INQUIRY_REPLY
   ORDER_PLACED
   ORDER_UPDATED
+  NEW_FROM_FOLLOWED_STORE
 }
 
 enum OrderStatus {
@@ -98,6 +99,7 @@ model User {
   orders         Order[]        @relation("BuyerOrders")
   tradeIns       TradeInRequest[]
   favorites      Favorite[]
+  storeFollows   StoreFollow[]
   reportsMade    Report[]        @relation("ReportReporter")
   reportsHandled Report[]        @relation("ReportResolver")
   authTokens     AuthToken[]
@@ -140,6 +142,7 @@ model Seller {
   user     User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   listings Listing[]
   orders   Order[]
+  followers StoreFollow[]
 
   @@index([verificationStatus])
   @@index([ratingAverage])
@@ -287,6 +290,21 @@ model InquiryReply {
 
   @@index([inquiryId, createdAt])
   @@map("inquiry_replies")
+}
+
+/// A buyer following a phone store, to hear when it lists a new phone.
+model StoreFollow {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  sellerId  String   @map("seller_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  seller Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([userId, sellerId])
+  @@index([sellerId])
+  @@map("store_follows")
 }
 
 model Favorite {

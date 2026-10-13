@@ -122,3 +122,22 @@ const storefrontSchema = z
   .strict()
 
 export const validateStorefrontSettings = validate(storefrontSchema)
+
+const directoryQuerySchema = z
+  .object({
+    q: z.string().trim().max(120).optional(),
+    city: z.string().trim().max(120).optional(),
+    sort: z.enum(['rating', 'sales', 'newest'], { error: 'Unsupported sort option.' }).default('rating'),
+    following: z.preprocess((value) => value === 'true' || value === '1', z.boolean()).optional(),
+    page: z.preprocess(
+      (value) => (value === '' || value === undefined ? undefined : Number(value)),
+      z.number().int().min(1).max(10000).optional().default(1),
+    ),
+    limit: z.preprocess(
+      (value) => (value === '' || value === undefined ? undefined : Number(value)),
+      z.number().int().min(1).max(48).optional().default(12),
+    ),
+  })
+  .strict()
+
+export const validateDirectoryQuery = validateQuery(directoryQuerySchema)

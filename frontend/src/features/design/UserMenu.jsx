@@ -9,6 +9,7 @@ import { useSavedListings } from '../favorites/useSavedListings.js'
 import { quickTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 import {
   ACCOUNT_NAV,
+  FOLLOWING_STORES_LINK,
   SELLER_INQUIRIES_LINK,
   canUseBuyerDestinations,
   canUseSellerInquiries,
@@ -184,6 +185,13 @@ export function UserMenu() {
                     )}
                   </Link>
                 ))}
+
+              {(user.role === 'BUYER' || user.role === 'SELLER') && (
+                <Link to={FOLLOWING_STORES_LINK.to} className={MENU_ITEM}>
+                  <FOLLOWING_STORES_LINK.icon className="size-4 shrink-0 text-subtle" aria-hidden="true" />
+                  {FOLLOWING_STORES_LINK.label}
+                </Link>
+              )}
 
               {showSellerInquiries && (
                 <Link to={SELLER_INQUIRIES_LINK.to} className={MENU_ITEM}>
