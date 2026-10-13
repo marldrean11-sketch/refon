@@ -5,13 +5,14 @@ import { SITE_INFO } from '../../content/site-info.js'
 /**
  * The floating "Chat with us" button, bottom-right.
  *
- * It opens a small menu of ways to reach the team: email and phone. Escape or a
- * click outside closes it.
+ * It opens a small menu of ways to reach the team: Viber when its link is set
+ * in `site-info.js` (shown as "coming soon" until then),
+ * plus email and phone, which always work. Escape or a click outside closes it.
  */
 export function ChatButton() {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
-  const { contact } = SITE_INFO
+  const { chat, contact } = SITE_INFO
 
   useEffect(() => {
     if (!open) return undefined
@@ -28,6 +29,7 @@ export function ChatButton() {
   }, [open])
 
   const options = [
+    { key: 'viber', label: 'Viber', href: chat.viber, icon: Phone },
     { key: 'email', label: contact.email, href: `mailto:${contact.email}`, icon: Mail },
     { key: 'phone', label: contact.phone, href: contact.phoneHref, icon: Phone },
   ]
