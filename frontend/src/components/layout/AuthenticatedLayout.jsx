@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { SiteFooter } from '../../features/design/SiteFooter.jsx'
 import { CustomCursor } from './CustomCursor.jsx'
 import { BackToTop } from './BackToTop.jsx'
+import { CompareTray } from '../../features/compare/CompareTray.jsx'
 import { PageSlider } from './PageSlider.jsx'
 import { WelcomeBurst } from './WelcomeBurst.jsx'
 import { PopChallenge } from './PopChallenge.jsx'
@@ -46,6 +47,8 @@ export function AuthenticatedLayout() {
       </main>
 
       <SiteFooter />
+      {/* Saved phones can be picked for comparison here too. */}
+      <CompareTray />
       <BackToTop />
       <PageSlider />
       <WelcomeBurst />

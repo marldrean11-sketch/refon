@@ -22,7 +22,7 @@ import { Container } from '../features/design/Container.jsx'
  * screen, which made it feel like a different product from the shop.
  */
 export function SavedListingsPage() {
-  const { refresh, savedIds, toggle } = useSavedListings()
+  const { refresh, savedIds, toggle, isLoading: isSavedLoading } = useSavedListings()
   const [listings, setListings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -45,6 +45,11 @@ export function SavedListingsPage() {
     // eslint-disable-next-line react/set-state-in-effect
     load().catch(() => {})
   }, [load])
+
+  // Un-hearting a phone on this page removes it at once: the shared saved set is
+  // the source of truth once it has loaded.
+  const visibleListings =
+    isSavedLoading || !savedIds ? listings : listings.filter((listing) => savedIds.has(listing.id))
 
   /** Drops a sold phone from the shelf; the card goes at once, the request follows. */
   async function removeSold(id) {
@@ -79,7 +84,7 @@ export function SavedListingsPage() {
               </p>
             </div>
 
-            {!isLoading && !error && listings.length > 0 && (
+            {!isLoading && !error && visibleListings.length > 0 && (
               <div className="shrink-0 border-l-2 border-primary-950 pl-4">
                 <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle">
                   Saved
@@ -88,7 +93,7 @@ export function SavedListingsPage() {
                   className="font-display text-2xl font-bold tabular-nums leading-none tracking-tight text-ink"
                   aria-live="polite"
                 >
-                  {listings.length}
+                  {visibleListings.length}
                 </p>
               </div>
             )}
@@ -111,7 +116,7 @@ export function SavedListingsPage() {
               refresh?.().catch(() => {})
             }}
           />
-        ) : listings.length === 0 ? (
+        ) : visibleListings.length === 0 ? (
           <EmptyState
             icon={Heart}
             kicker="Nothing saved yet"
@@ -123,9 +128,9 @@ export function SavedListingsPage() {
         ) : (
           <>
             <ul className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
-              {listings.map((listing) => (
+              {visibleListings.map((listing) => (
                 <li key={listing.id} className="flex flex-col gap-2">
-                  <ListingCard listing={listing} hideSaveButton />
+                  <ListingCard listing={listing} />
                   {listing.status === 'SOLD' && (
                     <button
                       type="button"
