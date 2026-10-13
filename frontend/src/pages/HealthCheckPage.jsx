@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, ClipboardCopy, Info, RotateCcw, Smartphone } from 'lucide-react'
+import { ArrowRight, ClipboardCopy, Info, RotateCcw, Share2, Smartphone } from 'lucide-react'
 import QRCode from 'qrcode'
 import { Breadcrumb } from '../components/ui/Breadcrumb.jsx'
 import { Button, ButtonLink } from '../components/ui/Button.jsx'
@@ -28,6 +28,7 @@ import {
 } from '../features/health-check/InlineTests.jsx'
 import { INSPECTION_CHECKS } from '../lib/listing-taxonomy.js'
 import { UpgradePicks } from '../features/health-check/UpgradePicks.jsx'
+import { drawShareCard, shareCard } from '../features/health-check/share-card.js'
 import {
   checkedTodayLabel,
   recordHealthCheckRun,
@@ -70,6 +71,7 @@ export function HealthCheckPage() {
   const [facts] = useState(readDeviceFacts)
   const [results, setResults] = useState({})
   const [active, setActive] = useState(null)
+  const [isSharing, setIsSharing] = useState(false)
 
   const finish = useCallback((id, status, note) => {
     setResults((current) => ({ ...current, [id]: { status, note } }))
@@ -113,6 +115,20 @@ export function HealthCheckPage() {
       toast.error("Couldn't copy the report", {
         description: 'Your browser blocked clipboard access.',
       })
+    }
+  }
+
+  async function handleShare() {
+    setIsSharing(true)
+    try {
+      const outcome = await shareCard(await drawShareCard(results))
+      if (outcome === 'downloaded') {
+        toast.success('Result card saved', { description: 'Post it or send it to a friend.' })
+      }
+    } catch {
+      toast.error("Couldn't make the result card")
+    } finally {
+      setIsSharing(false)
     }
   }
 
@@ -205,6 +221,15 @@ export function HealthCheckPage() {
               <Button variant="primary" onClick={copyReport} disabled={counts.done === 0}>
                 <ClipboardCopy className="size-4" aria-hidden="true" />
                 Copy report
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleShare}
+                disabled={counts.done === 0 || isSharing}
+                data-testid="share-health-card"
+              >
+                <Share2 className="size-4" aria-hidden="true" />
+                {isSharing ? 'Making your card…' : 'Share result card'}
               </Button>
               {counts.done > 0 && (
                 <Button

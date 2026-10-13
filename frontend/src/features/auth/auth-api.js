@@ -46,3 +46,10 @@ export function verifyEmailRequest(token) {
 export function resendVerificationRequest() {
   return apiRequest('/auth/resend-verification', { method: 'POST' })
 }
+
+export function demoLoginRequest(role) {
+  return apiRequest('/auth/demo-login', {
+    method: 'POST',
+    body: { role },
+  })
+}

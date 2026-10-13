@@ -98,6 +98,8 @@ export const env = Object.freeze({
     .filter(Boolean),
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
+  // One-click "try as buyer / seller" sign-in for the booth. On unless set to off.
+  demoLogin: process.env.DEMO_LOGIN !== 'off',
   authCookieName: 'refon_token',
   reservationMinutes,
   reservationMs: reservationMinutes * 60 * 1000,

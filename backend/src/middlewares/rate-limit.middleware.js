@@ -29,6 +29,8 @@ function createLimiter({ windowMs, limit }) {
 }
 
 export const authLimiter = createLimiter({ windowMs: fifteenMinutes, limit: 10 })
+/** Demo sign-in checks no password, and a booth shares one IP among many visitors. */
+export const demoLoginLimiter = createLimiter({ windowMs: fifteenMinutes, limit: 60 })
 
 export const inquiryLimiter = createLimiter({ windowMs: tenMinutes, limit: 5 })
 /** Replies in an existing inquiry thread: a conversation, so looser than new inquiries. */

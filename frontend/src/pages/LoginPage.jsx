@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertCircle, ArrowRight } from 'lucide-react'
+import { AlertCircle, ArrowRight, ShoppingBag, Store } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
 import { celebrateNextPage } from '../components/layout/WelcomeBurst.jsx'
@@ -27,11 +27,12 @@ function focusFirstField(fieldName) {
 }
 
 export function LoginPage() {
-  const { login, initializationError } = useAuth()
+  const { login, demoLogin, initializationError } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [demoRole, setDemoRole] = useState(null)
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -40,6 +41,40 @@ export function LoginPage() {
     setForm((current) => ({ ...current, [name]: value }))
     setFieldErrors((current) => ({ ...current, [name]: undefined }))
     setFormError('')
+  }
+
+  function finishSignIn(user) {
+    // Where they were going, if it is safe to send them there.
+    //
+    // The destination is honoured for every role, not just a buyer. A seller who
+    // clicked a heart on a product page and signed in should land back on that
+    // product, not on their dashboard. The routes a role genuinely cannot use —
+    // `/cart`, `/checkout` — are dealt with by `RequireBuyer` on arrival, which
+    // sends a non-buyer to their own workspace, so there is no need to second-guess
+    // the role here.
+    const destination = getSafeDestination(location.state?.from, getRoleHome(user.role))
+
+    // A pending intent only means something for a buyer. A seller or admin who signs
+    // in gets it dropped, so it cannot fire later under a different account.
+    if (!canUseBuyerDestinations(user)) {
+      clearIntent()
+    }
+
+    celebrateNextPage('login')
+    navigate(destination, { replace: true })
+  }
+
+  async function handleDemo(role) {
+    setDemoRole(role)
+    setFieldErrors({})
+    setFormError('')
+    try {
+      finishSignIn(await demoLogin(role))
+    } catch (error) {
+      setFormError(error.message ?? 'The demo account is not available right now.')
+    } finally {
+      setDemoRole(null)
+    }
   }
 
   async function handleSubmit(event) {
@@ -62,24 +97,7 @@ export function LoginPage() {
         password: form.password,
       })
 
-      // Where they were going, if it is safe to send them there.
-      //
-      // The destination is honoured for every role, not just a buyer. A seller who
-      // clicked a heart on a product page and signed in should land back on that
-      // product, not on their dashboard. The routes a role genuinely cannot use —
-      // `/cart`, `/checkout` — are dealt with by `RequireBuyer` on arrival, which
-      // sends a non-buyer to their own workspace, so there is no need to second-guess
-      // the role here.
-      const destination = getSafeDestination(location.state?.from, getRoleHome(user.role))
-
-      // A pending intent only means something for a buyer. A seller or admin who signs
-      // in gets it dropped, so it cannot fire later under a different account.
-      if (!canUseBuyerDestinations(user)) {
-        clearIntent()
-      }
-
-      celebrateNextPage('login')
-      navigate(destination, { replace: true })
+      finishSignIn(user)
     } catch (error) {
       const fieldErrors = error.errors ?? {}
       setFieldErrors(fieldErrors)
@@ -199,7 +217,34 @@ export function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-7 border-t border-line pt-6 text-center text-sm text-muted">
+        <div className="mt-7 rounded-2xl border border-dashed border-line-2 p-4" data-testid="demo-login">
+          <p className="text-center font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-accent">
+            Visiting the booth? Try it in one tap
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {[
+              { role: 'BUYER', label: 'Demo buyer', icon: ShoppingBag },
+              { role: 'SELLER', label: 'Demo seller', icon: Store },
+            ].map(({ role, label, icon: Icon }) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => handleDemo(role)}
+                disabled={isSubmitting || demoRole !== null}
+                data-testid={`demo-login-${role.toLowerCase()}`}
+                className="rf-bounce inline-flex min-h-11 items-center justify-center gap-2 rounded-control border border-line-2 bg-well px-3 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent disabled:opacity-50"
+              >
+                <Icon className="size-4" aria-hidden="true" />
+                {demoRole === role ? 'Signing in…' : label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-center text-xs text-subtle">
+            Shared sample accounts. Don&rsquo;t enter real personal details.
+          </p>
+        </div>
+
+        <p className="mt-6 border-t border-line pt-6 text-center text-sm text-muted">
           New to ReFon?{' '}
           <Link
             to={registerHref}

@@ -137,3 +137,7 @@ const verifyEmailSchema = z
 export const validateForgotPassword = validate(forgotPasswordSchema)
 export const validateResetPassword = validate(resetPasswordSchema)
 export const validateVerifyEmail = validate(verifyEmailSchema)
+
+export const validateDemoLogin = validate(
+  z.object({ role: z.enum(['BUYER', 'SELLER']) }).strict(),
+)

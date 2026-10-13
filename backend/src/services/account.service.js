@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
+import { isDemoEmail } from '../utils/demo-accounts.js'
 import { hashPassword, publicUserSelect, toPublicUser } from './auth.service.js'
 
 export async function updateProfile(userId, { name, phone, defaultAddress }) {
@@ -32,6 +33,14 @@ export async function changePassword(userId, { currentPassword, newPassword }) {
 
   if (!user) {
     throw new ApiError(401, 'Your session is no longer valid.', 'SESSION_INVALID')
+  }
+
+  if (isDemoEmail(user.email)) {
+    throw new ApiError(
+      403,
+      'The demo account password cannot be changed. Create your own account to try this.',
+      'DEMO_ACCOUNT_LOCKED',
+    )
   }
 
   const currentMatches = await bcrypt.compare(currentPassword, user.passwordHash)

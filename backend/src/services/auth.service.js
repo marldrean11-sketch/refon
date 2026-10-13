@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
+import { DEMO_ACCOUNTS } from '../utils/demo-accounts.js'
+import { env } from '../config/env.js'
 import { consumeAuthToken, issueAuthToken } from './auth-token.service.js'
 import {
   sendEmailVerificationEmail,
@@ -141,6 +143,27 @@ export async function authenticateUser({ email, password }) {
 
   // Checked only after the password, so a suspension is not revealed to someone
   // guessing an email address.
+  if (user.suspendedAt) {
+    throw suspendedError()
+  }
+
+  return toPublicUser(user)
+}
+
+export async function loginDemoAccount(role) {
+  if (!env.demoLogin) {
+    throw new ApiError(404, 'Demo sign-in is turned off.', 'DEMO_LOGIN_DISABLED')
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: DEMO_ACCOUNTS[role] },
+    include: { seller: { select: publicSellerSelect } },
+  })
+
+  if (!user || user.role !== role) {
+    throw new ApiError(404, 'The demo account is not set up on this server.', 'DEMO_ACCOUNT_MISSING')
+  }
+
   if (user.suspendedAt) {
     throw suspendedError()
   }
