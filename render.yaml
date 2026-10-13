@@ -40,10 +40,25 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
-      # The free tier's disk is wiped on every deploy: seeded images live in the
-      # image itself, but uploaded photos need STORAGE_DRIVER=s3 to survive.
+      # The free tier's disk is wiped on every deploy, so uploaded photos go to
+      # an S3-compatible bucket (the hosted demo uses Supabase Storage). Seeded
+      # demo images still ship inside the image and are served from disk.
       - key: STORAGE_DRIVER
-        value: local
+        value: s3
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_REGION
+        sync: false
+      # Supabase: https://<project>.storage.supabase.co/storage/v1/s3
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      # Supabase and MinIO need path-style addressing.
+      - key: S3_FORCE_PATH_STYLE
+        value: "true"
       # Vercel forwards /api to this service (see vercel.json), so there are two
       # proxies in front of the API: Vercel, then Render. Use "1" if visitors
       # open the Render address directly instead.
