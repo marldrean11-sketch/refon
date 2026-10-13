@@ -10,4 +10,4 @@ Disallow: /my-inquiries
 Disallow: /cart
 Disallow: /orders
 
-Sitemap: https://refon.onrender.com/sitemap.xml
+Sitemap: https://refon-lake.vercel.app/sitemap.xml
