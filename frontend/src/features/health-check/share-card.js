@@ -168,32 +168,41 @@ export async function drawShareCard(results) {
   })
 }
 
+const CARD_FILE_NAME = 'refon-health-check.png'
+
+function cardFile(blob) {
+  return new File([blob], CARD_FILE_NAME, { type: 'image/png' })
+}
+
+/** Whether this browser's share sheet can take the card as a file. */
+export function canShareCard(blob) {
+  return Boolean(navigator.canShare?.({ files: [cardFile(blob)] }))
+}
+
 /**
- * Opens the phone's share sheet with the card when it can take a file;
- * otherwise saves the PNG. Resolves to 'shared', 'downloaded' or 'cancelled'.
+ * Opens the phone's share sheet with the card. Resolves to 'shared' or
+ * 'cancelled'; throws when the browser refuses.
  */
 export async function shareCard(blob) {
-  const file = new File([blob], 'refon-health-check.png', { type: 'image/png' })
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({
-        files: [file],
-        title: 'My ReFon phone health check',
-        text: `I checked my phone on ReFon. Try it: ${SITE_INFO.url}${MARKETPLACE_ROUTES.healthCheck}`,
-      })
-      return 'shared'
-    } catch (error) {
-      if (error?.name === 'AbortError') return 'cancelled'
-    }
+  try {
+    await navigator.share({
+      files: [cardFile(blob)],
+      title: 'My ReFon phone health check',
+      text: `I checked my phone on ReFon. Try it: ${SITE_INFO.url}${MARKETPLACE_ROUTES.healthCheck}`,
+    })
+    return 'shared'
+  } catch (error) {
+    if (error?.name === 'AbortError') return 'cancelled'
+    throw error
   }
+}
 
-  const href = URL.createObjectURL(blob)
+/** Saves the card as a PNG through an ordinary download link. */
+export function downloadCard(href) {
   const link = document.createElement('a')
   link.href = href
-  link.download = file.name
+  link.download = CARD_FILE_NAME
   document.body.append(link)
   link.click()
   link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(href), 2000)
-  return 'downloaded'
 }
