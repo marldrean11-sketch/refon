@@ -153,6 +153,12 @@ function createS3Driver(config) {
           region: config.region,
           ...(config.endpoint ? { endpoint: config.endpoint } : {}),
           forcePathStyle: config.forcePathStyle,
+          // Recent SDK versions add CRC checksums to every upload and check them on
+          // every download by default. Not every S3-compatible provider (Supabase,
+          // older R2 and MinIO setups) accepts that, so only send checksums when an
+          // operation requires one, as the SDK did before.
+          requestChecksumCalculation: 'WHEN_REQUIRED',
+          responseChecksumValidation: 'WHEN_REQUIRED',
           credentials: {
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
