@@ -17,3 +17,10 @@ export function updatePaymentDetailsRequest(values) {
     body: values,
   })
 }
+
+export function updateStorefrontRequest(values) {
+  return apiRequest('/sellers/me/storefront', {
+    method: 'PATCH',
+    body: values,
+  })
+}

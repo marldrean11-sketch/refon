@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useApprovedListings } from '../features/listings/useApprovedListings.js'
 import { HomeHero } from '../features/homepage/HomeHero.jsx'
+import { SocialProofSection } from '../features/homepage/SocialProofSection.jsx'
 import { TrustStripSection } from '../features/homepage/TrustStripSection.jsx'
 import { BoothFeaturesSection } from '../features/homepage/BoothFeaturesSection.jsx'
 import { FeaturedCategoriesSection } from '../features/homepage/FeaturedCategoriesSection.jsx'
@@ -66,6 +67,7 @@ export function LandingPage() {
       <HomeHero listings={listings} featured={featured} />
       <BoothFeaturesSection />
       <TrustStripSection />
+      <SocialProofSection />
       <FeaturedCategoriesSection />
       <NewArrivalsSection listings={listings} isLoading={isLoading} />
       <GradingSection />

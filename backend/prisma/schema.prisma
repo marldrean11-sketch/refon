@@ -118,6 +118,10 @@ model Seller {
   city               String?                  @db.VarChar(120)
   region             String?                  @db.VarChar(120)
   tagline            String?                  @db.VarChar(200)
+  /// Storefront branding. Paths under /uploads; the colour is a named preset.
+  logoUrl            String?                  @map("logo_url") @db.VarChar(500)
+  bannerUrl          String?                  @map("banner_url") @db.VarChar(500)
+  brandColor         String?                  @map("brand_color") @db.VarChar(20)
   /// Denormalised from completed orders so the catalog can sort by rating
   /// without joining through the order table on every query.
   ratingAverage      Decimal                  @default(0) @map("rating_average") @db.Decimal(3, 2)

@@ -114,7 +114,50 @@ export async function getSellerProfile(userId) {
     throw new ApiError(404, 'No seller profile exists for this account.', 'SELLER_NOT_FOUND')
   }
 
-  return { ...presentSeller(seller), paymentDetails: presentPaymentDetails(seller) }
+  return {
+    ...presentSeller(seller),
+    paymentDetails: presentPaymentDetails(seller),
+    storefront: presentStorefrontSettings(seller),
+  }
+}
+
+/** The seller's own editable storefront fields. */
+export function presentStorefrontSettings(seller) {
+  return {
+    tagline: seller.tagline ?? '',
+    city: seller.city ?? '',
+    region: seller.region ?? '',
+    logoUrl: seller.logoUrl ?? '',
+    bannerUrl: seller.bannerUrl ?? '',
+    brandColor: seller.brandColor ?? '',
+  }
+}
+
+export async function updateStorefrontSettings(userId, values) {
+  const existing = await prisma.seller.findUnique({ where: { userId }, select: { id: true } })
+  if (!existing) {
+    throw new ApiError(404, 'No seller profile exists for this account.', 'SELLER_NOT_FOUND')
+  }
+
+  const clean = (value) => (value === undefined ? undefined : value.trim() || null)
+  const seller = await prisma.seller.update({
+    where: { userId },
+    data: {
+      tagline: clean(values.tagline),
+      city: clean(values.city),
+      region: clean(values.region),
+      logoUrl: clean(values.logoUrl),
+      bannerUrl: clean(values.bannerUrl),
+      brandColor: clean(values.brandColor),
+    },
+    include: { user: { select: { id: true, name: true, email: true } } },
+  })
+
+  return {
+    ...presentSeller(seller),
+    paymentDetails: presentPaymentDetails(seller),
+    storefront: presentStorefrontSettings(seller),
+  }
 }
 
 export async function getPendingSellers() {
@@ -158,6 +201,9 @@ function presentSellerForAdmin(seller, listingCounts) {
     city: seller.city ?? null,
     region: seller.region ?? null,
     tagline: seller.tagline ?? null,
+    logoUrl: seller.logoUrl ?? null,
+    bannerUrl: seller.bannerUrl ?? null,
+    brandColor: seller.brandColor ?? null,
     ratingAverage: Number(seller.ratingAverage),
     ratingCount: seller.ratingCount,
     completedSales: seller.completedSales,
@@ -306,6 +352,9 @@ const publicSellerSelect = {
   city: true,
   region: true,
   tagline: true,
+  logoUrl: true,
+  bannerUrl: true,
+  brandColor: true,
   ratingAverage: true,
   ratingCount: true,
   completedSales: true,
@@ -352,6 +401,9 @@ function presentPublicSeller(seller) {
     verificationStatus: seller.verificationStatus,
     isVerified: seller.verificationStatus === 'APPROVED',
     tagline: seller.tagline ?? null,
+    logoUrl: seller.logoUrl ?? null,
+    bannerUrl: seller.bannerUrl ?? null,
+    brandColor: seller.brandColor ?? null,
     // `city` and `region` are the storefront's own public fields. `contactInfo` is
     // never read here, so there is no path by which a phone number or an email
     // address can reach this payload.

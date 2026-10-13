@@ -26,6 +26,7 @@ import { ConfirmDialog } from '../features/seller/components/ConfirmDialog.jsx'
 import { SellerStatusBadge } from '../features/seller/components/SellerStatusBadge.jsx'
 import { LowerPriceDialog } from '../features/seller/components/LowerPriceDialog.jsx'
 import { PaymentDetailsCard } from '../features/seller/components/PaymentDetailsCard.jsx'
+import { StorefrontSettingsCard } from '../features/seller/components/StorefrontSettingsCard.jsx'
 import { AUTH_ROUTES, DASHBOARD_ROUTES } from '../features/auth/auth.routes.js'
 import { StatStripSkeleton, Skeleton } from '../components/ui/Skeleton.jsx'
 import { EmptyState, ErrorState } from '../components/ui/StateViews.jsx'
@@ -553,7 +554,11 @@ export function SellerDashboardPage() {
               </div>
 
               {verificationStatus === 'APPROVED' && (
-                <div className="mt-8">
+                <div className="mt-8 space-y-6">
+                  <StorefrontSettingsCard
+                    seller={seller}
+                    onSaved={() => refreshProfile({ silent: true }).catch(() => {})}
+                  />
                   <PaymentDetailsCard
                     seller={seller}
                     onSaved={() => refreshProfile({ silent: true }).catch(() => {})}

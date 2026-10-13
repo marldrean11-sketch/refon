@@ -21,6 +21,8 @@ export const listingInclude = {
       city: true,
       region: true,
       tagline: true,
+      logoUrl: true,
+      brandColor: true,
       ratingAverage: true,
       ratingCount: true,
       completedSales: true,
@@ -689,6 +691,12 @@ export async function getPopularSearches(limit = 6) {
   return [...counts.values()].sort((left, right) => right.count - left.count).slice(0, limit)
 }
 
+/** The product page also says how many shoppers saved the phone. */
+async function withSaveCount(listing) {
+  const saveCount = await prisma.favorite.count({ where: { listingId: listing.id } })
+  return { ...presentListing(listing), saveCount }
+}
+
 export async function getApprovedListing(id) {
   const listing = await prisma.listing.findFirst({
     where: { id, status: { in: ['APPROVED', 'SOLD'] } },
@@ -699,7 +707,7 @@ export async function getApprovedListing(id) {
     throw new ApiError(404, 'Approved listing not found.', 'LISTING_NOT_FOUND')
   }
 
-  return presentListing(listing)
+  return withSaveCount(listing)
 }
 
 /**
@@ -718,7 +726,7 @@ export async function getApprovedListingBySlug(slug) {
     throw new ApiError(404, 'Approved listing not found.', 'LISTING_NOT_FOUND')
   }
 
-  return presentListing(listing)
+  return withSaveCount(listing)
 }
 
 /**

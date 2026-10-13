@@ -101,3 +101,24 @@ const paymentDetailsSchema = z
   .strict()
 
 export const validatePaymentDetails = validate(paymentDetailsSchema)
+
+/** The storefront colour presets; the frontend maps each to its own swatch. */
+export const BRAND_COLORS = ['lime', 'sky', 'violet', 'coral', 'amber', 'mint']
+
+const uploadPathOrEmpty = z
+  .string()
+  .trim()
+  .regex(/^(\/uploads\/[A-Za-z0-9._-]+)?$/, 'Upload the image as a photo.')
+
+const storefrontSchema = z
+  .object({
+    tagline: z.string().trim().max(200, 'Tagline must be 200 characters or fewer.').optional(),
+    city: z.string().trim().max(120, 'City must be 120 characters or fewer.').optional(),
+    region: z.string().trim().max(120, 'Region must be 120 characters or fewer.').optional(),
+    logoUrl: uploadPathOrEmpty.optional(),
+    bannerUrl: uploadPathOrEmpty.optional(),
+    brandColor: z.union([z.enum(BRAND_COLORS), z.literal('')]).optional(),
+  })
+  .strict()
+
+export const validateStorefrontSettings = validate(storefrontSchema)

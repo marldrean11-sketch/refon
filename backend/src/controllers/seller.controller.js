@@ -5,6 +5,7 @@ import {
   getPublicSellerReviews,
   getSellerProfile,
   updatePaymentDetails,
+  updateStorefrontSettings,
 } from '../services/seller.service.js'
 import { getUserById } from '../services/auth.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
@@ -21,6 +22,11 @@ export const applySeller = asyncHandler(async (req, res) => {
 
 export const updateMyPaymentDetails = asyncHandler(async (req, res) => {
   const seller = await updatePaymentDetails(req.user.id, req.validatedBody)
+  return res.status(200).json({ seller })
+})
+
+export const updateMyStorefront = asyncHandler(async (req, res) => {
+  const seller = await updateStorefrontSettings(req.user.id, req.validatedBody)
   return res.status(200).json({ seller })
 })
 

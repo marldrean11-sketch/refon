@@ -6,11 +6,13 @@ import {
   getStorefrontProfile,
   getStorefrontReviews,
   updateMyPaymentDetails,
+  updateMyStorefront,
 } from '../controllers/seller.controller.js'
 import { authenticate, requireRole } from '../middlewares/auth.middleware.js'
 import {
   validateApplySeller,
   validatePaymentDetails,
+  validateStorefrontSettings,
   validatePublicSellerId,
   validateStorefrontQuery,
 } from '../validators/seller.validator.js'
@@ -34,6 +36,13 @@ router.patch(
   requireRole('SELLER'),
   validatePaymentDetails,
   updateMyPaymentDetails,
+)
+router.patch(
+  '/me/storefront',
+  authenticate,
+  requireRole('SELLER'),
+  validateStorefrontSettings,
+  updateMyStorefront,
 )
 
 router.get('/:id', validatePublicSellerId, getStorefrontProfile)

@@ -8,23 +8,7 @@ import { MetricStrip } from '../../design/Surfaces.jsx'
 import { Breadcrumb } from '../../../components/ui/Breadcrumb.jsx'
 import { formatNumber } from '../../../lib/format.js'
 import { MARKETPLACE_ROUTES } from '../../../lib/routes.js'
-
-/** First two letters of the store name, for the monogram. */
-function monogramFor(name) {
-  const parts = String(name ?? '')
-    .split(' ')
-    .filter(Boolean)
-
-  if (parts.length === 0) {
-    return '?'
-  }
-
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase()
-  }
-
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-}
+import { SellerAvatar, brandColorFor } from '../brand.jsx'
 
 /** The header skeleton. Mirrors the real header so nothing jumps on load. */
 export function StorefrontHeaderSkeleton() {
@@ -63,10 +47,29 @@ export function StorefrontHeader({ seller }) {
   const ratingCount = Number(seller.ratingCount ?? 0)
   const hasRating = ratingCount > 0 && seller.ratingAverage != null
   const listingCount = Number(seller.approvedListings ?? 0)
+  const color = brandColorFor(seller)
 
   return (
     <div className="border-b border-line bg-surface">
-      <Container className="py-10 sm:py-14">
+      {/* The store's banner, or a wash of its colour when it has none. */}
+      <div
+        className="relative h-32 overflow-hidden sm:h-48"
+        style={{ background: `linear-gradient(120deg, ${color.hex}55, ${color.hex}10 55%, transparent)` }}
+        data-testid="storefront-banner"
+      >
+        {seller.bannerUrl && (
+          <img
+            src={seller.bannerUrl}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+            onError={(event) => {
+              event.currentTarget.style.display = 'none'
+            }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent" />
+      </div>
+      <Container className="relative -mt-14 pb-10 sm:-mt-20 sm:pb-14">
         <Breadcrumb
           items={[
             { label: 'Home', to: MARKETPLACE_ROUTES.home },
@@ -76,12 +79,10 @@ export function StorefrontHeader({ seller }) {
         />
 
         <div className="mt-7 flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-7">
-          <span
-            className="grid size-16 shrink-0 place-items-center rounded-control bg-accent-600 font-display text-xl font-bold text-white"
-            aria-hidden="true"
-          >
-            {monogramFor(seller.businessName)}
-          </span>
+          <SellerAvatar
+            seller={seller}
+            className="size-20 border-4 border-surface text-2xl shadow-pop sm:size-24 sm:text-3xl"
+          />
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
