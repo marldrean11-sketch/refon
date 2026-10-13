@@ -1,7 +1,7 @@
 import { BadgeCheck, Store, Truck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { isImageReference } from './image-reference.js'
+import { ListingPhoto } from './ListingPhoto.jsx'
 import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { FavoriteButton } from '../favorites/FavoriteButton.jsx'
 import { CompareToggle } from '../compare/CompareToggle.jsx'
@@ -121,17 +121,15 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
 
       {/* 1. The device. */}
       <div className="relative overflow-hidden border-b border-line bg-surface-2">
-        {isImageReference(mainPhoto) ? (
-          <img
-            src={mainPhoto}
-            alt={`${listing.brand} ${listing.model} in ${listing.color ?? 'as pictured'}`}
-            loading="lazy"
-            decoding="async"
-            width={800}
-            height={1000}
-            className="aspect-[4/5] w-full object-cover transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.04]"
-          />
-        ) : (
+        <ListingPhoto
+          src={mainPhoto}
+          alt={`${listing.brand} ${listing.model} in ${listing.color ?? 'as pictured'}`}
+          loading="lazy"
+          decoding="async"
+          width={800}
+          height={1000}
+          className="aspect-[4/5] w-full object-cover transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.04]"
+          fallback={
           <PhoneArtwork
             brand={listing.brand}
             model={listing.model}
@@ -142,7 +140,8 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
             showLabel={false}
             className="aspect-[4/5] w-full"
           />
-        )}
+          }
+        />
 
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
           <ConditionBadge grade={grade} />

@@ -1,4 +1,4 @@
-import { isImageReference } from '../../listings/image-reference.js'
+import { ListingPhoto } from '../../listings/ListingPhoto.jsx'
 
 /**
  * A small, honest device thumbnail for order summaries.
@@ -21,24 +21,10 @@ export function DeviceThumb({ listing, className = '', size = 'md' }) {
   const box =
     size === 'sm' ? 'size-14 rounded-lg' : 'w-20 rounded-xl sm:w-24'
 
-  if (isImageReference(photo)) {
-    return (
-      <img
-        src={photo}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        width={320}
-        height={240}
-        className={`${box} aspect-[4/3] shrink-0 object-cover ${className}`}
-      />
-    )
-  }
-
   const brand = String(listing?.brand ?? '')
   const initial = BRAND_INITIALS[brand.toLowerCase()] ?? brand.charAt(0).toUpperCase() ?? 'R'
 
-  return (
+  const tile = (
     <div
       className={`${box} grid shrink-0 place-items-center overflow-hidden bg-canvas ring-1 ring-inset ring-line ${className}`}
       role="img"
@@ -48,5 +34,18 @@ export function DeviceThumb({ listing, className = '', size = 'md' }) {
         {initial}
       </span>
     </div>
+  )
+
+  return (
+    <ListingPhoto
+      src={photo}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      width={320}
+      height={240}
+      className={`${box} aspect-[4/3] shrink-0 object-cover ${className}`}
+      fallback={tile}
+    />
   )
 }

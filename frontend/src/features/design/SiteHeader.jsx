@@ -238,7 +238,7 @@ function Header() {
                 to={AUTH_ROUTES.saved}
                 data-testid="navbar-saved"
                 aria-label={`Saved phones, ${savedCount} saved`}
-                className={`${ICON_BUTTON} rf-bounce relative hidden lg:grid`}
+                className={`${ICON_BUTTON} rf-bounce relative hidden min-[360px]:grid`}
               >
                 {/* Keyed on the count, so the heart pops again on every save. */}
                 <Heart

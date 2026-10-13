@@ -5,7 +5,7 @@ import { ConditionBadge } from '../../../components/ui/ConditionBadge.jsx'
 import { BatteryHealth } from '../../../components/ui/BatteryHealth.jsx'
 import { WarrantyBadge } from '../../../components/ui/WarrantyBadge.jsx'
 import { PhoneArtwork } from '../../listings/PhoneArtwork.jsx'
-import { isImageReference } from '../../listings/image-reference.js'
+import { ListingPhoto } from '../../listings/ListingPhoto.jsx'
 import { productPath } from '../../../lib/routes.js'
 import {
   deviceModel,
@@ -70,17 +70,15 @@ export function CartItemCard({ item, onRemove, isRemoving = false }) {
             unavailable ? 'opacity-45 grayscale' : ''
           }`}
         >
-          {isImageReference(mainPhoto) ? (
-            <img
-              src={mainPhoto}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              width={640}
-              height={480}
-              className="aspect-[4/3] w-full object-cover"
-            />
-          ) : (
+          <ListingPhoto
+            src={mainPhoto}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width={640}
+            height={480}
+            className="aspect-[4/3] w-full object-cover"
+            fallback={
             <PhoneArtwork
               brand={listing?.brand}
               model={listing?.model}
@@ -90,7 +88,8 @@ export function CartItemCard({ item, onRemove, isRemoving = false }) {
               showLabel={false}
               showColor={false}
             />
-          )}
+            }
+          />
         </Link>
 
         <div className="flex min-w-0 flex-1 flex-col">

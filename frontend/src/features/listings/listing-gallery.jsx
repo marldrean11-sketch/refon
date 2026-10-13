@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Images, Maximize2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { isImageReference } from './image-reference.js'
+import { ListingPhoto } from './ListingPhoto.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { standardTransition, usePrefersReducedMotion } from '../../lib/motion.ts'
 
@@ -143,10 +144,27 @@ export function ListingGallery({ listing }) {
       view,
       label,
       { eager = false, cover = true, compact = false } = {},
-    ) =>
-      isImageReference(view) ? (
-        <img
+    ) => {
+      const artwork = (
+        <PhoneArtwork
+          brand={listing.brand}
+          model={listing.model}
+          color={listing.color}
+          view={isImageReference(view) ? 'front' : view}
+          batteryPercent={batteryPercent}
+          className="h-full w-full"
+          // No label here. The gallery's own counter chip occupies the same
+          // corner and already distinguishes photos from illustrations; two
+          // chips in one corner overlap into an unreadable smudge.
+          showLabel={false}
+          showColor={!compact}
+        />
+      )
+
+      return (
+        <ListingPhoto
           src={view}
+          fallback={artwork}
           alt={`${listing.brand} ${listing.model} in ${
             listing.color && listing.color !== 'As pictured' ? listing.color : 'as pictured'
           }, ${label}`}
@@ -158,21 +176,8 @@ export function ListingGallery({ listing }) {
               : 'size-full object-contain'
           }
         />
-      ) : (
-        <PhoneArtwork
-          brand={listing.brand}
-          model={listing.model}
-          color={listing.color}
-          view={view}
-          batteryPercent={batteryPercent}
-          className="h-full w-full"
-          // No label here. The gallery's own counter chip occupies the same
-          // corner and already distinguishes photos from illustrations; two
-          // chips in one corner overlap into an unreadable smudge.
-          showLabel={false}
-          showColor={!compact}
-        />
-      ),
+      )
+    },
     [listing.brand, listing.model, listing.color, batteryPercent],
   )
 
