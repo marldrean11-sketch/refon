@@ -1,0 +1,43 @@
+# Takes fresh screenshots of the live website for the README.
+# Run it from GitHub: Actions → "README screenshots" → Run workflow.
+name: README screenshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: npm ci --prefix e2e-ui
+
+      - name: Install Chromium
+        run: npx --prefix e2e-ui playwright install --with-deps chromium
+
+      - name: Take screenshots of the live site
+        run: node e2e-ui/readme-screenshots.mjs
+
+      - name: Commit the screenshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Update README screenshots"
+            git push
+          fi

@@ -1,8 +1,65 @@
 # ReFon
 
-[![CI](https://github.com/OWNER/refon/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/refon/actions/workflows/ci.yml)
+[![CI](https://github.com/marldrean11-sketch/refon/actions/workflows/ci.yml/badge.svg)](https://github.com/marldrean11-sketch/refon/actions/workflows/ci.yml)
 
-ReFon is a moderated multi-seller marketplace for secondhand phones from the 2015–2024 model years. The public marketplace, seller workspace, admin moderation queues, and inquiries are connected to Express and PostgreSQL through Prisma.
+**Pre-loved phones. Tested in the open.** *Sulit na, legit pa.*
+
+ReFon is a moderated marketplace for second-hand smartphones. Every phone shows a condition grade (A/B/C), its measured battery health, an 11-point inspection result, a warranty term and a verified seller, so buying a used phone feels as safe as buying a new one. Visitors can also test their own phone in the browser and get a trade-in estimate for free.
+
+**Live website:** https://refon-lake.vercel.app · Built by BSCS 4B, Taguig City University · Techno Fair 2026, Booth #7
+
+![ReFon homepage](docs/screenshots/home-desktop.png)
+
+## Screenshots
+
+| Shop | Product page | Phone Stores |
+| --- | --- | --- |
+| ![Shop](docs/screenshots/shop-desktop.png) | ![Product page](docs/screenshots/product-desktop.png) | ![Phone Stores](docs/screenshots/stores-desktop.png) |
+
+| Home (mobile) | Health check (mobile) | Trade-in estimator (mobile) |
+| --- | --- | --- |
+| <img src="docs/screenshots/home-mobile.png" alt="Home on mobile" width="260"> | <img src="docs/screenshots/health-check-mobile.png" alt="Health check on mobile" width="260"> | <img src="docs/screenshots/trade-in-mobile.png" alt="Trade-in estimator on mobile" width="260"> |
+
+Screenshots are taken from the live site by the **README screenshots** workflow (Actions → README screenshots → Run workflow).
+
+## Features
+
+**Buyers**
+- Search and filter by brand, price, grade, battery health and storage; compare phones side by side
+- Product pages with grade explanation, inspection list, specs, reviews, share button and save count
+- Save phones (with price-drop alerts), recently viewed phones, follow stores
+- Cart with a 15-minute hold, checkout with cash on delivery, GCash, Maya or bank transfer
+- Orders with a status timeline, seller payment details after confirmation, and verified-purchase reviews
+- Saved mobile number and delivery address that prefill checkout
+
+**Sellers**
+- Apply, get verified, and list phones with photos, grade, battery health and inspection answers
+- Dashboard for listings, inquiries and orders; lower prices and mark phones sold
+- "Store look" branding (logo, banner, colour, tagline) and payment details (GCash, Maya, bank, QR)
+
+**Admins**
+- Approve or reject sellers and listings, resolve reports, take listings down
+- Manage users (suspend / reinstate), orders, trade-in requests and booth feedback
+
+**Everyone**
+- **Visit Stores:** a directory of verified phone stores with search, city filter, sorting and Follow
+- **Phone health check:** screen, touch, speaker, mic, cameras, vibration, motion sensors and battery, with a shareable result card
+- **Trade-in estimator:** an honest price range in six taps, which can be sent to ReFon as a request
+- **Booth extras:** one-tap demo buyer/seller logins, a first-visit tour, a kiosk mode (`/kiosk`) and a printable poster (`/booth-poster`)
+
+## Tech stack
+
+| Part | Technology |
+| --- | --- |
+| Website | React 19, Vite, Tailwind CSS, React Router 7, Framer Motion (installable PWA) |
+| API | Node.js, Express 5, Zod validation |
+| Database | PostgreSQL with Prisma ORM and migrations |
+| Photos | S3-compatible storage (Supabase Storage in production) |
+| Email | Brevo (HTTPS API) or SMTP |
+| Hosting | Vercel (website) · Render (API and database) · UptimeRobot (monitoring) |
+| Quality | oxlint, API end-to-end tests, Playwright UI suite, Docker builds on GitHub Actions |
+
+Quick start: see [Commands](#commands) for local development and [Deployment](#deployment) for hosting.
 
 ## Project structure
 
@@ -46,18 +103,13 @@ refon/
 
 The Tailwind theme lives in `frontend/tailwind.config.js`.
 
-- **Page:** cool paper `#F3F5F9`, with `panel` `#E9EDF5`, `card` `#FFFFFF`, and `well` `#DFE4EE` as the steps above and below it
-- **Ink:** Night navy `#0D1633` for text, the footer, and primary buttons; muted text `#4D5672`; subtle text `#646C88`
-- **Brand:** ReFon Cobalt `#1F3FD1` (`brand`) for links and the one highlighted item in a row, and Tag Yellow `#FFC933` (`tag`) for the ReFon Tag and the homepage hero band. Tag Yellow is a fill only, with Night text on it; it is never text on a light surface
-- **Verified:** emerald (`accent`) keeps one meaning: verified, inspected, or cleared
-- **Value and grades:** amber (`flare`) for savings and Grade B, orange for Grade C, green only for Grade A
-- **Type:** Archivo (display, with its width axis for the expanded wordmark and headings), Instrument Sans (body), and IBM Plex Mono (measured figures), all self-hosted through `@fontsource`. No font is fetched from a CDN
-- **Logo:** the tag-phone, a phone cut like a shop tag whose screen is a battery reading, beside the lowercase "re**fon**" wordmark (`components/ui/BrandMark.jsx`)
-- **The ReFon Tag:** `components/ui/RefonTag.jsx` puts a listing's grade, measured battery, checklist result, notes, and price on one tag-shaped object
-- **Type scale:** 17px base with a `1.6` line height, plus fluid `hero`, `display`, `headline`, and `title` sizes
-- **Shape:** 20px cards, 28px panels, pill-shaped buttons
-- **Elevation:** wide, soft shadows (`0 10px 40px rgb(0 0 0 / 0.06)`), never tight drop shadows
-- **Motion:** 200ms for controls, 500ms for entrances, with reduced-motion support throughout. The homepage hero has no timer and no parallax; it changes slide only when asked
+- **Surfaces:** near-black page `#0A0B0D` with slightly lighter cards, panels and wells; hairline borders instead of heavy outlines
+- **Text:** chalk `#F2F4F0`, with muted and subtle greys for secondary text
+- **Brand:** volt lime `#C6FF3D` (`accent`) for primary buttons, highlights and the logo; coral `#FF6B5C` for danger
+- **Type:** Unbounded (display and wordmark), Geist (body) and Geist Mono (measured figures), all self-hosted through `@fontsource`. No font is fetched from a CDN
+- **Logo:** a phone outline with a loop arrow (re-use), beside the lowercase "re**fon**" wordmark (`components/ui/BrandMark.jsx`)
+- **Shape:** rounded cards and panels, pill-shaped buttons
+- **Motion:** quick, springy feedback (pops, confetti, count-ups, floating loops) with full reduced-motion support
 
 Global font loading and Tailwind base styles are in `frontend/src/index.css`. `frontend/src/App.jsx` owns the public marketplace, authentication, and role-aware route trees. Listing, seller, inquiry, and moderation screens now call the Express API directly; no frontend localStorage or mock inventory is used.
 
@@ -385,27 +437,26 @@ Standard delivery is free at ₱15,000 and above. Express is offered only in Met
 Manila, and that limit is enforced in the fee lookup rather than only in the UI, so
 a direct API call cannot quote next-day delivery to Davao.
 
-### A quote is not an order
+### From quote to order
 
 `POST /api/checkout/quote` prices the checkout, validates the contact block, and
 refuses anything that cannot proceed — an empty cart, an unavailable listing, or a
-lapsed reservation, each with a distinct code the UI can act on. It **creates
-nothing**. The response is already the shape an order-creation call would return,
-so Phase 7 replaces that one request with a transactional write and neither the form
-nor the review changes.
+lapsed reservation, each with a distinct code the UI can act on. It creates nothing.
 
-The confirmation screen says plainly that no order was placed and no payment was
-taken. It shows a **quote reference**, not an order number, and claims no receipt
-and no delivery date — a screen implying a purchase had happened would be a claim
-this build cannot support.
+`POST /api/checkout/place-order` places the order in one transaction: it re-prices the cart on the
+server, locks the listings, creates **one order per seller**, splits the delivery fee
+between them, takes the phones off sale, releases the cart holds and notifies each
+seller. Orders move `PLACED → CONFIRMED → SHIPPED → COMPLETED`, or `CANCELLED`
+(by the buyer before confirmation, by the seller, or automatically when a seller does
+not confirm within 48 hours, which puts the phones back on sale).
 
-### Payment methods are selections, not integrations
+### Payment methods
 
-Cash on delivery, GCash, Maya, and bank transfer are all available as *preferences*.
-No gateway is contacted, no money moves, and **no credential of any kind is
-collected** — no GCash number, no Maya account, no card or bank login. The three
-non-cash options are labelled `Demo payment method` in the interface and carry a
-`demo` flag from the server so the UI can say so wherever they appear.
+Cash on delivery, GCash, Maya, and bank transfer are offered at checkout. ReFon does
+not process payments: for non-cash orders the buyer pays the seller directly, using
+the payment details the seller saved in their dashboard, which the buyer sees only on
+their own order after the seller confirms it. No buyer payment credential is ever
+collected.
 
 ### Endpoints
 
@@ -413,13 +464,12 @@ non-cash options are labelled `Demo payment method` in the interface and carry a
 | --- | --- | --- | --- |
 | `GET` | `/api/checkout/options` | optional | Delivery methods, payment methods, and zones |
 | `POST` | `/api/checkout/quote` | optional | Price a checkout and validate it can proceed |
+| `POST` | `/api/checkout/place-order` | buyer | Place the order(s) for the cart |
 
 ### What checkout does not do
 
-No order is created, no payment is processed, and no reservation is converted into a
-purchase. Order creation, payment capture, delivery status, tracking, refunds, and
-returns all belong to Phase 7 and later. The reservation taken when a phone enters
-the cart is the only thing holding a device, and it still lapses on its own timer.
+No online payment gateway, escrow, or courier tracking yet: delivery progress is the
+order's status timeline, updated by the seller.
 
 ## Authentication
 
