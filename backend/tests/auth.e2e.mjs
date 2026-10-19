@@ -209,6 +209,24 @@ try {
   })
   assert.equal(storeSellerProfile.businessName, 'JDC Phones')
 
+  // The seller can rename the store later from Store look, but not blank it.
+  const storeSellerCookie = cookieFrom(storeSellerRegistration)
+  const renamed = await jsonRequest(`${apiBase}/api/sellers/me/storefront`, {
+    method: 'PATCH',
+    cookie: storeSellerCookie,
+    body: JSON.stringify({ businessName: ' JDC Phones Taguig ' }),
+  })
+  assert.equal(renamed.status, 200)
+  const renamedBody = await renamed.json()
+  assert.equal(renamedBody.seller.businessName, 'JDC Phones Taguig')
+  assert.equal(renamedBody.seller.storefront.businessName, 'JDC Phones Taguig')
+  const blanked = await jsonRequest(`${apiBase}/api/sellers/me/storefront`, {
+    method: 'PATCH',
+    cookie: storeSellerCookie,
+    body: JSON.stringify({ businessName: '' }),
+  })
+  assert.equal(blanked.status, 422)
+
   const duplicateRegistration = await jsonRequest(`${apiBase}/api/auth/register`, {
     method: 'POST',
     body: JSON.stringify({

@@ -124,6 +124,7 @@ export async function getSellerProfile(userId) {
 /** The seller's own editable storefront fields. */
 export function presentStorefrontSettings(seller) {
   return {
+    businessName: seller.businessName ?? '',
     tagline: seller.tagline ?? '',
     city: seller.city ?? '',
     region: seller.region ?? '',
@@ -143,6 +144,7 @@ export async function updateStorefrontSettings(userId, values) {
   const seller = await prisma.seller.update({
     where: { userId },
     data: {
+      businessName: values.businessName,
       tagline: clean(values.tagline),
       city: clean(values.city),
       region: clean(values.region),
