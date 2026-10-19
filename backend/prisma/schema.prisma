@@ -568,3 +568,14 @@ model TradeInRequest {
   @@index([status, createdAt])
   @@map("trade_in_requests")
 }
+
+/// Booth details the team edits from the admin dashboard on fair day, such as
+/// the booth number once it is announced. One row per key; a missing row means
+/// the website falls back to the value in its code.
+model SiteSetting {
+  key       String   @id @db.VarChar(40)
+  value     String   @db.VarChar(200)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("site_settings")
+}

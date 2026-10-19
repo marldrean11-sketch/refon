@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, MessageCircle, Repeat, ScanLine, Search, ShieldCheck, X } from 'lucide-react'
 import { useAuth } from '../../features/auth/useAuth.js'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
-import { SITE_INFO, boothLabel } from '../../content/site-info.js'
+import { boothLabel } from '../../content/site-info.js'
+import { useSiteSettings } from '../../lib/site-settings.js'
 
 const DONE_KEY = 'refon:tour-done'
 const START_DELAY_MS = 1600
@@ -41,7 +42,7 @@ const STEPS = [
   {
     icon: MessageCircle,
     title: 'Questions? Chat with us',
-    body: `This button reaches the team any time. Or visit us at ${boothLabel(SITE_INFO.location)}.`,
+    body: (booth) => `This button reaches the team any time. Or visit us at ${boothLabel(booth)}.`,
     target: '[data-testid="chat-button"]',
   },
 ]
@@ -83,6 +84,7 @@ function measure(selector) {
  */
 export function FirstVisitTour() {
   const { user } = useAuth()
+  const { booth } = useSiteSettings()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
@@ -170,7 +172,7 @@ export function FirstVisitTour() {
             </h2>
           </div>
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-muted">{current.body}</p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">{typeof current.body === 'function' ? current.body(booth) : current.body}</p>
         {current.link && (
           <Link
             to={current.link.to}

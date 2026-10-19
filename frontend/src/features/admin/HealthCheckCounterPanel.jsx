@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RotateCcw, Smartphone } from 'lucide-react'
+import { MapPin, Pencil, RotateCcw, Smartphone } from 'lucide-react'
 import { Panel, PanelHeader } from '../design/Surfaces.jsx'
 import { Button } from '../../components/ui/Button.jsx'
 import { Skeleton } from '../../components/ui/Skeleton.jsx'
@@ -8,18 +8,26 @@ import {
   getHealthCheckCountRequest,
   resetHealthChecksTodayRequest,
 } from './admin-api.js'
+import { BoothSettingsDialog } from './BoothSettingsDialog.jsx'
+import { boothLabel } from '../../content/site-info.js'
+import { useSiteSettings } from '../../lib/site-settings.js'
 
 /**
  * The booth's "phones checked today" counter, with a reset for fair morning:
  * the team tests its own phones while setting up, then zeroes the count so the
  * booth screen starts honest. It only clears today; it resets itself at
  * midnight Manila time anyway.
+ *
+ * It also holds the booth number, which the organisers may only announce on
+ * fair day: "Edit booth" changes it everywhere the site shows it.
  */
 export function HealthCheckCounterPanel() {
   const toast = useToast()
   const [stats, setStats] = useState(null)
   const [error, setError] = useState(null)
   const [isResetting, setIsResetting] = useState(false)
+  const [isEditingBooth, setIsEditingBooth] = useState(false)
+  const settings = useSiteSettings()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -52,22 +60,33 @@ export function HealthCheckCounterPanel() {
       <PanelHeader
         kicker="Techno Fair booth"
         title="Phones checked today"
-        description="The number on the booth screen. Reset it after testing your setup."
+        description="The count and booth number on the booth screen. Reset the count after testing your setup."
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleReset}
-            loading={isResetting}
-            disabled={!stats || stats.today === 0}
-            data-testid="reset-health-checks"
-          >
-            <RotateCcw className="size-4" aria-hidden="true" />
-            Reset today&rsquo;s count
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingBooth(true)}
+              data-testid="edit-booth-settings"
+            >
+              <Pencil className="size-4" aria-hidden="true" />
+              Edit booth
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              loading={isResetting}
+              disabled={!stats || stats.today === 0}
+              data-testid="reset-health-checks"
+            >
+              <RotateCcw className="size-4" aria-hidden="true" />
+              Reset today&rsquo;s count
+            </Button>
+          </>
         }
       />
-      <div className="p-5 sm:p-6">
+      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         {error ? (
           <p className="text-sm text-muted" role="alert">
             The counter could not load: {error.message}
@@ -85,7 +104,23 @@ export function HealthCheckCounterPanel() {
             </span>
           </p>
         )}
+        <p className="flex items-center gap-2 text-sm text-muted" data-testid="admin-booth-label">
+          <MapPin className="size-4 text-accent" aria-hidden="true" />
+          {boothLabel(settings.booth)}
+          <span className="text-subtle">· Viber {settings.viber ? 'link set' : 'coming soon'}</span>
+        </p>
       </div>
+      <BoothSettingsDialog
+        open={isEditingBooth}
+        settings={settings}
+        onClose={() => setIsEditingBooth(false)}
+        onSaved={(saved) => {
+          setIsEditingBooth(false)
+          toast.success('Booth settings saved', {
+            description: `The site now shows ${boothLabel(saved.booth ?? settings.booth)}. The kiosk updates within a minute.`,
+          })
+        }}
+      />
     </Panel>
   )
 }

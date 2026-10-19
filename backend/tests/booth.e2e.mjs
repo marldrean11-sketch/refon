@@ -10,6 +10,8 @@ import { PrismaClient } from '@prisma/client'
  *   admin can read the results.
  * - Price-drop alerts: a seller can only lower the price of a live listing, and
  *   every buyer who saved it gets a PRICE_DROP notification.
+ * - Booth settings: anyone can read the booth number and Viber link, only an
+ *   admin can change them, and bad values are refused.
  *
  * Everything this suite creates is removed at the end.
  */
@@ -239,6 +241,63 @@ try {
     assert.equal(stored.originalPrice, null, 'no fake discount')
     assert.equal(stored.discountPercent, 0)
   })
+  console.log('— Booth settings —')
+
+  const settingsBefore = await prisma.siteSetting.findMany()
+  try {
+    await test('anyone can read the booth settings', async () => {
+      const response = await createClient().raw('/api/site-settings')
+      assert.equal(response.status, 200)
+      assert.ok('booth' in response.json.settings && 'viber' in response.json.settings)
+    })
+
+    await test('only an admin can change them', async () => {
+      const body = { booth: '12' }
+      assert.equal((await createClient().raw('/api/admin/site-settings', { method: 'PATCH', body })).status, 401)
+      const { client: buyer } = await register('BUYER')
+      assert.equal((await buyer.raw('/api/admin/site-settings', { method: 'PATCH', body })).status, 403)
+    })
+
+    await test('an admin changes the booth number and Viber link', async () => {
+      const admin = await adminClient()
+      const viber = 'https://invite.viber.com/?g2=AQBtest'
+      const saved = await admin.raw('/api/admin/site-settings', {
+        method: 'PATCH',
+        body: { booth: ' B-12 ', viber },
+      })
+      assert.equal(saved.status, 200)
+      assert.deepEqual(saved.json.settings, { booth: 'B-12', viber })
+      const read = await createClient().raw('/api/site-settings')
+      assert.deepEqual(read.json.settings, { booth: 'B-12', viber })
+
+      const cleared = await admin.raw('/api/admin/site-settings', { method: 'PATCH', body: { viber: '' } })
+      assert.equal(cleared.status, 200)
+      assert.deepEqual(cleared.json.settings, { booth: 'B-12', viber: null }, 'an empty link clears it')
+    })
+
+    await test('bad values are refused', async () => {
+      const admin = await adminClient()
+      for (const body of [
+        {},
+        { booth: '' },
+        { booth: '<b>7</b>' },
+        { booth: '12345678901' },
+        { viber: 'https://evil.example/viber' },
+        { viber: 'javascript:alert(1)' },
+        { booth: '7', extra: true },
+      ]) {
+        const response = await admin.raw('/api/admin/site-settings', { method: 'PATCH', body })
+        assert.equal(response.status, 422, JSON.stringify(body))
+      }
+    })
+  } finally {
+    await prisma.siteSetting.deleteMany()
+    if (settingsBefore.length > 0) {
+      await prisma.siteSetting.createMany({
+        data: settingsBefore.map(({ key, value }) => ({ key, value })),
+      })
+    }
+  }
 } finally {
   await prisma.feedback.deleteMany({ where: { id: { in: createdFeedbackIds } } })
   // Listings first, then seller rows; users then cascade to favorites and notifications.
@@ -253,5 +312,5 @@ if (failures.length > 0) {
   console.error(`\n${failures.length} booth test(s) failed.`)
   process.exit(1)
 }
-console.log('\nBooth tests passed: feedback and price-drop alerts work end to end.')
+console.log('\nBooth tests passed: feedback, price-drop alerts and booth settings work end to end.')
 process.exit(0)
