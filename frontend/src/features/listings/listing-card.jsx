@@ -101,7 +101,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
       // Touch screens: a short press-in on tap, since there is no hover.
       whileTap={reduceMotion || preview ? undefined : { scale: 0.98 }}
       transition={standardTransition}
-      className={`rf-spotlight group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-card-hover ${gradeStyle.hoverBorder}`}
+      className={`rf-spotlight group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-card-hover active:scale-[0.98] ${gradeStyle.hoverBorder}`}
     >
       {!preview && (
         <Link
@@ -141,7 +141,8 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
             // condition badge and the two collided. On a card the grade already
             // says this is a listing, so the chip is redundant here.
             showLabel={false}
-            className="aspect-[4/5] w-full"
+            // Zooms on hover like a real photo does, so every card responds the same.
+            className="aspect-[4/5] w-full transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.04]"
           />
           }
         />
