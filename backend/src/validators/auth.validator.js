@@ -24,6 +24,16 @@ const registerSchema = z
         error: 'Choose either Buyer or Seller.',
       }),
     ),
+    // Sellers only, and optional: without it the store is named after the person.
+    businessName: z
+      .string()
+      .trim()
+      .max(160, 'Store name must be 160 characters or fewer.')
+      .refine((value) => value === '' || value.length >= 2, {
+        message: 'Store name must be at least 2 characters.',
+      })
+      .transform((value) => value || undefined)
+      .optional(),
   })
   .strict()
 

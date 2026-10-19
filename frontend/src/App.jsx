@@ -151,8 +151,8 @@ const TradeInPage = lazy(() =>
 const ComparePage = lazy(() =>
   import('./pages/ComparePage.jsx').then((module) => ({ default: module.ComparePage })),
 )
-const SellerApplyPage = lazy(() =>
-  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.SellerApplyPage })),
+const SellPage = lazy(() =>
+  import('./pages/SellPage.jsx').then((module) => ({ default: module.SellPage })),
 )
 const StoresPage = lazy(() =>
   import('./pages/StoresPage.jsx').then((module) => ({ default: module.StoresPage })),
@@ -240,7 +240,7 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.privacy} element={<PrivacyPage />} />
                 <Route path={MARKETPLACE_ROUTES.terms} element={<TermsPage />} />
                 <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
-                <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
+                <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellPage />} />
                 <Route path={MARKETPLACE_ROUTES.stores} element={<StoresPage />} />
                 <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
 
