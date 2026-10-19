@@ -21,6 +21,13 @@ const settingsSchema = z
         message: 'Paste a Viber link, for example https://invite.viber.com/?g2=… or viber://chat?number=…',
       })
       .nullable(),
+    // Plain text for the banner above the header; React renders it as text.
+    announcement: z
+      .string()
+      .trim()
+      .max(140, 'Keep the announcement to 140 characters so it fits on a phone.')
+      .transform((value) => value || null)
+      .nullable(),
   })
   .partial()
   .strict()

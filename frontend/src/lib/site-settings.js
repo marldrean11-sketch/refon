@@ -3,11 +3,11 @@ import { apiRequest } from './api-client.js'
 import { SITE_INFO } from '../content/site-info.js'
 
 /**
- * Booth details the admin can change on fair day: the booth number and the
- * Viber chat link. Until the API answers (or if it never does) the values in
+ * Booth details the admin can change on fair day: the booth number, the
+ * Viber chat link and the announcement banner. Until the API answers (or if it never does) the values in
  * `site-info.js` are used, so every page always has something to show.
  */
-const DEFAULTS = Object.freeze({ booth: SITE_INFO.location.booth, viber: SITE_INFO.chat.viber })
+const DEFAULTS = Object.freeze({ booth: SITE_INFO.location.booth, viber: SITE_INFO.chat.viber, announcement: null })
 
 /** Refetch on tab focus at most this often, so switching tabs stays cheap. */
 const STALE_MS = 60_000
@@ -35,6 +35,7 @@ export function applySiteSettings(settings) {
   current = {
     booth: settings?.booth ?? DEFAULTS.booth,
     viber: settings?.viber ?? DEFAULTS.viber,
+    announcement: settings?.announcement ?? DEFAULTS.announcement,
   }
   loadedAt = Date.now()
   emit()

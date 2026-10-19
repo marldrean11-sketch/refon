@@ -10,8 +10,8 @@ import { PrismaClient } from '@prisma/client'
  *   admin can read the results.
  * - Price-drop alerts: a seller can only lower the price of a live listing, and
  *   every buyer who saved it gets a PRICE_DROP notification.
- * - Booth settings: anyone can read the booth number and Viber link, only an
- *   admin can change them, and bad values are refused.
+ * - Booth settings: anyone can read the booth number, Viber link and
+ *   announcement, only an admin can change them, and bad values are refused.
  *
  * Everything this suite creates is removed at the end.
  */
@@ -248,7 +248,7 @@ try {
     await test('anyone can read the booth settings', async () => {
       const response = await createClient().raw('/api/site-settings')
       assert.equal(response.status, 200)
-      assert.ok('booth' in response.json.settings && 'viber' in response.json.settings)
+      for (const key of ['booth', 'viber', 'announcement']) assert.ok(key in response.json.settings, key)
     })
 
     await test('only an admin can change them', async () => {
@@ -258,21 +258,29 @@ try {
       assert.equal((await buyer.raw('/api/admin/site-settings', { method: 'PATCH', body })).status, 403)
     })
 
-    await test('an admin changes the booth number and Viber link', async () => {
+    await test('an admin changes the booth number, Viber link and announcement', async () => {
       const admin = await adminClient()
       const viber = 'https://invite.viber.com/?g2=AQBtest'
+      const announcement = 'Visit us at Booth #B-12: free phone health check!'
       const saved = await admin.raw('/api/admin/site-settings', {
         method: 'PATCH',
-        body: { booth: ' B-12 ', viber },
+        body: { booth: ' B-12 ', viber, announcement: `  ${announcement} ` },
       })
       assert.equal(saved.status, 200)
-      assert.deepEqual(saved.json.settings, { booth: 'B-12', viber })
+      assert.deepEqual(saved.json.settings, { booth: 'B-12', viber, announcement })
       const read = await createClient().raw('/api/site-settings')
-      assert.deepEqual(read.json.settings, { booth: 'B-12', viber })
+      assert.deepEqual(read.json.settings, { booth: 'B-12', viber, announcement })
 
-      const cleared = await admin.raw('/api/admin/site-settings', { method: 'PATCH', body: { viber: '' } })
+      const cleared = await admin.raw('/api/admin/site-settings', {
+        method: 'PATCH',
+        body: { viber: '', announcement: '' },
+      })
       assert.equal(cleared.status, 200)
-      assert.deepEqual(cleared.json.settings, { booth: 'B-12', viber: null }, 'an empty link clears it')
+      assert.deepEqual(
+        cleared.json.settings,
+        { booth: 'B-12', viber: null, announcement: null },
+        'empty values clear them',
+      )
     })
 
     await test('bad values are refused', async () => {
@@ -284,6 +292,7 @@ try {
         { booth: '12345678901' },
         { viber: 'https://evil.example/viber' },
         { viber: 'javascript:alert(1)' },
+        { announcement: 'x'.repeat(141) },
         { booth: '7', extra: true },
       ]) {
         const response = await admin.raw('/api/admin/site-settings', { method: 'PATCH', body })

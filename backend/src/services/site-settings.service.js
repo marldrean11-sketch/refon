@@ -1,10 +1,10 @@
 import { prisma } from '../config/prisma.js'
 
 /** The settings an admin can change. Anything else in the table is ignored. */
-export const SITE_SETTING_KEYS = Object.freeze(['booth', 'viber'])
+export const SITE_SETTING_KEYS = Object.freeze(['booth', 'viber', 'announcement'])
 
 /**
- * `{ booth, viber }`, each a string or `null` when the admin has not set it,
+ * `{ booth, viber, announcement }`, each a string or `null` when the admin has not set it,
  * in which case the website uses the value in its own code.
  */
 export async function getSiteSettings() {

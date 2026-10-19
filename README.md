@@ -40,7 +40,7 @@ Screenshots are taken from the live site by the **README screenshots** workflow 
 **Admins**
 - Approve or reject sellers and listings, resolve reports, take listings down
 - Manage users (suspend / reinstate), orders, trade-in requests and booth feedback
-- **Booth settings:** change the booth number and the Viber chat link from the dashboard on fair day, with no redeploy
+- **Booth settings:** change the booth number, the Viber chat link and an announcement banner (shown above the header on every page) from the dashboard on fair day, with no redeploy
 
 **Everyone**
 - **Visit Stores:** a directory of verified phone stores with search, city filter, sorting and Follow
@@ -500,8 +500,8 @@ Seller APIs require an authenticated session:
 - `PATCH /api/listings/:id/mark-sold`
 - `GET /api/listings/:id/inquiries`
 - `POST /api/uploads` — authenticated seller photo upload; accepts up to 6 JPG, PNG, or WebP files (8 MB each, verified by magic bytes) and returns `/uploads/...` URLs
-- `GET /api/site-settings` — public booth number and Viber link (`null` means the website uses its built-in default)
-- `PATCH /api/admin/site-settings` — admin only; `{ booth, viber }`, an empty `viber` clears the link
+- `GET /api/site-settings` — public booth number, Viber link and announcement (`null` means the website uses its built-in default)
+- `PATCH /api/admin/site-settings` — admin only; `{ booth, viber, announcement }`, an empty `viber` or `announcement` clears it
 - `GET /api/health` — public health check; `200` with `status: ok` when the database answers, `503` with `status: degraded` otherwise
 - `GET /api/notifications/mine`
 - `PATCH /api/notifications/:id/read`

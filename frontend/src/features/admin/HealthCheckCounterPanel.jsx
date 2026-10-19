@@ -107,7 +107,9 @@ export function HealthCheckCounterPanel() {
         <p className="flex items-center gap-2 text-sm text-muted" data-testid="admin-booth-label">
           <MapPin className="size-4 text-accent" aria-hidden="true" />
           {boothLabel(settings.booth)}
-          <span className="text-subtle">· Viber {settings.viber ? 'link set' : 'coming soon'}</span>
+          <span className="text-subtle">
+            · Viber {settings.viber ? 'link set' : 'coming soon'} · Banner {settings.announcement ? 'on' : 'off'}
+          </span>
         </p>
       </div>
       <BoothSettingsDialog

@@ -6,20 +6,24 @@ import { LoopSpinner } from '../../components/ui/LoopSpinner.jsx'
 import { applySiteSettings, updateSiteSettingsRequest } from '../../lib/site-settings.js'
 
 /**
- * Change the booth number (and the Viber chat link) on fair day, once the
- * organisers announce it. Every page reads the new value on its next load; the
+ * Change the booth number (plus the Viber chat link and the announcement
+ * banner) on fair day, once the organisers announce it. Every page reads the new value on its next load; the
  * kiosk screen picks it up within a minute.
  */
 export function BoothSettingsDialog({ open, settings, onClose, onSaved }) {
   const inputRef = useRef(null)
-  const [values, setValues] = useState({ booth: '', viber: '' })
+  const [values, setValues] = useState({ booth: '', viber: '', announcement: '' })
   const [errors, setErrors] = useState({})
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (!open) return
     const id = requestAnimationFrame(() => {
-      setValues({ booth: settings.booth ?? '', viber: settings.viber ?? '' })
+      setValues({
+        booth: settings.booth ?? '',
+        viber: settings.viber ?? '',
+        announcement: settings.announcement ?? '',
+      })
       setErrors({})
     })
     return () => cancelAnimationFrame(id)
@@ -37,7 +41,11 @@ export function BoothSettingsDialog({ open, settings, onClose, onSaved }) {
     setIsSaving(true)
     setErrors({})
     try {
-      const data = await updateSiteSettingsRequest({ booth, viber: values.viber.trim() || null })
+      const data = await updateSiteSettingsRequest({
+        booth,
+        viber: values.viber.trim() || null,
+        announcement: values.announcement.trim() || null,
+      })
       applySiteSettings(data.settings)
       onSaved(data.settings)
     } catch (requestError) {
@@ -52,7 +60,7 @@ export function BoothSettingsDialog({ open, settings, onClose, onSaved }) {
       open={open}
       onClose={onClose}
       title="Booth settings"
-      description="Shown in the footer, Contact page, kiosk, poster, pop badge and health check card."
+      description="The booth number shows in the footer, Contact page, kiosk, poster, pop badge and health check card."
       initialFocusRef={inputRef}
     >
       <form onSubmit={handleSubmit} noValidate data-testid="booth-settings-form" className="grid gap-5">
@@ -80,6 +88,18 @@ export function BoothSettingsDialog({ open, settings, onClose, onSaved }) {
           onChange={(event) => change('viber', event.target.value)}
           hint='For the "Chat with us" button. Leave empty to show Viber as "coming soon".'
           error={errors.viber}
+        />
+        <TextField
+          id="booth-announcement"
+          label="Announcement banner"
+          optional
+          placeholder={`Visit us at Booth #${values.booth.trim() || '7'}: free phone health check!`}
+          maxLength={140}
+          autoComplete="off"
+          value={values.announcement}
+          onChange={(event) => change('announcement', event.target.value)}
+          hint={`Shown above the header on every page (${values.announcement.trim().length}/140). Leave empty to hide it.`}
+          error={errors.announcement}
         />
         {errors.form && (
           <p className="text-sm font-semibold text-danger" role="alert">
