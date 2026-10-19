@@ -112,6 +112,14 @@ const uploadPathOrEmpty = z
 
 const storefrontSchema = z
   .object({
+    // The store's public name. Optional in the request (older clients omit it),
+    // but when sent it cannot be blanked.
+    businessName: z
+      .string()
+      .trim()
+      .min(2, 'Store name must be at least 2 characters.')
+      .max(80, 'Store name must be 80 characters or fewer.')
+      .optional(),
     tagline: z.string().trim().max(200, 'Tagline must be 200 characters or fewer.').optional(),
     city: z.string().trim().max(120, 'City must be 120 characters or fewer.').optional(),
     region: z.string().trim().max(120, 'Region must be 120 characters or fewer.').optional(),

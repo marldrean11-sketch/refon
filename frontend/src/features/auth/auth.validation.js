@@ -48,10 +48,12 @@ export function validateRegisterForm({ name, email, password, role, businessName
   }
 
   const storeName = businessName.trim()
-  if (role === 'SELLER' && storeName.length === 1) {
+  if (role === 'SELLER' && !storeName) {
+    errors.businessName = 'Enter your store name. Buyers see it on your listings.'
+  } else if (role === 'SELLER' && storeName.length < 2) {
     errors.businessName = 'Store name must be at least 2 characters.'
-  } else if (role === 'SELLER' && storeName.length > 160) {
-    errors.businessName = 'Store name must be 160 characters or fewer.'
+  } else if (role === 'SELLER' && storeName.length > 80) {
+    errors.businessName = 'Store name must be 80 characters or fewer.'
   }
 
   return errors

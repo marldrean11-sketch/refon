@@ -98,9 +98,7 @@ export function RegisterPage() {
         email: form.email.trim(),
         password: form.password,
         role: form.role,
-        ...(form.role === 'SELLER' && form.businessName.trim()
-          ? { businessName: form.businessName.trim() }
-          : {}),
+        ...(form.role === 'SELLER' ? { businessName: form.businessName.trim() } : {}),
       })
 
       // Registration is a full-page reset in some paths, so the "return to" target
@@ -262,9 +260,10 @@ export function RegisterPage() {
               value={form.businessName}
               onChange={updateField}
               error={fieldErrors.businessName}
-              hint="Shown to buyers on your listings and in Visit Stores. Leave it empty to use your name."
+              hint="Shown to buyers on your listings and in Visit Stores. You can change it later in Store look."
+              maxLength={80}
               disabled={isSubmitting}
-              optional
+              required
             />
           )}
 

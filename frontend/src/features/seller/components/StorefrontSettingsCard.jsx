@@ -8,10 +8,10 @@ import { sellerPath } from '../../../lib/routes.js'
 import { updateStorefrontRequest } from '../seller-api.js'
 import { BANNER_LOGO, BRAND_COLORS, SellerAvatar } from '../brand.jsx'
 
-const EMPTY = { tagline: '', city: '', region: '', logoUrl: '', bannerUrl: '', brandColor: '' }
+const EMPTY = { businessName: '', tagline: '', city: '', region: '', logoUrl: '', bannerUrl: '', brandColor: '' }
 
 function fromSeller(seller) {
-  const settings = seller?.storefront ?? {}
+  const settings = { businessName: seller?.businessName, ...seller?.storefront }
   return Object.fromEntries(Object.keys(EMPTY).map((key) => [key, settings[key] ?? '']))
 }
 
@@ -86,7 +86,8 @@ function ImageSlot({ label, hint, value, onChange, onError, disabled, wide }) {
 }
 
 /**
- * How the seller's storefront looks: logo, banner, colour, tagline and city.
+ * How the seller's storefront looks: store name, logo, banner, colour, tagline
+ * and city.
  * A live preview shows the result before saving.
  */
 export function StorefrontSettingsCard({ seller, onSaved }) {
@@ -110,11 +111,17 @@ export function StorefrontSettingsCard({ seller, onSaved }) {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    const storeName = values.businessName.trim()
+    if (storeName.length < 2) {
+      setErrors({ businessName: storeName ? 'Store name must be at least 2 characters.' : 'Enter your store name.' })
+      document.getElementById('store-name')?.focus()
+      return
+    }
     setIsSaving(true)
     setMessage('')
     setErrors({})
     try {
-      const response = await updateStorefrontRequest(values)
+      const response = await updateStorefrontRequest({ ...values, businessName: storeName })
       dirtyRef.current = false
       if (response.seller) setValues(fromSeller(response.seller))
       setMessage('Saved. Your storefront is updated.')
@@ -127,7 +134,7 @@ export function StorefrontSettingsCard({ seller, onSaved }) {
     }
   }
 
-  const preview = { ...values, businessName: seller?.businessName }
+  const preview = { ...values, businessName: values.businessName.trim() || seller?.businessName }
   const swatch = BRAND_COLORS[values.brandColor] ?? BRAND_COLORS.lime
 
   return (
@@ -140,7 +147,7 @@ export function StorefrontSettingsCard({ seller, onSaved }) {
           <div>
             <h2 className="text-lg font-semibold text-ink">Store look</h2>
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              Your logo, banner and colour appear on your storefront and next to every phone you sell.
+              Your store name, logo, banner and colour appear on your storefront and next to every phone you sell.
             </p>
           </div>
         </div>
@@ -166,7 +173,7 @@ export function StorefrontSettingsCard({ seller, onSaved }) {
         <div className="flex items-end gap-3 px-4 pb-4">
           <SellerAvatar seller={preview} rounded="rounded-2xl" className={`${BANNER_LOGO} -mt-9 border-surface`} />
           <div className="min-w-0 pb-1">
-            <p className="truncate font-display text-base font-bold text-ink">{seller?.businessName}</p>
+            <p className="truncate font-display text-base font-bold text-ink">{preview.businessName}</p>
             <p className="truncate text-xs text-muted">
               {values.tagline || 'Your tagline appears here'}
             </p>
@@ -175,6 +182,21 @@ export function StorefrontSettingsCard({ seller, onSaved }) {
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="mt-5 grid gap-4 sm:grid-cols-2">
+        <TextField
+          id="store-name"
+          className="sm:col-span-2"
+          label="Store name"
+          required
+          maxLength={80}
+          autoComplete="organization"
+          placeholder="JDC Phones"
+          value={values.businessName}
+          onChange={(event) => change('businessName', event.target.value)}
+          error={errors.businessName}
+          hint="Your store's public name. Your display name in Account stays your personal name."
+          disabled={isSaving}
+        />
+
         <ImageSlot
           label="Logo"
           hint="square works best"
