@@ -26,7 +26,7 @@ export function validateLoginForm({ email, password }) {
   return errors
 }
 
-export function validateRegisterForm({ name, email, password, role }) {
+export function validateRegisterForm({ name, email, password, role, businessName = '' }) {
   const errors = validateLoginForm({ email, password })
 
   if (!name.trim()) {
@@ -45,6 +45,13 @@ export function validateRegisterForm({ name, email, password, role }) {
 
   if (!['BUYER', 'SELLER'].includes(role)) {
     errors.role = 'Choose whether you are buying or selling.'
+  }
+
+  const storeName = businessName.trim()
+  if (role === 'SELLER' && storeName.length === 1) {
+    errors.businessName = 'Store name must be at least 2 characters.'
+  } else if (role === 'SELLER' && storeName.length > 160) {
+    errors.businessName = 'Store name must be 160 characters or fewer.'
   }
 
   return errors

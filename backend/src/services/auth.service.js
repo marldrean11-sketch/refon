@@ -64,7 +64,7 @@ export function toPublicUser(user) {
   }
 }
 
-export async function registerUser({ name, email, password, role }) {
+export async function registerUser({ name, email, password, role, businessName }) {
   const normalizedEmail = normalizeEmail(email)
   const passwordHash = await hashPassword(password)
 
@@ -83,7 +83,7 @@ export async function registerUser({ name, email, password, role }) {
         await transaction.seller.create({
           data: {
             userId: createdUser.id,
-            businessName: name,
+            businessName: businessName ?? name,
             contactInfo: normalizedEmail,
             verificationStatus: 'PENDING',
           },
