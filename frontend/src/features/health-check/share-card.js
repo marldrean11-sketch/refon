@@ -1,6 +1,7 @@
 import QRCode from 'qrcode'
 import { CHECK_STATUS, HEALTH_CHECKS } from './health-checks.js'
 import { SITE_INFO, boothLabel } from '../../content/site-info.js'
+import { getSiteSettings } from '../../lib/site-settings.js'
 import { MARKETPLACE_ROUTES } from '../../lib/routes.js'
 
 const W = 1080
@@ -158,7 +159,7 @@ export async function drawShareCard(results) {
   ctx.fillText('Free, in your browser. Scan the code.', left, qrY + 120)
   ctx.fillStyle = COLORS.accent
   ctx.font = `600 26px ${MONO}`
-  ctx.fillText(boothLabel(SITE_INFO.location).toUpperCase(), left, qrY + 175)
+  ctx.fillText(boothLabel(getSiteSettings().booth).toUpperCase(), left, qrY + 175)
   ctx.fillStyle = COLORS.muted
   ctx.font = `500 22px ${MONO}`
   ctx.fillText(new Date().toLocaleDateString('en-PH', { dateStyle: 'medium' }), left, qrY + 210)

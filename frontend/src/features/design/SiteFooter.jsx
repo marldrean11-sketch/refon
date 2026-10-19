@@ -24,6 +24,7 @@ import { FloatingLoops } from "../../components/brand/FloatingLoops.jsx";
 import { SoundToggle } from "../../components/ui/SoundToggle.jsx";
 import { InstallAppButton } from "../../components/ui/InstallAppButton.jsx";
 import { SITE_INFO, boothLabel } from "../../content/site-info.js";
+import { useSiteSettings } from "../../lib/site-settings.js";
 import { useAuth } from "../auth/useAuth.js";
 import { AUTH_ROUTES, MARKETPLACE_ROUTES } from "../../lib/routes.js";
 import { canSeeBuyerDestinations } from "./navigation-config.js";
@@ -422,6 +423,7 @@ function GiantWordmark({ reduced }) {
 /** Email, phone, and where to find the booth. */
 function ContactBlock() {
   const { contact, location } = SITE_INFO;
+  const { booth } = useSiteSettings();
   const row = "flex items-start gap-2.5 text-sm text-muted";
   return (
     <ul data-testid="footer-contact" className="mt-6 flex max-w-sm flex-col gap-2.5">
@@ -442,7 +444,7 @@ function ContactBlock() {
         <span>
           {location.venue}, {location.city}
           <br />
-          {boothLabel(location)}
+          {boothLabel(booth)}
         </span>
       </li>
     </ul>

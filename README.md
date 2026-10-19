@@ -40,6 +40,7 @@ Screenshots are taken from the live site by the **README screenshots** workflow 
 **Admins**
 - Approve or reject sellers and listings, resolve reports, take listings down
 - Manage users (suspend / reinstate), orders, trade-in requests and booth feedback
+- **Booth settings:** change the booth number, the Viber chat link and an announcement banner (shown above the header on every page) from the dashboard on fair day, with no redeploy
 
 **Everyone**
 - **Visit Stores:** a directory of verified phone stores with search, city filter, sorting and Follow
@@ -209,12 +210,12 @@ deliberate rules rather than incidental copy:
   name, verification, rating, location, and tagline — never a phone number or email.
 - **Verified-purchase badges follow the stored flag only.** They are never inferred
   from a rating or from the wording of a comment.
-- **Reviews are labelled as seeded sample data** while ReFon has no delivered
-  orders, and there is no submission path in the UI.
+- **Seeded reviews are labelled as sample data.** Real reviews can only be written
+  by the buyer of a completed order.
 
-Cart and checkout are a later phase, so the conversion panel offers the two
-actions that work — wishlist and seller inquiry — and names cart as unavailable
-rather than rendering a button that would appear to complete a purchase.
+The conversion panel offers Add to cart (with the 15-minute hold), save, and
+seller inquiry. Buyers can review a phone once its order is completed, and those
+reviews carry the verified-purchase flag.
 
 - `/phones/:slug` — canonical product URL. `/listings/:id` still resolves and replaces the
   address with the slug, so existing links and bookmarks keep working.
@@ -226,7 +227,7 @@ rather than rendering a button that would appear to complete a purchase.
 - Inquiry submissions are persisted through `POST /api/listings/:id/inquiries` and return the existing animated success UI.
 - Pending and rejected listings are editable/deletable; approved listings can be marked sold, while approved and sold records remain locked from editing.
 - The admin dashboard reads the same PostgreSQL queues used by sellers and writes moderation decisions directly to the database.
-- In-app notifications are enabled for buyers and sellers: inquiry confirmations, new inquiries, listing moderation decisions, and sold-listing alerts appear in the navbar bell. Email notifications remain a future feature.
+- In-app notifications are enabled for buyers and sellers: inquiry confirmations, new inquiries, listing moderation decisions, and sold-listing alerts appear in the navbar bell. Order updates are also sent by email (Brevo or SMTP).
 - Browse and listing detail views use responsive skeleton placeholders while PostgreSQL requests are pending; unavailable listings and unknown URLs have dedicated recovery states.
 - The UI includes a skip link, visible keyboard focus rings, labeled form controls, descriptive image alternatives, responsive mobile layouts, and reduced-motion fallbacks.
 
@@ -499,6 +500,8 @@ Seller APIs require an authenticated session:
 - `PATCH /api/listings/:id/mark-sold`
 - `GET /api/listings/:id/inquiries`
 - `POST /api/uploads` — authenticated seller photo upload; accepts up to 6 JPG, PNG, or WebP files (8 MB each, verified by magic bytes) and returns `/uploads/...` URLs
+- `GET /api/site-settings` — public booth number, Viber link and announcement (`null` means the website uses its built-in default)
+- `PATCH /api/admin/site-settings` — admin only; `{ booth, viber, announcement }`, an empty `viber` or `announcement` clears it
 - `GET /api/health` — public health check; `200` with `status: ok` when the database answers, `503` with `status: degraded` otherwise
 - `GET /api/notifications/mine`
 - `PATCH /api/notifications/:id/read`

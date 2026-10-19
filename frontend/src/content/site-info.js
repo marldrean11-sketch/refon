@@ -25,13 +25,14 @@ export const SITE_INFO = Object.freeze({
     venue: 'Taguig City University',
     city: 'Taguig City',
     country: 'Philippines',
-    /** The Techno Fair booth number. */
+    /** The Techno Fair booth number, until an admin sets it from the dashboard. */
     booth: '7',
   }),
 
   /**
-   * The "Chat with us" button. Set `viber` to a viber:// chat link when ready;
-   * until then it shows as "coming soon", and email and phone always work.
+   * The "Chat with us" button. An admin can paste the Viber link from the
+   * dashboard (Booth settings); this is the fallback. Until either is set it
+   * shows as "coming soon", and email and phone always work.
    */
   chat: Object.freeze({
     viber: null,
@@ -39,14 +40,18 @@ export const SITE_INFO = Object.freeze({
 
   /** Placeholders until the accounts exist: set `href` to the real URL. */
   socials: Object.freeze([
-    Object.freeze({ id: 'facebook', label: 'Facebook', href: 'https://www.facebook.com/aedrean.d.nudalo' }),
-    Object.freeze({ id: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/' }),
+    Object.freeze({ id: 'facebook', label: 'Facebook', href: null }),
+    Object.freeze({ id: 'instagram', label: 'Instagram', href: null }),
   ]),
 
   credits: 'Built by BSCS 4B Students, Taguig City University, Techno Fair 2026',
 })
 
-/** "Techno Fair Booth #12", or "Techno Fair booth" until a number is assigned. */
-export function boothLabel(location = SITE_INFO.location) {
-  return location.booth ? `Techno Fair Booth #${location.booth}` : 'Techno Fair booth (number to follow)'
+/**
+ * "Techno Fair Booth #12", or "Techno Fair booth" until a number is assigned.
+ * Pages pass the live number from `useSiteSettings()`, since the admin can
+ * change it on fair day; `booth` above is only the fallback.
+ */
+export function boothLabel(booth = SITE_INFO.location.booth) {
+  return booth ? `Techno Fair Booth #${booth}` : 'Techno Fair booth (number to follow)'
 }

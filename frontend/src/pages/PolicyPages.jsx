@@ -1,4 +1,5 @@
 import { SITE_INFO, boothLabel } from '../content/site-info.js'
+import { useSiteSettings } from '../lib/site-settings.js'
 import { PolicyList, StaticPageLayout } from './StaticPageLayout.jsx'
 import {
   RETURN_TERMS,
@@ -215,6 +216,7 @@ export function TermsPage() {
 
 export function ContactPage() {
   const { contact, location, socials, credits } = SITE_INFO
+  const { booth } = useSiteSettings()
   const card = 'rf-spotlight rf-lift rounded-card-lg border border-line bg-card p-6 hover:border-accent/40'
   const title = 'font-display text-lg font-semibold text-ink'
   const body = 'mt-2 text-sm leading-body text-muted'
@@ -256,7 +258,7 @@ export function ContactPage() {
           <p className={body}>
             {location.venue}, {location.city}, {location.country}
             <br />
-            {boothLabel(location)}
+            {boothLabel(booth)}
           </p>
         </section>
         <section className={card}>

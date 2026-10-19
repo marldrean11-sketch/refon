@@ -6,6 +6,7 @@ import { Confetti } from '../ui/Confetti.jsx'
 import { Modal } from '../ui/Modal.jsx'
 import { POP_GOAL, getPopState, onPopChange } from '../../lib/pop-challenge.js'
 import { boothLabel } from '../../content/site-info.js'
+import { useSiteSettings } from '../../lib/site-settings.js'
 import { play } from '../../lib/sound.js'
 
 /**
@@ -28,6 +29,7 @@ function readHidden() {
 
 export function PopChallenge() {
   const { user } = useAuth()
+  const { booth } = useSiteSettings()
   const [state, setState] = useState({ count: 0, unlockedAt: null, code: null })
   const [open, setOpen] = useState(false)
   const [hidden, setHidden] = useState(readHidden)
@@ -122,7 +124,7 @@ export function PopChallenge() {
           <div className="w-full rounded-2xl border border-dashed border-accent/60 bg-accent-100 px-4 py-3 font-mono text-sm text-accent">
             <div>BADGE {state.code}</div>
             <div className="text-[12px] text-muted">
-              {boothLabel()} ·{' '}
+              {boothLabel(booth)} ·{' '}
               {state.unlockedAt ? new Date(state.unlockedAt).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }) : ''}
             </div>
           </div>
