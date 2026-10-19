@@ -40,7 +40,7 @@ export const SITE_INFO = Object.freeze({
 
   /** Placeholders until the accounts exist: set `href` to the real URL. */
   socials: Object.freeze([
-    Object.freeze({ id: 'facebook', label: 'Facebook', href: 'https://www.facebook.com/aedrean.d.nudalo' }),
+    Object.freeze({ id: 'facebook', label: 'Facebook', href: null }),
     Object.freeze({ id: 'instagram', label: 'Instagram', href: null }),
   ]),
 
