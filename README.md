@@ -33,9 +33,10 @@ Screenshots are taken from the live site by the **README screenshots** workflow 
 - Saved mobile number and delivery address that prefill checkout
 
 **Sellers**
-- Apply, get verified, and list phones with photos, grade, battery health and inspection answers
+- **Sell on ReFon** page (`/sell`) with the seller steps and a sign-up link that opens with Seller picked
+- Sign up with a store name, get verified, and list phones with photos, grade, battery health and inspection answers
 - Dashboard for listings, inquiries and orders; lower prices and mark phones sold
-- "Store look" branding (logo, banner, colour, tagline) and payment details (GCash, Maya, bank, QR)
+- "Store look": store name (renamable any time), logo, banner, colour, tagline and city, with a live preview; payment details (GCash, Maya, bank, QR)
 
 **Admins**
 - Approve or reject sellers and listings, resolve reports, take listings down
@@ -47,6 +48,8 @@ Screenshots are taken from the live site by the **README screenshots** workflow 
 - **Phone health check:** screen, touch, speaker, mic, cameras, vibration, motion sensors and battery, with a shareable result card
 - **Trade-in estimator:** an honest price range in six taps, which can be sent to ReFon as a request
 - **Booth extras:** one-tap demo buyer/seller logins, a first-visit tour, a kiosk mode (`/kiosk`) and a printable poster (`/booth-poster`)
+- **Interface sounds** on by default (clicks, pops, chimes), with a mute switch in the footer
+- Sign-up shows a Terms and Privacy notice and sends a confirmation email
 
 ## Tech stack
 
