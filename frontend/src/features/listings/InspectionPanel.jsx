@@ -1,3 +1,5 @@
+import { imeiStatus } from '../../lib/imei.js'
+import { BuyerImeiGuide } from './BuyerImeiGuide.jsx'
 import { CheckCircle2, CircleDashed, ShieldCheck } from 'lucide-react'
 import { INSPECTION_CHECKS } from '../../lib/listing-taxonomy.js'
 
@@ -140,19 +142,19 @@ export function InspectionPanel({ listing }) {
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-          {listing.imeiVerified ? (
+          {imeiStatus(listing).state === 'verified' ? (
             <span className="inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-ink ring-1 ring-inset ring-accent-300">
               <ShieldCheck className="size-3.5 text-accent-600" aria-hidden="true" />
-              IMEI verified by seller
-              {listing.imeiLast4 ? ` ····${listing.imeiLast4}` : ''}
+              {imeiStatus(listing).label}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] text-muted ring-1 ring-inset ring-line-2">
               <CircleDashed className="size-3.5" aria-hidden="true" />
-              IMEI not verified
+              {imeiStatus(listing).label}
             </span>
           )}
         </div>
+        <BuyerImeiGuide imeiLast4={listing.imeiLast4} />
       </div>
     </section>
   )

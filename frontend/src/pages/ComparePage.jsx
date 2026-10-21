@@ -1,3 +1,4 @@
+import { imeiStatus } from '../lib/imei.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, BadgeCheck, X } from 'lucide-react'
@@ -87,7 +88,7 @@ const ROWS = [
   {
     group: 'Condition',
     label: 'IMEI',
-    value: (listing) => (listing.imeiVerified ? 'Verified by the seller' : 'Not recorded'),
+    value: (listing) => imeiStatus(listing).short,
   },
   {
     group: 'Device',

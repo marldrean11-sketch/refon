@@ -186,9 +186,17 @@ model Listing {
   /// The functional checks that passed on this device. Empty means "not recorded",
   /// which the UI presents differently from "recorded and incomplete".
   inspectionChecks  String[]      @default([]) @map("inspection_checks")
-  /// IMEI verification status. Only the last four digits are retained.
+  /// True only once a ReFon moderator checked the IMEI (matches the phone and
+  /// box, not reported lost or stolen) and the iCloud / Google lock is off.
+  /// A seller cannot set it.
   imeiVerified      Boolean       @default(false) @map("imei_verified")
+  /// Only the last four digits of the IMEI are retained for display.
   imeiLast4         String?       @map("imei_last4") @db.Char(4)
+  /// Keyed fingerprint (HMAC-SHA256) of the full IMEI, so one phone cannot be on
+  /// two live listings. The full IMEI is never stored.
+  imeiHash          String?       @map("imei_hash") @db.Char(64)
+  /// When a moderator recorded the IMEI and lock check.
+  imeiCheckedAt     DateTime?     @map("imei_checked_at") @db.Timestamptz(3)
   /// Units available. Each listing is one physical phone by default.
   quantity          Int           @default(1)
   viewsCount        Int           @default(0) @map("views_count")
@@ -210,6 +218,7 @@ model Listing {
   orderItems    OrderItem[]
   reservations  Reservation[]
 
+  @@index([imeiHash])
   @@index([sellerId, status])
   @@index([status, createdAt])
   @@index([brand, model])

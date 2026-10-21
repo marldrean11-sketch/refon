@@ -14,6 +14,12 @@ const rejectListingSchema = z.preprocess(
     .strict(),
 )
 
+/** Approving may record the moderator's IMEI and lock check. The body is optional. */
+const approveListingSchema = z.preprocess(
+  (value) => value ?? {},
+  z.object({ imeiChecked: z.boolean().optional() }).strict(),
+)
+
 const rejectSellerSchema = z.preprocess(
   (value) => value ?? {},
   z
@@ -27,6 +33,7 @@ const rejectSellerSchema = z.preprocess(
     .strict(),
 )
 
+export const validateApproveListing = validate(approveListingSchema)
 export const validateRejectListing = validate(rejectListingSchema)
 export const validateRejectSeller = validate(rejectSellerSchema)
 

@@ -34,8 +34,9 @@ export function getPendingListingsRequest() {
   return apiRequest('/admin/listings/pending')
 }
 
-export function approveListingRequest(id) {
-  return apiRequest(`/admin/listings/${id}/approve`, { method: 'PATCH' })
+/** `imeiChecked` records the moderator's IMEI and lock check with the approval. */
+export function approveListingRequest(id, { imeiChecked = false } = {}) {
+  return apiRequest(`/admin/listings/${id}/approve`, { method: 'PATCH', body: { imeiChecked } })
 }
 
 export function rejectListingRequest(id, feedback = '') {

@@ -199,8 +199,12 @@ export function presentListing(listing) {
     discountPercent: discount.discountPercent,
 
     // Trust signals.
+    // `imeiVerified` is a ReFon moderator's check, never the seller's word. The
+    // full IMEI and its fingerprint are never sent to the browser.
     imeiVerified: listing.imeiVerified ?? false,
     imeiLast4: listing.imeiLast4 ?? null,
+    imeiOnFile: Boolean(listing.imeiHash || listing.imeiLast4),
+    imeiCheckedAt: listing.imeiCheckedAt ? listing.imeiCheckedAt.toISOString() : null,
     ...inspection,
 
     // Review aggregate.

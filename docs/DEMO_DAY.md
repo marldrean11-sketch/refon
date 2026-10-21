@@ -49,7 +49,7 @@ Only for the hosted demo, which is seeded with your own passwords (see README, "
 2. **Health check (40s).** The visitor scans the QR and runs Display and Speaker on their own phone. Show the lime ring filling and the confetti when a test passes.
 3. **Trade-in (20s).** "Magkano kaya 'yan?" Tap their model, storage, condition, battery: the price range counts up.
 4. **Shop (30s).** Open a phone, show the grade explanation and inspection list, tap **Add to cart**: confetti and the 15-minute hold timer.
-5. **Seller and admin (10s, optional).** Open **Sell on ReFon** (`/sell`) to show the steps, then a seller lists a phone; the admin approves it; it appears in the shop.
+5. **Seller and admin (20s, optional).** Open **Sell on ReFon** (`/sell`) to show the steps, then a seller lists a phone and types its IMEI (a wrong digit is caught instantly; only the last 4 digits are kept). The admin ticks **IMEI and lock checked** and approves; it appears in the shop, and the product page shows **IMEI verified by ReFon ···1234** plus the buyer's "Check the IMEI yourself" guide.
 6. **Price-drop alert (20s, optional).** As the buyer, tap the heart on a phone. As the seller, click **Lower price** on that phone in the dashboard. Back as the buyer, the bell shows "Price drop! … now ₱X (was ₱Y)".
 7. **Ask for a rating.** Point at the "Rate us" QR on the poster. Three questions, about 20 seconds.
 
