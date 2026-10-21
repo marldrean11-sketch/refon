@@ -24,6 +24,17 @@ const registerSchema = z
         error: 'Choose either Buyer or Seller.',
       }),
     ),
+    // Sellers only. The sign-up form requires it; a client that leaves it out
+    // gets a store named after the person.
+    businessName: z
+      .string()
+      .trim()
+      .max(80, 'Store name must be 80 characters or fewer.')
+      .refine((value) => value === '' || value.length >= 2, {
+        message: 'Store name must be at least 2 characters.',
+      })
+      .transform((value) => value || undefined)
+      .optional(),
   })
   .strict()
 
@@ -137,3 +148,7 @@ const verifyEmailSchema = z
 export const validateForgotPassword = validate(forgotPasswordSchema)
 export const validateResetPassword = validate(resetPasswordSchema)
 export const validateVerifyEmail = validate(verifyEmailSchema)
+
+export const validateDemoLogin = validate(
+  z.object({ role: z.enum(['BUYER', 'SELLER']) }).strict(),
+)

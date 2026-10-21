@@ -1,6 +1,7 @@
 import {
   authenticateUser,
   getUserById,
+  loginDemoAccount,
   registerUser,
   requestPasswordReset,
   resendVerificationEmail,
@@ -25,6 +26,12 @@ export const register = asyncHandler(async (req, res) => {
 
 export const login = asyncHandler(async (req, res) => {
   const user = await authenticateUser(req.validatedBody)
+  setAuthCookie(res, createAccessToken(user))
+  return sendUser(res, user)
+})
+
+export const demoLogin = asyncHandler(async (req, res) => {
+  const user = await loginDemoAccount(req.validatedBody.role)
   setAuthCookie(res, createAccessToken(user))
   return sendUser(res, user)
 })

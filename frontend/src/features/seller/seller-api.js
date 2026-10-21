@@ -10,3 +10,17 @@ export function applyAsSellerRequest(values) {
 export function getMySellerProfileRequest() {
   return apiRequest('/sellers/me')
 }
+
+export function updatePaymentDetailsRequest(values) {
+  return apiRequest('/sellers/me/payment', {
+    method: 'PATCH',
+    body: values,
+  })
+}
+
+export function updateStorefrontRequest(values) {
+  return apiRequest('/sellers/me/storefront', {
+    method: 'PATCH',
+    body: values,
+  })
+}

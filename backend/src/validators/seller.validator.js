@@ -80,3 +80,72 @@ export function validatePublicSellerId(req, _res, next) {
   req.validatedParams = result.data
   return next()
 }
+
+const mobileOrEmpty = z
+  .string()
+  .trim()
+  .regex(/^((\+?63|0)9\d{9})?$/, 'Enter a Philippine mobile number, e.g. 09171234567.')
+
+const paymentDetailsSchema = z
+  .object({
+    gcash: mobileOrEmpty.optional(),
+    maya: mobileOrEmpty.optional(),
+    bank: z.string().trim().max(300, 'Bank details must be 300 characters or fewer.').optional(),
+    qr: z
+      .string()
+      .trim()
+      .regex(/^(\/uploads\/[A-Za-z0-9._-]+)?$/, 'Upload the QR code as a photo.')
+      .optional(),
+    note: z.string().trim().max(300, 'Note must be 300 characters or fewer.').optional(),
+  })
+  .strict()
+
+export const validatePaymentDetails = validate(paymentDetailsSchema)
+
+/** The storefront colour presets; the frontend maps each to its own swatch. */
+export const BRAND_COLORS = ['lime', 'sky', 'violet', 'coral', 'amber', 'mint']
+
+const uploadPathOrEmpty = z
+  .string()
+  .trim()
+  .regex(/^(\/uploads\/[A-Za-z0-9._-]+)?$/, 'Upload the image as a photo.')
+
+const storefrontSchema = z
+  .object({
+    // The store's public name. Optional in the request (older clients omit it),
+    // but when sent it cannot be blanked.
+    businessName: z
+      .string()
+      .trim()
+      .min(2, 'Store name must be at least 2 characters.')
+      .max(80, 'Store name must be 80 characters or fewer.')
+      .optional(),
+    tagline: z.string().trim().max(200, 'Tagline must be 200 characters or fewer.').optional(),
+    city: z.string().trim().max(120, 'City must be 120 characters or fewer.').optional(),
+    region: z.string().trim().max(120, 'Region must be 120 characters or fewer.').optional(),
+    logoUrl: uploadPathOrEmpty.optional(),
+    bannerUrl: uploadPathOrEmpty.optional(),
+    brandColor: z.union([z.enum(BRAND_COLORS), z.literal('')]).optional(),
+  })
+  .strict()
+
+export const validateStorefrontSettings = validate(storefrontSchema)
+
+const directoryQuerySchema = z
+  .object({
+    q: z.string().trim().max(120).optional(),
+    city: z.string().trim().max(120).optional(),
+    sort: z.enum(['rating', 'sales', 'newest'], { error: 'Unsupported sort option.' }).default('rating'),
+    following: z.preprocess((value) => value === 'true' || value === '1', z.boolean()).optional(),
+    page: z.preprocess(
+      (value) => (value === '' || value === undefined ? undefined : Number(value)),
+      z.number().int().min(1).max(10000).optional().default(1),
+    ),
+    limit: z.preprocess(
+      (value) => (value === '' || value === undefined ? undefined : Number(value)),
+      z.number().int().min(1).max(48).optional().default(12),
+    ),
+  })
+  .strict()
+
+export const validateDirectoryQuery = validateQuery(directoryQuerySchema)

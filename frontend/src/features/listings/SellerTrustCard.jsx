@@ -2,16 +2,7 @@ import { BadgeCheck, Clock3, MapPin, Store } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { RatingStars } from '../../components/ui/RatingStars.jsx'
 import { sellerPath } from '../../lib/routes.js'
-
-function initialsFor(name) {
-  return String(name ?? '')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-}
+import { SellerAvatar } from '../seller/brand.jsx'
 
 /**
  * Who is selling this phone.
@@ -50,14 +41,7 @@ export function SellerTrustCard({ listing, actionSlot }) {
   return (
     <div className="rounded-card border border-line bg-surface">
       <div className="flex items-start gap-4 border-b border-line p-5">
-        <span
-          className={`grid size-12 shrink-0 place-items-center rounded-control font-display text-base font-bold text-white ${
-            isVerified ? 'bg-accent-600' : 'bg-subtle'
-          }`}
-          aria-hidden="true"
-        >
-          {initialsFor(listing.sellerName)}
-        </span>
+        <SellerAvatar seller={seller} name={listing.sellerName} className="size-12 text-base" />
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

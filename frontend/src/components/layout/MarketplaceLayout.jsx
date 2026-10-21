@@ -12,6 +12,7 @@ import { BackToTop } from './BackToTop.jsx'
 import { WelcomeBurst } from './WelcomeBurst.jsx'
 import { PopChallenge } from './PopChallenge.jsx'
 import { ChatButton } from './ChatButton.jsx'
+import { FirstVisitTour } from './FirstVisitTour.jsx'
 
 /**
  * The public marketplace shell.
@@ -59,6 +60,7 @@ export function MarketplaceLayout() {
       <WelcomeBurst />
       <PopChallenge />
       <ChatButton />
+      <FirstVisitTour />
       <CustomCursor />
     </div>
   )

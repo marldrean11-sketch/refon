@@ -169,7 +169,7 @@ export function OrderReview({
               <span className="block font-semibold text-ink">{payment?.label}</span>
               {payment?.demo && (
                 <span className="mt-1 block rounded-pill bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-900">
-                  Demo payment method
+                  Pay seller directly
                 </span>
               )}
               {payment?.instructions && (

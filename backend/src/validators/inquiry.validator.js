@@ -41,3 +41,15 @@ const inquiryQuerySchema = z
 
 export const validateInquiryId = validateParams(inquiryIdSchema)
 export const validateInquiryQuery = validateQuery(inquiryQuerySchema)
+
+const inquiryReplySchema = z
+  .object({
+    body: z
+      .string()
+      .trim()
+      .min(1, 'Write a reply first.')
+      .max(2000, 'Reply must be 2000 characters or fewer.'),
+  })
+  .strict()
+
+export const validateInquiryReply = validate(inquiryReplySchema)

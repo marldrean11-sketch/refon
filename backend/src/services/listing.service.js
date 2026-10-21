@@ -2,6 +2,7 @@ import { prisma } from '../config/prisma.js'
 import { storage } from './storage.service.js'
 import { ApiError } from '../utils/api-error.js'
 import { fingerprintImei } from '../utils/imei.js'
+import { notifyStoreFollowers } from './store.service.js'
 import { presentListing, presentPagination } from '../utils/listing-presenter.js'
 import { RAM_GB, STORAGE_GB, categoryWhere } from '../utils/catalog-taxonomy.js'
 
@@ -22,6 +23,8 @@ export const listingInclude = {
       city: true,
       region: true,
       tagline: true,
+      logoUrl: true,
+      brandColor: true,
       ratingAverage: true,
       ratingCount: true,
       completedSales: true,
@@ -724,6 +727,12 @@ export async function getPopularSearches(limit = 6) {
   return [...counts.values()].sort((left, right) => right.count - left.count).slice(0, limit)
 }
 
+/** The product page also says how many shoppers saved the phone. */
+async function withSaveCount(listing) {
+  const saveCount = await prisma.favorite.count({ where: { listingId: listing.id } })
+  return { ...presentListing(listing), saveCount }
+}
+
 export async function getApprovedListing(id) {
   const listing = await prisma.listing.findFirst({
     where: { id, status: { in: ['APPROVED', 'SOLD'] } },
@@ -734,7 +743,7 @@ export async function getApprovedListing(id) {
     throw new ApiError(404, 'Approved listing not found.', 'LISTING_NOT_FOUND')
   }
 
-  return presentListing(listing)
+  return withSaveCount(listing)
 }
 
 /**
@@ -753,7 +762,7 @@ export async function getApprovedListingBySlug(slug) {
     throw new ApiError(404, 'Approved listing not found.', 'LISTING_NOT_FOUND')
   }
 
-  return presentListing(listing)
+  return withSaveCount(listing)
 }
 
 /**
@@ -1057,8 +1066,9 @@ export async function reviewListing(id, decision, feedback = '', { imeiChecked =
         status: true,
         brand: true,
         model: true,
+        storage: true,
         imeiHash: true,
-        seller: { select: { userId: true } },
+        seller: { select: { id: true, userId: true, businessName: true } },
       },
     })
 
@@ -1110,6 +1120,15 @@ export async function reviewListing(id, decision, feedback = '', { imeiChecked =
         relatedListingId: existingListing.id,
       },
     })
+
+    if (decision === 'APPROVED') {
+      await notifyStoreFollowers(transaction, {
+        sellerId: existingListing.seller.id,
+        listingId: existingListing.id,
+        label: `${existingListing.brand} ${existingListing.model} ${existingListing.storage}`,
+        storeName: existingListing.seller.businessName,
+      })
+    }
 
     return presentListing(listing)
   })

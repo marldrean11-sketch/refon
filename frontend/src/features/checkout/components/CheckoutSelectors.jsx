@@ -202,7 +202,7 @@ export function PaymentMethodSelector({ methods, value, onChange, error, notice 
             badge={
               method.demo ? (
                 <span className="inline-flex items-center rounded-pill bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-900">
-                  Demo payment method
+                  Pay seller directly
                 </span>
               ) : null
             }

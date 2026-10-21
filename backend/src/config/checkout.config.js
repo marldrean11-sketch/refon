@@ -81,12 +81,11 @@ export const DEFAULT_ZONE_ID = 'metro_manila'
 /**
  * Payment methods.
  *
- * Every one of these is a **demo** selection. No payment credentials are collected
- * for any of them, no gateway is contacted, and no money moves. `demo: true` is
- * returned to the client so the interface can say so plainly rather than implying
- * a live payment step exists.
- *
- * Cash on delivery is the only method with any real-world meaning in this build.
+ * No payment is taken on ReFon: no credentials are collected for any of them and no
+ * gateway is contacted. The buyer pays the seller directly. `demo: true` marks the
+ * methods paid outside ReFon after the seller confirms the order (the seller sends
+ * the details), so the interface can say so plainly rather than implying a live
+ * payment step exists. Cash on delivery is paid to the courier.
  */
 export const PAYMENT_METHODS = Object.freeze([
   {
@@ -100,24 +99,24 @@ export const PAYMENT_METHODS = Object.freeze([
   {
     id: 'gcash',
     label: 'GCash',
-    description: 'Demo payment method. No GCash account details are collected.',
-    instructions: 'A ReFon support agent would send payment instructions after the order is placed.',
+    description: 'Pay the seller by GCash after they confirm your order. ReFon never asks for your GCash login.',
+    instructions: 'The seller will send you payment details after confirming your order. Pay only after the seller confirms.',
     demo: true,
     collectsCredentials: false,
   },
   {
     id: 'maya',
     label: 'Maya',
-    description: 'Demo payment method. No Maya account details are collected.',
-    instructions: 'A ReFon support agent would send payment instructions after the order is placed.',
+    description: 'Pay the seller by Maya after they confirm your order. ReFon never asks for your Maya login.',
+    instructions: 'The seller will send you payment details after confirming your order. Pay only after the seller confirms.',
     demo: true,
     collectsCredentials: false,
   },
   {
     id: 'bank_transfer',
     label: 'Bank Transfer',
-    description: 'Demo payment method. No bank login details are collected.',
-    instructions: 'A ReFon support agent would send payment instructions after the order is placed.',
+    description: 'Pay the seller by bank transfer after they confirm your order. ReFon never asks for bank logins.',
+    instructions: 'The seller will send you payment details after confirming your order. Pay only after the seller confirms.',
     demo: true,
     collectsCredentials: false,
   },
@@ -236,7 +235,7 @@ export function presentCheckoutOptions({ zoneId = DEFAULT_ZONE_ID, subtotal = 0 
     // Stated once so the UI can be explicit about it wherever payment is chosen,
     // rather than relying on each component to say the right thing.
     demoPaymentNotice:
-      'This build takes a payment preference only. No payment is processed, and no payment or bank credentials are collected.',
+      'No payment is processed on ReFon, and no payment or bank details are collected here. You pay the seller directly: cash on delivery, or GCash, Maya or bank transfer using the details the seller sends once they confirm your order.',
     freeStandardDeliveryThreshold: FREE_STANDARD_DELIVERY_THRESHOLD,
   }
 }

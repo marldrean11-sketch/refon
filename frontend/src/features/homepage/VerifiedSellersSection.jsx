@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { BadgeCheck, Clock3, Store } from 'lucide-react'
 import { Section, SectionHeading } from '../../components/ui/Section.jsx'
 import { Link } from 'react-router-dom'
 import { formatNumber, formatPeso } from '../../lib/format.js'
-import { sellerPath } from '../../lib/routes.js'
+import { MARKETPLACE_ROUTES, sellerPath } from '../../lib/routes.js'
+import { StoreCard } from '../seller/components/StoreCard.jsx'
+import { getStoreDirectoryRequest } from '../seller/storefront-api.js'
 
 /**
  * Verified sellers.
@@ -49,7 +51,18 @@ export function VerifiedSellersSection({ listings, isLoading }) {
       .slice(0, 4)
   }, [listings])
 
-  const isEmpty = !isLoading && sellers.length === 0
+  // The three top-rated stores, as branded cards. Until they load (or if the
+  // directory cannot be reached) the register built from listings shows instead.
+  const [topStores, setTopStores] = useState([])
+  useEffect(() => {
+    const controller = new AbortController()
+    getStoreDirectoryRequest({ sort: 'rating', limit: 3 }, controller.signal)
+      .then((response) => setTopStores(response.stores ?? []))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [])
+
+  const isEmpty = !isLoading && sellers.length === 0 && topStores.length === 0
 
   return (
     <Section tone="white" id="sellers">
@@ -57,12 +70,28 @@ export function VerifiedSellersSection({ listings, isLoading }) {
         eyebrow="Verified sellers"
         title="Only verified accounts can list a phone"
         description="Sellers are reviewed before they can publish, and a moderator checks each listing before it reaches you."
+        action={
+          <Link
+            to={MARKETPLACE_ROUTES.stores}
+            data-testid="see-all-stores"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-2 px-5 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent"
+          >
+            <Store className="size-4" aria-hidden="true" />
+            See all stores
+          </Link>
+        }
       />
 
       {isEmpty ? (
         <p className="mt-10 rounded-card border border-dashed border-line-2 bg-canvas p-8 text-center text-sm font-semibold text-muted">
           No approved sellers have published listings yet.
         </p>
+      ) : topStores.length > 0 ? (
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-testid="top-stores">
+          {topStores.map((store) => (
+            <StoreCard key={store.id} store={store} />
+          ))}
+        </div>
       ) : (
         <ul className="mt-10 grid gap-px overflow-hidden rounded-card-lg border border-line bg-line lg:grid-cols-2">
           {sellers.map((seller) => (

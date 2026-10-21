@@ -6,7 +6,7 @@ import {
   ShoppingBag,
   Store,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthShell } from '../components/auth/AuthShell.jsx'
 import { celebrateNextPage } from '../components/layout/WelcomeBurst.jsx'
 import { LogoGlyph } from '../components/ui/BrandMark.jsx'
@@ -14,6 +14,7 @@ import { PasswordField } from '../components/auth/PasswordField.jsx'
 import { TextField } from '../components/ui/TextField.jsx'
 import { useAuth } from '../features/auth/useAuth.js'
 import { AUTH_ROUTES, getRoleHome } from '../features/auth/auth.routes.js'
+import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 import {
   getSafeDestination,
   validateRegisterForm,
@@ -26,6 +27,7 @@ const initialForm = {
   email: '',
   password: '',
   role: 'BUYER',
+  businessName: '',
 }
 
 const roleOptions = [
@@ -52,7 +54,12 @@ function focusFirstField(fieldName) {
 
 export function RegisterPage() {
   const { register, initializationError } = useAuth()
-  const [form, setForm] = useState(initialForm)
+  // `/register?role=seller` (the "Sell on ReFon" page) opens with Seller picked.
+  const [searchParams] = useSearchParams()
+  const [form, setForm] = useState(() => ({
+    ...initialForm,
+    role: searchParams.get('role')?.toUpperCase() === 'SELLER' ? 'SELLER' : 'BUYER',
+  }))
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -91,6 +98,7 @@ export function RegisterPage() {
         email: form.email.trim(),
         password: form.password,
         role: form.role,
+        ...(form.role === 'SELLER' ? { businessName: form.businessName.trim() } : {}),
       })
 
       // Registration is a full-page reset in some paths, so the "return to" target
@@ -148,8 +156,8 @@ export function RegisterPage() {
             Create your account
           </h1>
           <p className="mt-2.5 leading-body text-muted">
-            Start as a buyer or a seller. You can sign in securely immediately after
-            registration.
+            Start as a buyer or a seller. You can use ReFon right away; we&rsquo;ll also
+            email you a link to confirm your address.
           </p>
         </div>
 
@@ -233,13 +241,31 @@ export function RegisterPage() {
             label="Full name"
             type="text"
             autoComplete="name"
-            placeholder="Alex Morgan"
+            placeholder="Juan Dela Cruz"
             value={form.name}
             onChange={updateField}
             error={fieldErrors.name}
             disabled={isSubmitting}
             required
           />
+
+          {form.role === 'SELLER' && (
+            <TextField
+              id="businessName"
+              name="businessName"
+              label="Store name"
+              type="text"
+              autoComplete="organization"
+              placeholder="JDC Phones"
+              value={form.businessName}
+              onChange={updateField}
+              error={fieldErrors.businessName}
+              hint="Shown to buyers on your listings and in Visit Stores. You can change it later in Store look."
+              maxLength={80}
+              disabled={isSubmitting}
+              required
+            />
+          )}
 
           <TextField
             id="email"
@@ -302,9 +328,28 @@ export function RegisterPage() {
               </>
             )}
           </button>
+          <p className="text-center text-xs leading-relaxed text-muted" data-testid="register-consent">
+            By creating an account you agree to the{' '}
+            <Link to={MARKETPLACE_ROUTES.terms} className="font-semibold text-ink underline underline-offset-2 hover:text-accent">
+              Terms
+            </Link>{' '}
+            and the{' '}
+            <Link to={MARKETPLACE_ROUTES.privacy} className="font-semibold text-ink underline underline-offset-2 hover:text-accent">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         </form>
 
-        <p className="mt-7 border-t border-line pt-6 text-center text-sm text-muted">
+        <p className="mt-6 rounded-2xl border border-dashed border-line-2 p-3 text-center text-sm text-muted">
+          Just looking around?{' '}
+          <Link to={AUTH_ROUTES.login} className="font-semibold text-accent hover:underline">
+            Try a demo account
+          </Link>{' '}
+          in one tap.
+        </p>
+
+        <p className="mt-6 border-t border-line pt-6 text-center text-sm text-muted">
           Already have an account?{' '}
           <Link
             to={AUTH_ROUTES.login}

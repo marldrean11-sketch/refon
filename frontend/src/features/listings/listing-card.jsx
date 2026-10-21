@@ -1,7 +1,7 @@
 import { BadgeCheck, Store, Truck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { isImageReference } from './image-reference.js'
+import { ListingPhoto } from './ListingPhoto.jsx'
 import { PhoneArtwork } from './PhoneArtwork.jsx'
 import { FavoriteButton } from '../favorites/FavoriteButton.jsx'
 import { CompareToggle } from '../compare/CompareToggle.jsx'
@@ -83,6 +83,9 @@ export function gradeFor(listing) {
  * listing carries a reference price above the selling price.
  */
 export function ListingCard({ listing, preview = false, hideSaveButton = false }) {
+  // A sold phone stays visible (a buyer's saved shelf keeps it) but can no
+  // longer be acted on, so it is marked as sold and loses its controls.
+  const sold = listing.status === 'SOLD'
   const reduceMotion = usePrefersReducedMotion()
   const mainPhoto = listing.mainPhoto ?? listing.photos?.[0]
   const grade = gradeFor(listing)
@@ -98,7 +101,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
       // Touch screens: a short press-in on tap, since there is no hover.
       whileTap={reduceMotion || preview ? undefined : { scale: 0.98 }}
       transition={standardTransition}
-      className={`rf-spotlight group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-card-hover ${gradeStyle.hoverBorder}`}
+      className={`rf-spotlight group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-surface transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-1 hover:shadow-card-hover active:scale-[0.98] ${gradeStyle.hoverBorder}`}
     >
       {!preview && (
         <Link
@@ -121,17 +124,15 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
 
       {/* 1. The device. */}
       <div className="relative overflow-hidden border-b border-line bg-surface-2">
-        {isImageReference(mainPhoto) ? (
-          <img
-            src={mainPhoto}
-            alt={`${listing.brand} ${listing.model} in ${listing.color ?? 'as pictured'}`}
-            loading="lazy"
-            decoding="async"
-            width={800}
-            height={1000}
-            className="aspect-[4/5] w-full object-cover transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.04]"
-          />
-        ) : (
+        <ListingPhoto
+          src={mainPhoto}
+          alt={`${listing.brand} ${listing.model} in ${listing.color ?? 'as pictured'}`}
+          loading="lazy"
+          decoding="async"
+          width={800}
+          height={1000}
+          className="aspect-[4/5] w-full object-cover transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.04]"
+          fallback={
           <PhoneArtwork
             brand={listing.brand}
             model={listing.model}
@@ -140,13 +141,29 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
             // condition badge and the two collided. On a card the grade already
             // says this is a listing, so the chip is redundant here.
             showLabel={false}
-            className="aspect-[4/5] w-full"
+            // Zooms on hover like a real photo does, so every card responds the same.
+            className="aspect-[4/5] w-full transition duration-500 ease-smooth motion-reduce:transform-none group-hover:scale-[1.04]"
           />
-        )}
+          }
+        />
 
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
           <ConditionBadge grade={grade} />
         </div>
+
+        {sold && (
+          <div
+            data-testid="listing-sold-notice"
+            className="absolute inset-0 z-20 grid place-items-center bg-page/70 backdrop-grayscale"
+          >
+            <div className="flex flex-col items-center gap-1 rounded-control bg-page/90 px-4 py-3 text-center shadow-pop">
+              <span className="font-display text-xl font-bold uppercase tracking-[0.12em] text-ink">
+                Sold
+              </span>
+              <span className="text-xs text-muted">No longer available</span>
+            </div>
+          </div>
+        )}
 
         {listing.isFeatured && (
           <span className="absolute bottom-0 left-0 bg-primary-950 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white">
@@ -155,7 +172,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
         )}
 
         {/* Owns the stacking context so it paints above the z-30 full-card link. */}
-        {!preview && !hideSaveButton && (
+        {!preview && !hideSaveButton && !sold && (
           <div className="absolute right-3 top-3 z-40">
             <FavoriteButton listing={listing} />
           </div>
@@ -226,7 +243,7 @@ export function ListingCard({ listing, preview = false, hideSaveButton = false }
                 Verified seller
               </span>
             )}
-            {!preview && <CompareToggle listing={listing} className="ml-auto -my-1" />}
+            {!preview && !sold && <CompareToggle listing={listing} className="ml-auto -my-1" />}
           </div>
         </div>
       </div>

@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { Mail, MessageCircle, Phone, X } from 'lucide-react'
 import { SITE_INFO } from '../../content/site-info.js'
+import { useSiteSettings } from '../../lib/site-settings.js'
 
 /**
  * The floating "Chat with us" button, bottom-right.
  *
- * It opens a small menu of ways to reach the team: Messenger and Viber when
- * their links are set in `site-info.js` (shown as "coming soon" until then),
+ * It opens a small menu of ways to reach the team: Viber when an admin has set
+ * its link (shown as "coming soon" until then),
  * plus email and phone, which always work. Escape or a click outside closes it.
  */
 export function ChatButton() {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
-  const { chat, contact } = SITE_INFO
+  const { contact } = SITE_INFO
+  const { viber } = useSiteSettings()
 
   useEffect(() => {
     if (!open) return undefined
@@ -29,8 +31,7 @@ export function ChatButton() {
   }, [open])
 
   const options = [
-    { key: 'messenger', label: 'Messenger', href: chat.messenger, icon: MessageCircle },
-    { key: 'viber', label: 'Viber', href: chat.viber, icon: Phone },
+    { key: 'viber', label: 'Viber', href: viber, icon: Phone },
     { key: 'email', label: contact.email, href: `mailto:${contact.email}`, icon: Mail },
     { key: 'phone', label: contact.phone, href: contact.phoneHref, icon: Phone },
   ]

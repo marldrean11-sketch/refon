@@ -9,13 +9,14 @@ import {
   Send,
   ShieldAlert,
   ShoppingBag,
+  Store,
   TrendingDown,
   X,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
-import { AUTH_ROUTES } from '../auth/auth.routes.js'
+import { AUTH_ROUTES, DASHBOARD_ROUTES } from '../auth/auth.routes.js'
 import {
   getMyNotificationsRequest,
   markAllNotificationsReadRequest,
@@ -67,9 +68,35 @@ const notificationPresentation = {
     icon: TrendingDown,
     iconClass: 'bg-accent text-page',
   },
+  INQUIRY_REPLY: {
+    icon: MessageCircle,
+    iconClass: 'bg-accent text-page',
+  },
+  ORDER_PLACED: {
+    icon: ShoppingBag,
+    iconClass: 'bg-accent text-page',
+  },
+  ORDER_UPDATED: {
+    icon: ShoppingBag,
+    iconClass: 'bg-accent-tint text-accent',
+  },
+  NEW_FROM_FOLLOWED_STORE: {
+    icon: Store,
+    iconClass: 'bg-accent text-page',
+  },
 }
 
-function getNotificationTarget(notification) {
+function getNotificationTarget(notification, role) {
+  // Orders open the seller's order list, or the buyer's own orders.
+  if (notification.type === 'ORDER_PLACED' || notification.type === 'ORDER_UPDATED') {
+    return role === 'SELLER' ? DASHBOARD_ROUTES.sellerOrders : DASHBOARD_ROUTES.orders
+  }
+
+  // A reply opens the thread: the seller's inbox, or the buyer's sent inquiries.
+  if (notification.type === 'INQUIRY_REPLY') {
+    return role === 'SELLER' ? AUTH_ROUTES.sellerInquiries : AUTH_ROUTES.myInquiries
+  }
+
   // Buyer questions belong in the seller's inbox rather than on the listing page.
   if (notification.type === 'NEW_INQUIRY') {
     return AUTH_ROUTES.sellerInquiries
@@ -84,6 +111,11 @@ function getNotificationTarget(notification) {
     notification.relatedListingId &&
     notification.type === 'LISTING_APPROVED'
   ) {
+    return `/listings/${notification.relatedListingId}`
+  }
+
+  // A followed store's new phone opens that phone.
+  if (notification.type === 'NEW_FROM_FOLLOWED_STORE' && notification.relatedListingId) {
     return `/listings/${notification.relatedListingId}`
   }
 
@@ -280,7 +312,7 @@ export function NotificationBell() {
     }
 
     setIsOpen(false)
-    navigate(getNotificationTarget(notification))
+    navigate(getNotificationTarget(notification, user?.role))
   }
 
   async function handleMarkAllRead() {

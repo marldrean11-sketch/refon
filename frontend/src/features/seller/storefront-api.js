@@ -39,3 +39,19 @@ export function getSellerStorefrontReviewsRequest(sellerId, params, signal) {
     signal,
   })
 }
+/** The "Phone Stores" directory. Sends the session so `following` is filled in. */
+export function getStoreDirectoryRequest(params, signal) {
+  return apiRequest(`/sellers${toQueryString(params)}`, { signal })
+}
+
+export function getFollowStateRequest(sellerId, signal) {
+  return apiRequest(`/sellers/${encodeURIComponent(sellerId)}/follow`, { signal })
+}
+
+export function followStoreRequest(sellerId) {
+  return apiRequest(`/sellers/${encodeURIComponent(sellerId)}/follow`, { method: 'POST' })
+}
+
+export function unfollowStoreRequest(sellerId) {
+  return apiRequest(`/sellers/${encodeURIComponent(sellerId)}/follow`, { method: 'DELETE' })
+}

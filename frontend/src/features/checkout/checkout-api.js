@@ -26,3 +26,11 @@ export function getCheckoutQuoteRequest({ deliveryMethodId, paymentMethodId, det
     body: { deliveryMethodId, paymentMethodId, details },
   })
 }
+
+/** Places the order: one per seller, the phones come off sale and the cart empties. */
+export function placeOrderRequest({ deliveryMethodId, paymentMethodId, details }) {
+  return apiRequest('/checkout/place-order', {
+    method: 'POST',
+    body: { deliveryMethodId, paymentMethodId, details },
+  })
+}

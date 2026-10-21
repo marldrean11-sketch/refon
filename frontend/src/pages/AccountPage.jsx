@@ -18,6 +18,7 @@ import {
 } from '../features/account/account-api.js'
 import { resendVerificationRequest } from '../features/auth/auth-api.js'
 import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
+import { DeliveryDetailsCard } from '../features/account/DeliveryDetailsCard.jsx'
 
 const roleLabels = {
   ADMIN: 'Administrator',
@@ -300,6 +301,8 @@ export function AccountPage() {
             </button>
           </form>
         </div>
+
+        {user.role === 'BUYER' && <DeliveryDetailsCard />}
 
         <VerificationCard isVerified={isVerified} />
 

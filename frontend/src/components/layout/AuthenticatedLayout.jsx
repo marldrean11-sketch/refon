@@ -1,8 +1,9 @@
 import { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { SiteFooter } from '../../features/design/SiteFooter.jsx'
 import { CustomCursor } from './CustomCursor.jsx'
 import { BackToTop } from './BackToTop.jsx'
+import { CompareTray } from '../../features/compare/CompareTray.jsx'
 import { WelcomeBurst } from './WelcomeBurst.jsx'
 import { PopChallenge } from './PopChallenge.jsx'
 import { ChatButton } from './ChatButton.jsx'
@@ -10,6 +11,7 @@ import { SiteHeader } from '../../features/design/SiteHeader.jsx'
 import { EmailVerificationBanner } from '../auth/EmailVerificationBanner.jsx'
 import { PageTransition } from './PageTransition.jsx'
 import { LoadingScreen } from '../ui/LoadingScreen.jsx'
+import { AUTH_ROUTES } from '../../features/auth/auth.routes.js'
 
 /**
  * The signed-in shell: account, seller, and admin.
@@ -27,6 +29,8 @@ import { LoadingScreen } from '../ui/LoadingScreen.jsx'
  * screen, not a second global header.
  */
 export function AuthenticatedLayout() {
+  const { pathname } = useLocation()
+
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       <SiteHeader />
@@ -45,6 +49,9 @@ export function AuthenticatedLayout() {
       </main>
 
       <SiteFooter />
+      {/* Only on Saved, where its cards have Compare toggles. On dashboards and
+          account pages a leftover selection would follow the visitor around. */}
+      <CompareTray hidden={pathname !== AUTH_ROUTES.saved} />
       <BackToTop />
       <WelcomeBurst />
       <PopChallenge />

@@ -38,6 +38,8 @@ export const MARKETPLACE_ROUTES = Object.freeze({
   /** Legacy alias kept so existing bookmarks and tests keep working. */
   browse: '/browse',
   categories: '/categories',
+  /** The directory of every verified phone store. */
+  stores: '/stores',
   howItWorks: '/how-it-works',
   qualityCheck: '/quality-check',
   /** The in-browser self-test a visitor runs on the phone in their hand. */

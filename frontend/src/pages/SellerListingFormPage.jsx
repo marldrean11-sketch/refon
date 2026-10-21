@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ImagePlus,
   Info,
+  ListChecks,
   LockKeyhole,
   RefreshCw,
   Save,
@@ -16,11 +17,19 @@ import {
   ShieldCheck,
   Star,
   Smartphone,
+  ImageOff,
   Trash2,
   UploadCloud,
 } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ListingCard } from '../features/listings/listing-card.jsx'
+import { ListingPhoto } from '../features/listings/ListingPhoto.jsx'
+import {
+  CONDITION_GRADES,
+  CONDITION_GRADE_ORDER,
+  INSPECTION_CHECKS,
+  gradeFromLegacyCondition,
+} from '../lib/listing-taxonomy.js'
 import { uploadPhotosRequest } from '../features/listings/listing-api.js'
 import { useSellerListings } from '../features/seller/useSellerListings.js'
 import { useSellerProfile } from '../features/seller/useSellerProfile.js'
@@ -28,10 +37,35 @@ import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
 import { imeiProblem, normalizeImei } from '../lib/imei.js'
 
-const brandOptions = ['Apple', 'Samsung', 'Xiaomi', 'OPPO']
+// Suggestions only: the brand field still accepts any name. Spellings match the
+// catalog's brand categories (Google for Pixel, OnePlus, Oppo, Vivo).
+const brandOptions = [
+  'Apple',
+  'Samsung',
+  'Google',
+  'Xiaomi',
+  'Oppo',
+  'Vivo',
+  'OnePlus',
+  'realme',
+  'Huawei',
+  'Honor',
+  'Infinix',
+  'Tecno',
+  'Motorola',
+  'Nothing',
+]
 const years = Array.from({ length: 10 }, (_, index) => 2015 + index)
-const storageOptions = ['32 GB', '64 GB', '128 GB', '256 GB', '512 GB']
-const conditionOptions = ['Good', 'Excellent', 'Like New']
+const storageOptions = ['32 GB', '64 GB', '128 GB', '256 GB', '512 GB', '1 TB']
+const ramOptions = ['2 GB', '3 GB', '4 GB', '6 GB', '8 GB', '12 GB', '16 GB']
+const warrantyOptions = [
+  { months: 0, label: 'None (sold as-is)' },
+  { months: 3, label: '3 months' },
+  { months: 6, label: '6 months' },
+  { months: 12, label: '12 months' },
+]
+/** The API still stores the older free-text condition next to the grade. */
+const CONDITION_FOR_GRADE = { A: 'Excellent', B: 'Good', C: 'Good' }
 const MAX_PHOTOS = 6
 const MAX_COLOR_LENGTH = 80
 const MAX_PHOTO_SIZE = 8 * 1024 * 1024
@@ -85,7 +119,11 @@ function getInitialForm(listing) {
     price: listing ? String(listing.price) : '',
     batteryPercent: listing?.batteryPercent ?? 85,
     storage: listing?.storage ?? '128 GB',
-    condition: listing?.condition ?? 'Good',
+    conditionGrade: listing?.grade ?? gradeFromLegacyCondition(listing?.condition ?? 'Good'),
+    originalPrice: listing?.originalPrice ? String(listing.originalPrice) : '',
+    warrantyMonths: listing?.warrantyMonths ?? 0,
+    ram: listing?.ram ?? '',
+    inspectionChecks: listing?.inspectionChecks ?? [],
     // The API substitutes "As pictured" when a listing has no color, so treat that
     // placeholder as an empty field instead of showing it to the seller.
     color: listing?.color && listing.color !== 'As pictured' ? listing.color : '',
@@ -119,6 +157,10 @@ function validateForm(form, photos, { imeiOnFile = false } = {}) {
 
   if (!form.price || Number(form.price) <= 0) {
     errors.price = 'Enter a price greater than ₱0.'
+  }
+
+  if (form.originalPrice && Number(form.originalPrice) <= Number(form.price)) {
+    errors.originalPrice = 'The original price must be higher than your price, or left blank.'
   }
 
   if (Number(form.batteryPercent) < 0 || Number(form.batteryPercent) > 100) {
@@ -401,6 +443,12 @@ function SellerListingFormEditor({ mode, existingListing }) {
       year: Number(form.year),
       price: Number(form.price),
       batteryPercent: Number(form.batteryPercent),
+      condition: CONDITION_FOR_GRADE[form.conditionGrade] ?? 'Good',
+      conditionGrade: form.conditionGrade,
+      originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+      warrantyMonths: Number(form.warrantyMonths),
+      ram: form.ram,
+      inspectionChecks: form.inspectionChecks,
       conditionNotes: form.conditionNotes.trim(),
       color: form.color.trim(),
     }
@@ -500,7 +548,12 @@ function SellerListingFormEditor({ mode, existingListing }) {
     price: Number(form.price) || 0,
     batteryPercent: Number(form.batteryPercent) || 0,
     storage: form.storage,
-    condition: form.condition,
+    grade: form.conditionGrade,
+    originalPrice: Number(form.originalPrice) > Number(form.price) ? Number(form.originalPrice) : null,
+    warrantyMonths: Number(form.warrantyMonths),
+    inspectionRecorded: form.inspectionChecks.length > 0,
+    inspectionChecks: form.inspectionChecks,
+    inspectionTotal: INSPECTION_CHECKS.length,
     conditionNotes: form.conditionNotes,
     color: form.color.trim() || 'As pictured',
     sellerName: seller?.businessName || 'Your shop',
@@ -657,15 +710,78 @@ function SellerListingFormEditor({ mode, existingListing }) {
                   </div>
 
                   <div>
-                    <label htmlFor="listing-condition" className={labelClassName}>Cosmetic grade</label>
+                    <label htmlFor="listing-condition" className={labelClassName}>Condition grade</label>
                     <select
                       id="listing-condition"
-                      value={form.condition}
-                      onChange={(event) => updateField('condition', event.target.value)}
+                      value={form.conditionGrade}
+                      onChange={(event) => updateField('conditionGrade', event.target.value)}
                       className={`${inputClassName} mt-2`}
                     >
-                      {conditionOptions.map((condition) => (
-                        <option key={condition} value={condition}>{condition}</option>
+                      {CONDITION_GRADE_ORDER.map((grade) => (
+                        <option key={grade} value={grade}>
+                          {CONDITION_GRADES[grade].headline}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-xs text-muted">
+                      {CONDITION_GRADES[form.conditionGrade]?.summary}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="listing-ram" className={labelClassName}>RAM</label>
+                    <select
+                      id="listing-ram"
+                      value={form.ram}
+                      onChange={(event) => updateField('ram', event.target.value)}
+                      className={`${inputClassName} mt-2`}
+                    >
+                      <option value="">Not stated</option>
+                      {ramOptions.map((ram) => (
+                        <option key={ram} value={ram}>{ram}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="listing-original-price" className={labelClassName}>
+                      Original price <span className="font-normal text-muted">(optional)</span>
+                    </label>
+                    <div className="relative mt-2">
+                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-muted">₱</span>
+                      <input
+                        id="listing-original-price"
+                        type="number"
+                        min="1"
+                        step="100"
+                        inputMode="numeric"
+                        value={form.originalPrice}
+                        onChange={(event) => updateField('originalPrice', event.target.value)}
+                        placeholder="e.g. 44990"
+                        className={`${inputClassName} pl-9 ${errors.originalPrice ? 'border-danger focus:border-danger focus:ring-red-100' : ''}`}
+                        aria-invalid={Boolean(errors.originalPrice)}
+                        aria-describedby="listing-original-price-help"
+                      />
+                    </div>
+                    <p
+                      id="listing-original-price-help"
+                      role={errors.originalPrice ? 'alert' : undefined}
+                      className={`mt-2 text-xs ${errors.originalPrice ? 'font-medium text-danger' : 'text-muted'}`}
+                    >
+                      {errors.originalPrice ?? 'The new retail price. Buyers see the saving.'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="listing-warranty" className={labelClassName}>Warranty (cover)</label>
+                    <select
+                      id="listing-warranty"
+                      value={form.warrantyMonths}
+                      onChange={(event) => updateField('warrantyMonths', Number(event.target.value))}
+                      className={`${inputClassName} mt-2`}
+                    >
+                      {warrantyOptions.map((option) => (
+                        <option key={option.months} value={option.months}>{option.label}</option>
                       ))}
                     </select>
                   </div>
@@ -810,6 +926,72 @@ function SellerListingFormEditor({ mode, existingListing }) {
                 </div>
               </div>
 
+              <fieldset className="rounded-card-xl border border-line bg-white p-5 shadow-card sm:p-7">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-5">
+                  <legend className="contents">
+                    <span className="flex items-center gap-3">
+                      <span className="grid size-10 place-items-center rounded-xl bg-accent-50 text-accent-700">
+                        <ListChecks className="size-5" aria-hidden="true" />
+                      </span>
+                      <span>
+                        <span className="block font-display text-xl font-semibold text-ink">Inspection checks</span>
+                        <span className="block text-xs text-muted">
+                          Tick what you tested and what passed ({form.inspectionChecks.length}/{INSPECTION_CHECKS.length})
+                        </span>
+                      </span>
+                    </span>
+                  </legend>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateField(
+                        'inspectionChecks',
+                        form.inspectionChecks.length === INSPECTION_CHECKS.length
+                          ? []
+                          : INSPECTION_CHECKS.map((check) => check.id),
+                      )
+                    }
+                    className="rounded-lg border border-line px-3 py-2 text-xs font-bold text-ink transition hover:border-accent hover:text-accent"
+                  >
+                    {form.inspectionChecks.length === INSPECTION_CHECKS.length ? 'Clear all' : 'Select all'}
+                  </button>
+                </div>
+                <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+                  {INSPECTION_CHECKS.map((check) => {
+                    const checked = form.inspectionChecks.includes(check.id)
+                    return (
+                      <label
+                        key={check.id}
+                        className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
+                          checked ? 'border-accent bg-accent-tint' : 'border-line hover:border-line-2'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            updateField(
+                              'inspectionChecks',
+                              checked
+                                ? form.inspectionChecks.filter((id) => id !== check.id)
+                                : [...form.inspectionChecks, check.id],
+                            )
+                          }
+                          className="mt-0.5 size-4 accent-accent"
+                        />
+                        <span>
+                          <span className="block text-sm font-semibold text-ink">{check.label}</span>
+                          <span className="block text-xs text-muted">{check.detail}</span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+                <p className="mt-4 text-xs text-muted">
+                  Leave all unticked if the phone was not tested; buyers then see "Not recorded".
+                </p>
+              </fieldset>
+
               <div className="rounded-card-xl border border-line bg-white p-5 shadow-card sm:p-7">
                 <div className="flex items-center gap-3 border-b border-line pb-5">
                   <span className="grid size-10 place-items-center rounded-xl bg-violet-50 text-violet-700">
@@ -872,12 +1054,25 @@ function SellerListingFormEditor({ mode, existingListing }) {
                       {photos.map((photo, index) => (
                         <div key={photo.id} className="overflow-hidden rounded-2xl border border-line bg-canvas">
                           <div className="relative">
-                            <img
+                            <ListingPhoto
                               src={photo.url}
                               alt={photo.name}
                               loading="lazy"
                               decoding="async"
                               className="aspect-[4/3] w-full object-cover"
+                              fallback={
+                                // The file is gone (e.g. wiped from a host's temporary
+                                // disk): say so, instead of a broken image icon.
+                                <div className="grid aspect-[4/3] w-full place-items-center bg-surface-2 p-4 text-center">
+                                  <div>
+                                    <ImageOff className="mx-auto size-7 text-subtle" aria-hidden="true" />
+                                    <p className="mt-2 text-sm font-semibold text-ink">Photo missing</p>
+                                    <p className="mt-1 text-xs text-muted">
+                                      Use Replace to upload it again.
+                                    </p>
+                                  </div>
+                                </div>
+                              }
                             />
                             {index === 0 && (
                               <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1.5 text-[11px] font-bold text-page shadow-sm">

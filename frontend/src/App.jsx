@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { MotionConfig } from 'framer-motion'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider.jsx'
-import { AUTH_ROUTES, MARKETPLACE_ROUTES } from './features/auth/auth.routes.js'
+import { AUTH_ROUTES, DASHBOARD_ROUTES, MARKETPLACE_ROUTES } from './features/auth/auth.routes.js'
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute.jsx'
 import { RequireAuth } from './components/auth/RequireAuth.jsx'
 import { RequireBuyer } from './components/auth/RequireBuyer.jsx'
@@ -52,6 +52,15 @@ const SellerInquiriesPage = lazy(() =>
 )
 const SavedListingsPage = lazy(() =>
   import('./pages/SavedListingsPage.jsx').then((module) => ({ default: module.SavedListingsPage })),
+)
+const MyOrdersPage = lazy(() =>
+  import('./pages/MyOrdersPage.jsx').then((module) => ({ default: module.MyOrdersPage })),
+)
+const OrderDetailPage = lazy(() =>
+  import('./pages/OrderDetailPage.jsx').then((module) => ({ default: module.OrderDetailPage })),
+)
+const SellerOrdersPage = lazy(() =>
+  import('./pages/SellerOrdersPage.jsx').then((module) => ({ default: module.SellerOrdersPage })),
 )
 const MyInquiriesPage = lazy(() =>
   import('./pages/MyInquiriesPage.jsx').then((module) => ({ default: module.MyInquiriesPage })),
@@ -142,8 +151,11 @@ const TradeInPage = lazy(() =>
 const ComparePage = lazy(() =>
   import('./pages/ComparePage.jsx').then((module) => ({ default: module.ComparePage })),
 )
-const SellerApplyPage = lazy(() =>
-  import('./pages/NotFoundRoutePages.jsx').then((module) => ({ default: module.SellerApplyPage })),
+const SellPage = lazy(() =>
+  import('./pages/SellPage.jsx').then((module) => ({ default: module.SellPage })),
+)
+const StoresPage = lazy(() =>
+  import('./pages/StoresPage.jsx').then((module) => ({ default: module.StoresPage })),
 )
 const SellerStorefrontPage = lazy(() =>
   import('./pages/SellerStorefrontPage.jsx').then((module) => ({
@@ -228,7 +240,8 @@ function App() {
                 <Route path={MARKETPLACE_ROUTES.privacy} element={<PrivacyPage />} />
                 <Route path={MARKETPLACE_ROUTES.terms} element={<TermsPage />} />
                 <Route path={MARKETPLACE_ROUTES.contact} element={<ContactPage />} />
-                <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellerApplyPage />} />
+                <Route path={MARKETPLACE_ROUTES.sellerApply} element={<SellPage />} />
+                <Route path={MARKETPLACE_ROUTES.stores} element={<StoresPage />} />
                 <Route path="/sellers/:sellerId" element={<SellerStorefrontPage />} />
 
                 {/* Purchasing is buyer-only. The guard sits *inside* the marketplace
@@ -270,6 +283,8 @@ function App() {
                       403 from the server on every visit. */}
                   <Route element={<RequireRole allowedRoles={['BUYER']} />}>
                     <Route path={AUTH_ROUTES.saved} element={<SavedListingsPage />} />
+                    <Route path={DASHBOARD_ROUTES.orders} element={<MyOrdersPage />} />
+                    <Route path="/orders/:orderNumber" element={<OrderDetailPage />} />
                   </Route>
 
                   {/* An inquiry is a message to a seller rather than a purchasing
@@ -285,6 +300,7 @@ function App() {
                         path={AUTH_ROUTES.sellerInquiries}
                         element={<SellerInquiriesPage />}
                       />
+                      <Route path={DASHBOARD_ROUTES.sellerOrders} element={<SellerOrdersPage />} />
                       <Route
                         path="/seller/listings/new"
                         element={<SellerListingFormPage mode="create" />}

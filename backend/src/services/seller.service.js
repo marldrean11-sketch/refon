@@ -71,6 +71,39 @@ export async function applyAsSeller(userId, values) {
   })
 }
 
+/** The seller's own payment details, as buyers will see them on a confirmed order. */
+export function presentPaymentDetails(seller) {
+  return {
+    gcash: seller.paymentGcash ?? null,
+    maya: seller.paymentMaya ?? null,
+    bank: seller.paymentBank ?? null,
+    qr: seller.paymentQr ?? null,
+    note: seller.paymentNote ?? null,
+  }
+}
+
+export async function updatePaymentDetails(userId, values) {
+  const existing = await prisma.seller.findUnique({ where: { userId }, select: { id: true } })
+  if (!existing) {
+    throw new ApiError(404, 'No seller profile exists for this account.', 'SELLER_NOT_FOUND')
+  }
+
+  const clean = (value) => (value === undefined ? undefined : value.trim() || null)
+  const seller = await prisma.seller.update({
+    where: { userId },
+    data: {
+      paymentGcash: clean(values.gcash),
+      paymentMaya: clean(values.maya),
+      paymentBank: clean(values.bank),
+      paymentQr: clean(values.qr),
+      paymentNote: clean(values.note),
+    },
+    include: { user: { select: { id: true, name: true, email: true } } },
+  })
+
+  return { ...presentSeller(seller), paymentDetails: presentPaymentDetails(seller) }
+}
+
 export async function getSellerProfile(userId) {
   const seller = await prisma.seller.findUnique({
     where: { userId },
@@ -81,7 +114,52 @@ export async function getSellerProfile(userId) {
     throw new ApiError(404, 'No seller profile exists for this account.', 'SELLER_NOT_FOUND')
   }
 
-  return presentSeller(seller)
+  return {
+    ...presentSeller(seller),
+    paymentDetails: presentPaymentDetails(seller),
+    storefront: presentStorefrontSettings(seller),
+  }
+}
+
+/** The seller's own editable storefront fields. */
+export function presentStorefrontSettings(seller) {
+  return {
+    businessName: seller.businessName ?? '',
+    tagline: seller.tagline ?? '',
+    city: seller.city ?? '',
+    region: seller.region ?? '',
+    logoUrl: seller.logoUrl ?? '',
+    bannerUrl: seller.bannerUrl ?? '',
+    brandColor: seller.brandColor ?? '',
+  }
+}
+
+export async function updateStorefrontSettings(userId, values) {
+  const existing = await prisma.seller.findUnique({ where: { userId }, select: { id: true } })
+  if (!existing) {
+    throw new ApiError(404, 'No seller profile exists for this account.', 'SELLER_NOT_FOUND')
+  }
+
+  const clean = (value) => (value === undefined ? undefined : value.trim() || null)
+  const seller = await prisma.seller.update({
+    where: { userId },
+    data: {
+      businessName: values.businessName,
+      tagline: clean(values.tagline),
+      city: clean(values.city),
+      region: clean(values.region),
+      logoUrl: clean(values.logoUrl),
+      bannerUrl: clean(values.bannerUrl),
+      brandColor: clean(values.brandColor),
+    },
+    include: { user: { select: { id: true, name: true, email: true } } },
+  })
+
+  return {
+    ...presentSeller(seller),
+    paymentDetails: presentPaymentDetails(seller),
+    storefront: presentStorefrontSettings(seller),
+  }
 }
 
 export async function getPendingSellers() {
@@ -92,6 +170,123 @@ export async function getPendingSellers() {
   })
 
   return sellers.map(presentSeller)
+}
+
+/** Listing counts per status for each seller id, as { [sellerId]: { APPROVED: n, ... } }. */
+async function listingCountsBySeller(sellerIds) {
+  const rows = await prisma.listing.groupBy({
+    by: ['sellerId', 'status'],
+    where: { sellerId: { in: sellerIds } },
+    _count: { _all: true },
+  })
+
+  const counts = {}
+  for (const row of rows) {
+    counts[row.sellerId] ??= { PENDING: 0, APPROVED: 0, REJECTED: 0, SOLD: 0 }
+    counts[row.sellerId][row.status] = row._count._all
+  }
+  return counts
+}
+
+const adminSellerUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  emailVerifiedAt: true,
+  createdAt: true,
+}
+
+/** Everything an admin sees about a seller, beyond the public storefront. */
+function presentSellerForAdmin(seller, listingCounts) {
+  return {
+    ...presentSeller(seller),
+    city: seller.city ?? null,
+    region: seller.region ?? null,
+    tagline: seller.tagline ?? null,
+    logoUrl: seller.logoUrl ?? null,
+    bannerUrl: seller.bannerUrl ?? null,
+    brandColor: seller.brandColor ?? null,
+    ratingAverage: Number(seller.ratingAverage),
+    ratingCount: seller.ratingCount,
+    completedSales: seller.completedSales,
+    listingCounts: listingCounts ?? { PENDING: 0, APPROVED: 0, REJECTED: 0, SOLD: 0 },
+    user: {
+      id: seller.user.id,
+      name: seller.user.name,
+      email: seller.user.email,
+      emailVerified: Boolean(seller.user.emailVerifiedAt),
+      joinedAt: seller.user.createdAt.toISOString(),
+    },
+  }
+}
+
+/** The admin's seller directory: every seller, optionally by status or search text. */
+export async function getSellerDirectory({ status, q } = {}) {
+  const search = q?.trim()
+  const sellers = await prisma.seller.findMany({
+    where: {
+      ...(status ? { verificationStatus: status } : {}),
+      ...(search
+        ? {
+            OR: [
+              { businessName: { contains: search, mode: 'insensitive' } },
+              { contactInfo: { contains: search, mode: 'insensitive' } },
+              { user: { name: { contains: search, mode: 'insensitive' } } },
+              { user: { email: { contains: search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+    include: { user: { select: adminSellerUserSelect } },
+  })
+
+  const counts = await listingCountsBySeller(sellers.map((seller) => seller.id))
+  return sellers.map((seller) => presentSellerForAdmin(seller, counts[seller.id]))
+}
+
+/** One seller in full for an admin, with their most recent listings. */
+export async function getSellerForAdmin(sellerId) {
+  const seller = await prisma.seller.findUnique({
+    where: { id: sellerId },
+    include: {
+      user: { select: adminSellerUserSelect },
+      listings: {
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          slug: true,
+          brand: true,
+          model: true,
+          storage: true,
+          price: true,
+          status: true,
+          createdAt: true,
+        },
+      },
+    },
+  })
+
+  if (!seller) {
+    throw new ApiError(404, 'Seller profile not found.', 'SELLER_NOT_FOUND')
+  }
+
+  const counts = await listingCountsBySeller([seller.id])
+  return {
+    ...presentSellerForAdmin(seller, counts[seller.id]),
+    listings: seller.listings.map((listing) => ({
+      id: listing.id,
+      slug: listing.slug,
+      brand: listing.brand,
+      model: listing.model,
+      storage: listing.storage,
+      price: Number(listing.price),
+      status: listing.status,
+      createdAt: listing.createdAt.toISOString(),
+    })),
+  }
 }
 
 export async function reviewSeller(sellerId, decision, feedback = '') {
@@ -151,7 +346,7 @@ export async function reviewSeller(sellerId, decision, feedback = '') {
 // ---------------------------------------------------------------------------
 
 /** Columns the storefront may expose. Deliberately an allowlist. */
-const publicSellerSelect = {
+export const publicSellerSelect = {
   id: true,
   businessName: true,
   verificationStatus: true,
@@ -159,6 +354,9 @@ const publicSellerSelect = {
   city: true,
   region: true,
   tagline: true,
+  logoUrl: true,
+  bannerUrl: true,
+  brandColor: true,
   ratingAverage: true,
   ratingCount: true,
   completedSales: true,
@@ -195,7 +393,7 @@ function toIso(value) {
   return value instanceof Date ? value.toISOString() : value
 }
 
-function presentPublicSeller(seller) {
+export function presentPublicSeller(seller) {
   const ratingCount = Number(seller.ratingCount ?? 0)
   const location = [seller.city, seller.region].filter(Boolean).join(', ')
 
@@ -205,6 +403,9 @@ function presentPublicSeller(seller) {
     verificationStatus: seller.verificationStatus,
     isVerified: seller.verificationStatus === 'APPROVED',
     tagline: seller.tagline ?? null,
+    logoUrl: seller.logoUrl ?? null,
+    bannerUrl: seller.bannerUrl ?? null,
+    brandColor: seller.brandColor ?? null,
     // `city` and `region` are the storefront's own public fields. `contactInfo` is
     // never read here, so there is no path by which a phone number or an email
     // address can reach this payload.

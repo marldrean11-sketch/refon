@@ -1,11 +1,18 @@
 import { Router } from 'express'
 import {
+  suspendUser,
+  takeDown,
+  unsuspendUser,
+  users,
+  allListings,
   approveListing,
   approveSeller,
   pendingListings,
   pendingSellers,
   rejectListing,
   rejectSeller,
+  sellerDetail,
+  sellerDirectory,
   stats,
 } from '../controllers/admin.controller.js'
 import {
@@ -17,8 +24,28 @@ import {
   validateRejectListing,
   validateRejectSeller,
   validateApproveListing,
+  validateAdminListingsQuery,
+  validateAdminUsersQuery,
+  validateSuspendBody,
+  validateTakeDownBody,
+  validateUserId,
+  validateSellerDirectoryQuery,
 } from '../validators/admin.validator.js'
 import { validateSellerId } from '../validators/seller.validator.js'
+import { adminOrders } from '../controllers/order.controller.js'
+import { adminTradeIns, adminUpdateTradeIn } from '../controllers/trade-in.controller.js'
+import {
+  validateTradeInId,
+  validateTradeInQuery,
+  validateTradeInUpdate,
+} from '../validators/trade-in.validator.js'
+import { validateOrderQuery } from '../validators/order.validator.js'
+import {
+  resetToday as resetHealthChecksToday,
+  stats as healthCheckStats,
+} from '../controllers/health-check.controller.js'
+import { update as updateSiteSettings } from '../controllers/site-settings.controller.js'
+import { validateSiteSettings } from '../validators/site-settings.validator.js'
 import { summary as feedbackSummary } from '../controllers/feedback.controller.js'
 import {
   reports,
@@ -35,7 +62,12 @@ const router = Router()
 router.use(authenticate, requireAdmin)
 router.get('/stats', stats)
 router.get('/feedback', feedbackSummary)
+router.get('/health-checks', healthCheckStats)
+router.delete('/health-checks/today', resetHealthChecksToday)
+router.patch('/site-settings', validateSiteSettings, updateSiteSettings)
 router.get('/sellers/pending', pendingSellers)
+router.get('/sellers', validateSellerDirectoryQuery, sellerDirectory)
+router.get('/sellers/:id', validateSellerId, sellerDetail)
 router.patch('/sellers/:id/approve', validateSellerId, approveSeller)
 router.patch('/sellers/:id/reject', validateSellerId, validateRejectSeller, rejectSeller)
 router.get('/reports', validateReportsQuery, reports)
@@ -46,6 +78,14 @@ router.patch(
   resolve,
 )
 router.get('/listings/pending', pendingListings)
+router.get('/listings', validateAdminListingsQuery, allListings)
+router.get('/orders', validateOrderQuery, adminOrders)
+router.patch('/listings/:id/take-down', validateListingId, validateTakeDownBody, takeDown)
+router.get('/users', validateAdminUsersQuery, users)
+router.patch('/users/:id/suspend', validateUserId, validateSuspendBody, suspendUser)
+router.patch('/users/:id/unsuspend', validateUserId, unsuspendUser)
+router.get('/trade-ins', validateTradeInQuery, adminTradeIns)
+router.patch('/trade-ins/:id', validateTradeInId, validateTradeInUpdate, adminUpdateTradeIn)
 router.patch('/listings/:id/approve', validateListingId, validateApproveListing, approveListing)
 router.patch(
   '/listings/:id/reject',

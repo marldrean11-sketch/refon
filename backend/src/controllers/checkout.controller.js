@@ -2,6 +2,7 @@ import {
   getCheckoutOptions,
   quoteCheckout,
 } from '../services/checkout.service.js'
+import { placeOrder as placeOrderService } from '../services/order.service.js'
 import { asyncHandler } from '../utils/async-handler.js'
 import { ApiError } from '../utils/api-error.js'
 
@@ -47,6 +48,37 @@ export const getQuote = asyncHandler(async (req, res) => {
     })
 
     return res.status(200).json(result)
+  } catch (error) {
+    const flattened = toFieldErrors(error)
+
+    if (flattened) {
+      return res.status(flattened.status).json({
+        message: flattened.message,
+        code: flattened.code,
+        errors: flattened.errors,
+      })
+    }
+
+    throw error
+  }
+})
+
+/**
+ * Places the order: the same validation and pricing as the quote, then one order
+ * per seller, the phones taken off sale and the cart emptied, in one transaction.
+ */
+export const placeOrder = asyncHandler(async (req, res) => {
+  const { deliveryMethodId, paymentMethodId, details } = req.validatedBody
+
+  try {
+    const result = await placeOrderService({
+      userId: req.user.id,
+      deliveryMethodId,
+      paymentMethodId,
+      details,
+    })
+
+    return res.status(201).json(result)
   } catch (error) {
     const flattened = toFieldErrors(error)
 

@@ -23,6 +23,10 @@ import favoriteRoutes from './routes/favorite.routes.js'
 import myInquiryRoutes from './routes/my-inquiry.routes.js'
 import cartRoutes from './routes/cart.routes.js'
 import checkoutRoutes from './routes/checkout.routes.js'
+import orderRoutes from './routes/order.routes.js'
+import statsRoutes from './routes/stats.routes.js'
+import tradeInRoutes from './routes/trade-in.routes.js'
+import siteSettingsRoutes from './routes/site-settings.routes.js'
 
 const app = express()
 
@@ -98,8 +102,12 @@ app.use('/api/favorites', favoriteRoutes)
 app.use('/api/my-inquiries', myInquiryRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/checkout', checkoutRoutes)
+app.use('/api/orders', orderRoutes)
+app.use('/api/trade-ins', tradeInRoutes)
 app.use('/api/health-checks', healthCheckRoutes)
 app.use('/api/feedback', feedbackRoutes)
+app.use('/api/stats', statsRoutes)
+app.use('/api/site-settings', siteSettingsRoutes)
 
 if (env.staticDir) {
   // Single-service deploy: serve the built frontend from the same origin as the API.

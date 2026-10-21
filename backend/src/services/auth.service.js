@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from '../config/prisma.js'
 import { ApiError } from '../utils/api-error.js'
+import { DEMO_ACCOUNTS } from '../utils/demo-accounts.js'
+import { env } from '../config/env.js'
 import { consumeAuthToken, issueAuthToken } from './auth-token.service.js'
 import {
   sendEmailVerificationEmail,
@@ -25,7 +27,18 @@ export const publicUserSelect = {
   role: true,
   emailVerifiedAt: true,
   passwordChangedAt: true,
+  phone: true,
+  defaultAddress: true,
+  suspendedAt: true,
   seller: { select: publicSellerSelect },
+}
+
+export function suspendedError() {
+  return new ApiError(
+    403,
+    'This account is suspended. Contact ReFon if you think this is a mistake.',
+    'ACCOUNT_SUSPENDED',
+  )
 }
 
 function normalizeEmail(email) {
@@ -45,11 +58,13 @@ export function toPublicUser(user) {
     role: user.role,
     emailVerified: Boolean(user.emailVerifiedAt),
     sellerVerificationStatus: user.seller?.verificationStatus ?? null,
+    phone: user.phone ?? null,
+    defaultAddress: user.defaultAddress ?? null,
     createdAt: user.createdAt,
   }
 }
 
-export async function registerUser({ name, email, password, role }) {
+export async function registerUser({ name, email, password, role, businessName }) {
   const normalizedEmail = normalizeEmail(email)
   const passwordHash = await hashPassword(password)
 
@@ -68,7 +83,7 @@ export async function registerUser({ name, email, password, role }) {
         await transaction.seller.create({
           data: {
             userId: createdUser.id,
-            businessName: name,
+            businessName: businessName ?? name,
             contactInfo: normalizedEmail,
             verificationStatus: 'PENDING',
           },
@@ -81,10 +96,14 @@ export async function registerUser({ name, email, password, role }) {
       })
     })
 
-    // Registration must succeed even if the verification email cannot be sent.
+    // Registration must succeed even if the verification email cannot be sent,
+    // and must not wait on the mail relay, which can be slow or unreachable.
     try {
       const { token } = await issueAuthToken(user.id, 'EMAIL_VERIFY')
-      await sendEmailVerificationEmail({ to: user.email, name: user.name, token })
+      await sendEmailVerificationEmail(
+        { to: user.email, name: user.name, token },
+        { background: true },
+      )
     } catch (error) {
       console.error('Could not send the verification email:', error.message)
     }
@@ -122,6 +141,33 @@ export async function authenticateUser({ email, password }) {
     )
   }
 
+  // Checked only after the password, so a suspension is not revealed to someone
+  // guessing an email address.
+  if (user.suspendedAt) {
+    throw suspendedError()
+  }
+
+  return toPublicUser(user)
+}
+
+export async function loginDemoAccount(role) {
+  if (!env.demoLogin) {
+    throw new ApiError(404, 'Demo sign-in is turned off.', 'DEMO_LOGIN_DISABLED')
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: DEMO_ACCOUNTS[role] },
+    include: { seller: { select: publicSellerSelect } },
+  })
+
+  if (!user || user.role !== role) {
+    throw new ApiError(404, 'The demo account is not set up on this server.', 'DEMO_ACCOUNT_MISSING')
+  }
+
+  if (user.suspendedAt) {
+    throw suspendedError()
+  }
+
   return toPublicUser(user)
 }
 
@@ -133,6 +179,10 @@ export async function getUserById(id, issuedAt) {
 
   if (!user) {
     throw new ApiError(401, 'Your session is no longer valid.', 'SESSION_INVALID')
+  }
+
+  if (user.suspendedAt) {
+    throw suspendedError()
   }
 
   // JWT iat is whole seconds, so compare in seconds to keep a cookie issued in

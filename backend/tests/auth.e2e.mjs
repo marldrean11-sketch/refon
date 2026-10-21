@@ -56,6 +56,7 @@ const sellerEmail = `seller-${suffix}@example.test`
 const password = 'RefonPass123!'
 let buyerId
 let sellerId
+let storeSellerId
 
 function cookieFrom(response) {
   const setCookies = response.headers.getSetCookie?.() ?? []
@@ -177,6 +178,54 @@ try {
     (await jsonRequest(`${guardBase}/test/buyer`, { cookie: sellerCookie })).status,
     403,
   )
+
+  // A seller can name their store at sign-up; a too-short name is refused.
+  const storeSellerEmail = `store-seller-${suffix}@example.test`
+  const shortStoreName = await jsonRequest(`${apiBase}/api/auth/register`, {
+    method: 'POST',
+    body: JSON.stringify({
+      name: 'Store Seller',
+      email: storeSellerEmail,
+      password,
+      role: 'SELLER',
+      businessName: 'X',
+    }),
+  })
+  assert.equal(shortStoreName.status, 422)
+  const storeSellerRegistration = await jsonRequest(`${apiBase}/api/auth/register`, {
+    method: 'POST',
+    body: JSON.stringify({
+      name: 'Store Seller',
+      email: storeSellerEmail,
+      password,
+      role: 'SELLER',
+      businessName: '  JDC Phones  ',
+    }),
+  })
+  assert.equal(storeSellerRegistration.status, 201)
+  storeSellerId = (await storeSellerRegistration.json()).user.id
+  const storeSellerProfile = await prisma.seller.findUniqueOrThrow({
+    where: { userId: storeSellerId },
+  })
+  assert.equal(storeSellerProfile.businessName, 'JDC Phones')
+
+  // The seller can rename the store later from Store look, but not blank it.
+  const storeSellerCookie = cookieFrom(storeSellerRegistration)
+  const renamed = await jsonRequest(`${apiBase}/api/sellers/me/storefront`, {
+    method: 'PATCH',
+    cookie: storeSellerCookie,
+    body: JSON.stringify({ businessName: ' JDC Phones Taguig ' }),
+  })
+  assert.equal(renamed.status, 200)
+  const renamedBody = await renamed.json()
+  assert.equal(renamedBody.seller.businessName, 'JDC Phones Taguig')
+  assert.equal(renamedBody.seller.storefront.businessName, 'JDC Phones Taguig')
+  const blanked = await jsonRequest(`${apiBase}/api/sellers/me/storefront`, {
+    method: 'PATCH',
+    cookie: storeSellerCookie,
+    body: JSON.stringify({ businessName: '' }),
+  })
+  assert.equal(blanked.status, 422)
 
   const duplicateRegistration = await jsonRequest(`${apiBase}/api/auth/register`, {
     method: 'POST',
@@ -441,7 +490,7 @@ try {
     'Auth E2E passed: registration, login, session restore, guards, seller profile, validation, logout, email verification, password reset, account profile and change-password, session invalidation',
   )
 } finally {
-  const userIds = [buyerId, sellerId].filter(Boolean)
+  const userIds = [buyerId, sellerId, storeSellerId].filter(Boolean)
   if (userIds.length > 0) {
     await prisma.seller.deleteMany({ where: { userId: { in: userIds } } })
     await prisma.user.deleteMany({ where: { id: { in: userIds } } })

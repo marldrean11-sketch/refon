@@ -1,11 +1,16 @@
 /**
  * Tiny interface sounds, synthesised with Web Audio so there are no audio files
- * to download. Off by default: a page that makes noise without being asked is a
- * page people close. The visitor turns them on with the speaker toggle in the
- * footer, and the choice is remembered on this device.
+ * to download. On by default, so the booth demo has its pops and chimes from
+ * the first tap (browsers only play sound after a tap anyway). The visitor can
+ * mute them with the speaker toggle in the footer, and the choice is
+ * remembered on this device.
  */
 
-const KEY = 'refon:sound'
+/**
+ * A new key, so visitors who had the old off-by-default setting saved start
+ * with sounds on too.
+ */
+const KEY = 'refon:sound-v2'
 const listeners = new Set()
 
 let context = null
@@ -13,9 +18,9 @@ let enabled = readStored()
 
 function readStored() {
   try {
-    return window.localStorage.getItem(KEY) === 'on'
+    return window.localStorage.getItem(KEY) !== 'off'
   } catch {
-    return false
+    return true
   }
 }
 

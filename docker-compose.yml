@@ -40,6 +40,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_SECURE: ${SMTP_SECURE:-false}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
       STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
       S3_BUCKET: ${S3_BUCKET:-}
       S3_REGION: ${S3_REGION:-}

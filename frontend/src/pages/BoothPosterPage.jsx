@@ -4,6 +4,7 @@ import { ArrowLeft, Maximize2, Printer } from 'lucide-react'
 import QRCode from 'qrcode'
 import { LogoGlyph } from '../components/ui/BrandMark.jsx'
 import { SITE_INFO, boothLabel } from '../content/site-info.js'
+import { useSiteSettings } from '../lib/site-settings.js'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 
 /** Loops scattered behind the poster, in the grade colours: lime A, amber B, coral C. */
@@ -57,6 +58,7 @@ function useQrSvg(target) {
  * dark background prints without the "Background graphics" option.
  */
 export function BoothPosterPage() {
+  const { booth } = useSiteSettings()
   const target = `${SITE_INFO.url}${MARKETPLACE_ROUTES.healthCheck}`
   const feedbackTarget = `${SITE_INFO.url}${MARKETPLACE_ROUTES.feedback}`
   const svg = useQrSvg(target)
@@ -145,7 +147,7 @@ export function BoothPosterPage() {
               re<span className="text-[#c6ff3d]">fon</span>
             </span>
             <span className="ml-auto rounded-full border-[0.4mm] border-[#3a3f48] px-[4mm] py-[2mm] font-mono text-[12px] uppercase tracking-[0.12em] text-[#b9bec4]">
-              {boothLabel()}
+              {boothLabel(booth)}
             </span>
           </header>
 

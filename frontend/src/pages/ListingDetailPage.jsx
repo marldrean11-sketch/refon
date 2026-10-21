@@ -6,6 +6,7 @@ import {
   Clock3,
   Flag,
   HardDrive,
+  Heart,
   MemoryStick,
   MessageCircle,
   SearchX,
@@ -51,6 +52,9 @@ import { productPath } from '../lib/routes.js'
 import { explainBatteryHealth } from '../lib/listing-taxonomy.js'
 import { formatPeso } from '../lib/format.js'
 import { HealthCheckCallout } from '../features/health-check/HealthCheckCallout.jsx'
+import { ShareListingButton } from '../features/listings/ShareListingButton.jsx'
+import { RecentlyViewedStrip } from '../features/listings/RecentlyViewedStrip.jsx'
+import { rememberViewed } from '../lib/recently-viewed.js'
 
 function ListingUnavailableState({ error, onRetry }) {
   const isMissing =
@@ -214,6 +218,10 @@ export function ListingDetailPage() {
     }
   }, [shouldRedirect, listing, navigate])
 
+  useEffect(() => {
+    if (listing) rememberViewed(listing)
+  }, [listing])
+
   // Ownership is not exposed on the public listing payload, so the server rejects
   // a seller's own report with CANNOT_REPORT_OWN_LISTING.
   const canReport = Boolean(user) && user.role !== 'ADMIN'
@@ -325,13 +333,23 @@ export function ListingDetailPage() {
                       showSavings={false}
                       className="flex-1"
                     />
-                    {!isSold && (
-                      <FavoriteButton listing={listing} className="-mt-1" />
-                    )}
+                    <div className="-mt-1 flex items-center gap-2">
+                      <ShareListingButton listing={listing} />
+                      {!isSold && <FavoriteButton listing={listing} />}
+                    </div>
                   </div>
 
                   {/* A saving is only ever stated when a reference price is
                       genuinely higher than the selling price. */}
+                  {!isSold && listing.saveCount > 0 && (
+                    <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent" data-testid="save-count">
+                      <Heart className="size-3.5 fill-current" aria-hidden="true" />
+                      {listing.saveCount === 1
+                        ? '1 shopper saved this phone'
+                        : `${listing.saveCount} shoppers saved this phone`}
+                    </p>
+                  )}
+
                   {listing.savings ? (
                     <p className="mt-3 text-sm font-semibold text-flare-700">
                       You save {formatPeso(listing.savings)} against the original{' '}
@@ -556,6 +574,8 @@ export function ListingDetailPage() {
             )}
           </Container>
         </section>
+
+        <RecentlyViewedStrip key={listing.id} currentId={listing.id} />
       </div>
 
       {/* Mobile action bar. The price stays visible while the buyer scrolls the

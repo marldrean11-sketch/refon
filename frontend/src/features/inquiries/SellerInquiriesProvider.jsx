@@ -5,6 +5,7 @@ import {
   getMyInquiriesRequest,
   markAllInquiriesReadRequest,
   markInquiryReadRequest,
+  replyToInquiryRequest,
 } from './inquiry-api.js'
 import { useAuth } from '../auth/useAuth.js'
 import {
@@ -121,6 +122,20 @@ export function SellerInquiriesProvider() {
     }
   }, [])
 
+  /**
+   * Posts a reply; the server also marks the inquiry read, so the badge drops
+   * when `wasUnread` (the caller knows the card's state when it sent).
+   */
+  const reply = useCallback(async (id, body, wasUnread = false) => {
+    const response = await replyToInquiryRequest(id, body)
+    setInquiries((current) =>
+      current.map((inquiry) => (inquiry.id === id ? response.inquiry : inquiry)),
+    )
+    if (wasUnread) setUnreadCount((current) => Math.max(0, current - 1))
+    notifyMarketplaceChange()
+    return response.inquiry
+  }, [])
+
   const value = useMemo(
     () => ({
       inquiries,
@@ -130,8 +145,9 @@ export function SellerInquiriesProvider() {
       refresh,
       markRead,
       markAllRead,
+      reply,
     }),
-    [error, inquiries, isLoading, markAllRead, markRead, refresh, unreadCount],
+    [error, inquiries, isLoading, markAllRead, markRead, refresh, reply, unreadCount],
   )
 
   return (

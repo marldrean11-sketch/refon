@@ -23,6 +23,12 @@ import { Skeleton } from '../components/ui/Skeleton.jsx'
 import { Container } from '../features/design/Container.jsx'
 import { MetricStrip, Panel } from '../features/design/Surfaces.jsx'
 import { FeedbackSummaryPanel } from '../features/feedback/FeedbackSummaryPanel.jsx'
+import { HealthCheckCounterPanel } from '../features/admin/HealthCheckCounterPanel.jsx'
+import { SellerDirectoryPanel } from '../features/admin/SellerDirectoryPanel.jsx'
+import { AdminListingsPanel } from '../features/admin/AdminListingsPanel.jsx'
+import { AdminOrdersPanel } from '../features/admin/AdminOrdersPanel.jsx'
+import { AdminUsersPanel } from '../features/admin/AdminUsersPanel.jsx'
+import { AdminTradeInsPanel } from '../features/admin/AdminTradeInsPanel.jsx'
 import {
   approveListingRequest,
   approveSellerRequest,
@@ -586,7 +592,7 @@ export function AdminDashboardPage() {
               </h1>
               <p className="mt-2.5 max-w-2xl leading-body text-muted">
                 Review seller applications and listing submissions before they become
-                visible to buyers.
+                visible to buyers, and look up any seller's account.
               </p>
             </div>
             <span className="inline-flex shrink-0 items-center gap-2 border-l-2 border-primary-950 pl-3 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
@@ -1036,6 +1042,18 @@ export function AdminDashboardPage() {
                 )}
               </div>
             </Panel>
+
+            <SellerDirectoryPanel />
+
+            <AdminOrdersPanel />
+
+            <AdminListingsPanel />
+
+            <AdminUsersPanel />
+
+            <AdminTradeInsPanel />
+
+            <HealthCheckCounterPanel />
 
             <FeedbackSummaryPanel />
           </>

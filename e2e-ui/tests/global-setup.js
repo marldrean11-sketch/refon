@@ -58,6 +58,7 @@ export default async function globalSetup() {
     await page.getByLabel('Create a password').fill('BuyerTest123!')
     if (role === 'Seller') {
       await page.getByText('Magbebenta ako').click()
+      await page.getByLabel('Store name').fill(`E2E ${role} Store`)
     }
     await page.getByRole('button', { name: 'Create account' }).click()
     await page.waitForFunction(() => !location.pathname.includes('/register'), null, {

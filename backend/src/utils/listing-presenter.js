@@ -162,6 +162,8 @@ export function presentListing(listing) {
       city: seller.city ?? null,
       region: seller.region ?? null,
       tagline: seller.tagline ?? null,
+      logoUrl: seller.logoUrl ?? null,
+      brandColor: seller.brandColor ?? null,
       ratingAverage: sellerRatingCount > 0 ? sellerRatingAverage : null,
       ratingCount: sellerRatingCount,
     },

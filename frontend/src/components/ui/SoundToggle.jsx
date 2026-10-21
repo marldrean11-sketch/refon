@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
 import { isSoundOn, onSoundChange, setSoundOn } from '../../lib/sound.js'
 
-/** The footer speaker switch for the interface sounds. Off until turned on. */
+/** The footer speaker switch for the interface sounds. On until muted. */
 export function SoundToggle({ className = '' }) {
-  const [on, setOn] = useState(false)
+  const [on, setOn] = useState(isSoundOn)
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setOn(isSoundOn()))

@@ -6,6 +6,7 @@ import { BrandMark } from '../components/ui/BrandMark.jsx'
 import { FloatingLoops } from '../components/brand/FloatingLoops.jsx'
 import { ConditionBadge } from '../components/ui/ConditionBadge.jsx'
 import { SITE_INFO, boothLabel } from '../content/site-info.js'
+import { useSiteSettings } from '../lib/site-settings.js'
 import { MARKETPLACE_ROUTES } from '../lib/routes.js'
 import { CONDITION_GRADE_ORDER, getConditionGrade } from '../lib/listing-taxonomy.js'
 import { checkedTodayLabel, useHealthCheckStats } from '../features/health-check/health-check-stats.js'
@@ -80,6 +81,8 @@ function useQrCodes() {
 export function KioskPage() {
   const [index, setIndex] = useState(0)
   const stats = useHealthCheckStats()
+  // The kiosk runs all day, so it picks up a booth number changed by the admin.
+  const { booth } = useSiteSettings({ refreshMs: 60_000 })
   const codes = useQrCodes()
   const slide = SLIDES[index]
 
@@ -107,7 +110,7 @@ export function KioskPage() {
         />
         <div className="flex items-center gap-3">
           <span className="rounded-full border border-line-2 px-4 py-2 font-mono text-sm uppercase tracking-[0.1em] text-muted">
-            {boothLabel()}
+            {boothLabel(booth)}
           </span>
           <button
             type="button"

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthContext } from './auth-context.js'
 import {
   loginRequest,
+  demoLoginRequest,
   logoutRequest,
   meRequest,
   registerRequest,
@@ -50,6 +51,13 @@ export function AuthProvider({ children }) {
     return authenticatedUser
   }, [])
 
+  const demoLogin = useCallback(async (role) => {
+    const { user: authenticatedUser } = await demoLoginRequest(role)
+    setInitializationError(null)
+    setUser(authenticatedUser)
+    return authenticatedUser
+  }, [])
+
   const register = useCallback(async (account) => {
     const { user: authenticatedUser } = await registerRequest(account)
     setInitializationError(null)
@@ -84,11 +92,12 @@ export function AuthProvider({ children }) {
       isLoading,
       initializationError,
       login,
+      demoLogin,
       register,
       logout,
       updateUser,
     }),
-    [initializationError, isLoading, login, logout, register, updateUser, user],
+    [demoLogin, initializationError, isLoading, login, logout, register, updateUser, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { uploadsDirectory } from '../config/uploads.js'
 import { env } from '../config/env.js'
+import { ApiError } from '../utils/api-error.js'
 
 /**
  * Filenames produced by uploads are `<epochMillis>-<uuid>.<ext>`. Anything else under
@@ -153,6 +154,12 @@ function createS3Driver(config) {
           region: config.region,
           ...(config.endpoint ? { endpoint: config.endpoint } : {}),
           forcePathStyle: config.forcePathStyle,
+          // Recent SDK versions add CRC checksums to every upload and check them on
+          // every download by default. Not every S3-compatible provider (Supabase,
+          // older R2 and MinIO setups) accepts that, so only send checksums when an
+          // operation requires one, as the SDK did before.
+          requestChecksumCalculation: 'WHEN_REQUIRED',
+          responseChecksumValidation: 'WHEN_REQUIRED',
           credentials: {
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
@@ -267,10 +274,29 @@ export async function saveAll(files) {
     }
   } catch (error) {
     await Promise.all(saved.map((filename) => storage.remove(filename).catch(() => {})))
-    throw error
+    throw storageFailure(error)
   }
 
   return saved
+}
+
+/**
+ * Turns a storage provider error into a 502 that names the provider's error code
+ * (e.g. SignatureDoesNotMatch, NoSuchBucket), so a misconfigured bucket is
+ * diagnosable from the browser. The code and HTTP status are not secret; the full
+ * error, which can include request details, only goes to the server log.
+ */
+function storageFailure(error) {
+  const code = error?.Code ?? error?.code ?? error?.name ?? 'UnknownError'
+  const status = error?.$metadata?.httpStatusCode
+  console.error(
+    `[storage] ${storage.name} save failed: ${code}${status ? ` (HTTP ${status})` : ''}: ${error?.message ?? error}`,
+  )
+  return new ApiError(
+    502,
+    `The photo could not be saved to storage (${code}${status ? `, HTTP ${status}` : ''}).`,
+    'PHOTO_STORAGE_FAILED',
+  )
 }
 
 export async function removeAll(filenames) {

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  demoLogin,
   forgotPassword,
   login,
   logout,
@@ -12,10 +13,12 @@ import {
 import { authenticate } from '../middlewares/auth.middleware.js'
 import {
   authLimiter,
+  demoLoginLimiter,
   passwordResetLimiter,
   verificationLimiter,
 } from '../middlewares/rate-limit.middleware.js'
 import {
+  validateDemoLogin,
   validateForgotPassword,
   validateLogin,
   validateRegister,
@@ -27,6 +30,7 @@ const router = Router()
 
 router.post('/register', authLimiter, validateRegister, register)
 router.post('/login', authLimiter, validateLogin, login)
+router.post('/demo-login', demoLoginLimiter, validateDemoLogin, demoLogin)
 router.post('/logout', logout)
 router.get('/me', authenticate, me)
 
