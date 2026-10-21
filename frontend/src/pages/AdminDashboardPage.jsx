@@ -108,9 +108,11 @@ function ReviewActions({
   onFeedbackChange,
   isProcessing = false,
   showFeedback = true,
+  children,
 }) {
   return (
     <div className="border-t border-line px-5 py-4 sm:px-6">
+      {children}
       {showFeedback && (
         <>
           <label
@@ -513,6 +515,9 @@ export function AdminDashboardPage() {
     }
   }
 
+  // Per listing: did the moderator tick "IMEI and lock checked"?
+  const [imeiChecks, setImeiChecks] = useState({})
+
   async function handleListingReview(listing, decision) {
     const key = `listing:${listing.id}`
     setReviewingId(listing.id)
@@ -520,7 +525,7 @@ export function AdminDashboardPage() {
 
     try {
       if (decision === 'APPROVED') {
-        await approveListingRequest(listing.id)
+        await approveListingRequest(listing.id, { imeiChecked: Boolean(imeiChecks[listing.id]) })
       } else {
         await rejectListingRequest(listing.id, feedback[key] ?? '')
       }
@@ -897,6 +902,16 @@ export function AdminDashboardPage() {
                                     </div>
                                     <div className="mt-3 border-t border-line pt-3">
                                       <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
+                                        IMEI
+                                      </dt>
+                                      <dd className="mt-1 font-semibold text-ink" data-testid="admin-listing-imei">
+                                        {listing.imeiOnFile
+                                          ? `On file, ends ···${listing.imeiLast4}. Valid format (check digit OK).`
+                                          : 'No IMEI provided by the seller.'}
+                                      </dd>
+                                    </div>
+                                    <div className="mt-3 border-t border-line pt-3">
+                                      <dt className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">
                                         Cosmetic notes
                                       </dt>
                                       <dd className="mt-1 leading-relaxed text-ink">
@@ -920,7 +935,33 @@ export function AdminDashboardPage() {
                                     onReject={() => handleListingReview(listing, 'REJECTED')}
                                     onApprove={() => handleListingReview(listing, 'APPROVED')}
                                     isProcessing={reviewingId === listing.id}
-                                  />
+                                  >
+                                    <label
+                                      className={`mb-3 flex items-start gap-3 rounded-control border p-3 text-sm ${
+                                        listing.imeiOnFile ? 'cursor-pointer border-line-2' : 'border-line opacity-60'
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="mt-0.5 size-4 shrink-0 accent-[#c6ff3d]"
+                                        disabled={!listing.imeiOnFile}
+                                        checked={Boolean(imeiChecks[listing.id])}
+                                        onChange={(event) =>
+                                          setImeiChecks((current) => ({ ...current, [listing.id]: event.target.checked }))
+                                        }
+                                        data-testid="admin-imei-checked"
+                                      />
+                                      <span>
+                                        <span className="block font-semibold text-ink">IMEI and lock checked</span>
+                                        <span className="block text-xs leading-relaxed text-muted">
+                                          The <span className="font-mono">*#06#</span> number matches the box and ends
+                                          {listing.imeiLast4 ? ` ···${listing.imeiLast4}` : ' as shown'}, it is not reported
+                                          lost or stolen with the network, and iCloud / Google lock is off. Buyers then see
+                                          &ldquo;IMEI verified by ReFon&rdquo;.
+                                        </span>
+                                      </span>
+                                    </label>
+                                  </ReviewActions>
                                 </div>
                               </motion.article>
                             )

@@ -31,13 +31,14 @@ export const INSPECTION_STAGES = Object.freeze([
   {
     step: 3,
     title: 'Software & lock check',
-    summary: 'We confirm the phone is genuinely free and clear.',
+    summary: 'A moderator checks the IMEI and the account lock before approval, and the listing says whether it was verified.',
     checks: [
       'Operating system version',
       'Factory reset',
-      'Google account lock',
-      'iCloud activation lock',
-      'IMEI validity',
+      'Google account lock (FRP) off',
+      'iCloud activation lock off',
+      'IMEI format (check digit) on entry',
+      'IMEI matches the phone and box',
     ],
   },
   {
@@ -152,7 +153,7 @@ export const FAQ_ITEMS = Object.freeze([
   {
     question: 'Are refurbished phones safe to buy?',
     answer:
-      'The concern with used phones is usually not the hardware, it is the unknown. ReFon removes the unknown. Every phone passes an eleven-point inspection, its IMEI and lock status are checked, and any repair history is disclosed on the listing before you pay.',
+      'The concern with used phones is usually not the hardware, it is the unknown. ReFon removes the unknown. Every listing shows its inspection results, whether a ReFon moderator verified the IMEI and lock status, and any repair history, before you pay. If a listing’s IMEI is not verified yet, the product page shows how to check it yourself in a minute.',
   },
   {
     question: 'What does Grade A mean?',
@@ -182,12 +183,12 @@ export const FAQ_ITEMS = Object.freeze([
   {
     question: 'Are the phones original?',
     answer:
-      'They are genuine devices, not replicas or parts. We verify IMEI validity and check that no activation lock is attached, so you receive a phone that can be used normally and updated.',
+      'They are genuine devices, not replicas or parts. Sellers enter the phone’s IMEI, which must have a valid format, and a moderator can verify it and confirm no activation lock is attached; listings that passed say "IMEI verified by ReFon".',
   },
   {
     question: 'Are IMEI numbers checked?',
     answer:
-      'Yes. IMEI validity and lock status are part of the software check before a listing is approved. The listing shows whether the device passed that verification.',
+      'In three steps. The seller types the 15-digit IMEI and ReFon checks its format (the check digit catches typos and made-up numbers); only the last four digits are kept, and the same phone cannot be on two listings. A moderator can then verify it before approval: the number matches the phone and box, it is not reported lost or stolen, and the iCloud / Google lock is off. Each listing says which it is: "IMEI verified by ReFon" or "not verified yet". Either way, dial *#06# and check it yourself before you pay; the product page shows how.',
   },
   {
     question: 'Do the phones come unlocked?',

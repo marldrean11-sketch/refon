@@ -26,6 +26,7 @@ import { useSellerListings } from '../features/seller/useSellerListings.js'
 import { useSellerProfile } from '../features/seller/useSellerProfile.js'
 import { AUTH_ROUTES } from '../features/auth/auth.routes.js'
 import { LoopSpinner } from '../components/ui/LoopSpinner.jsx'
+import { imeiProblem, normalizeImei } from '../lib/imei.js'
 
 const brandOptions = ['Apple', 'Samsung', 'Xiaomi', 'OPPO']
 const years = Array.from({ length: 10 }, (_, index) => 2015 + index)
@@ -89,11 +90,20 @@ function getInitialForm(listing) {
     // placeholder as an empty field instead of showing it to the seller.
     color: listing?.color && listing.color !== 'As pictured' ? listing.color : '',
     conditionNotes: listing?.conditionNotes ?? '',
+    // Never pre-filled: ReFon keeps only the last four digits, so an edit shows
+    // what is on file and a blank field keeps it.
+    imei: '',
   }
 }
 
-function validateForm(form, photos) {
+function validateForm(form, photos, { imeiOnFile = false } = {}) {
   const errors = {}
+
+  // Required for a new listing; on an edit a blank field keeps the IMEI on file.
+  if (form.imei.trim() || !imeiOnFile) {
+    const problem = imeiProblem(form.imei)
+    if (problem) errors.imei = problem
+  }
 
   if (!form.brand.trim()) {
     errors.brand = 'Brand is required.'
@@ -373,7 +383,7 @@ function SellerListingFormEditor({ mode, existingListing }) {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    const validationErrors = validateForm(form, photos)
+    const validationErrors = validateForm(form, photos, { imeiOnFile: Boolean(existingListing?.imeiOnFile) })
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
@@ -393,6 +403,12 @@ function SellerListingFormEditor({ mode, existingListing }) {
       batteryPercent: Number(form.batteryPercent),
       conditionNotes: form.conditionNotes.trim(),
       color: form.color.trim(),
+    }
+    // Only send an IMEI the seller typed; omitting it keeps the one on file.
+    if (form.imei.trim()) {
+      values.imei = normalizeImei(form.imei)
+    } else {
+      delete values.imei
     }
 
     setIsSubmitting(true)
@@ -723,6 +739,43 @@ function SellerListingFormEditor({ mode, existingListing }) {
                     <span>100%</span>
                   </div>
                   {errors.batteryPercent && <p id="listing-battery-error" role="alert" className="mt-2 text-xs font-medium text-danger">{errors.batteryPercent}</p>}
+                </div>
+
+                <div className="mt-6">
+                  <label htmlFor="listing-imei" className={labelClassName}>
+                    IMEI {existingListing?.imeiOnFile ? '(on file)' : ''}
+                  </label>
+                  <p className="mt-1 text-xs text-muted">
+                    Dial <span className="font-mono text-ink">*#06#</span> on the phone and type the 15-digit
+                    number. ReFon keeps only the last four digits. A moderator can then verify it and the
+                    iCloud / Google lock, and buyers see &ldquo;IMEI verified by ReFon&rdquo;.
+                  </p>
+                  <input
+                    id="listing-imei"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={20}
+                    value={form.imei}
+                    onChange={(event) => updateField('imei', event.target.value)}
+                    placeholder={
+                      existingListing?.imeiLast4
+                        ? `On file: ···${existingListing.imeiLast4}. Leave blank to keep it.`
+                        : 'e.g. 35 209900 176148 1'
+                    }
+                    className={`${inputClassName} mt-2 font-mono tracking-[0.08em]`}
+                    aria-invalid={Boolean(errors.imei)}
+                    aria-describedby={errors.imei ? 'listing-imei-error' : 'listing-imei-status'}
+                  />
+                  {errors.imei ? (
+                    <p id="listing-imei-error" role="alert" className="mt-2 text-xs font-medium text-danger">{errors.imei}</p>
+                  ) : form.imei.trim() ? (
+                    <p
+                      id="listing-imei-status"
+                      className={`mt-2 text-xs font-semibold ${imeiProblem(form.imei) ? 'text-muted' : 'text-accent'}`}
+                    >
+                      {imeiProblem(form.imei) || `Valid IMEI. Only ···${normalizeImei(form.imei).slice(-4)} will be stored.`}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="mt-6">

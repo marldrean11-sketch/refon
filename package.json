@@ -25,7 +25,8 @@
     "uploads:cleanup": "npm run uploads:cleanup --workspace @refon/backend",
     "lint": "npm run lint --workspaces --if-present",
     "test:health-check": "npm run test:health-check --workspace @refon/backend",
-    "test:booth": "npm run test:booth --workspace @refon/backend"
+    "test:booth": "npm run test:booth --workspace @refon/backend",
+    "test:imei": "npm run test:imei --workspace @refon/backend"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

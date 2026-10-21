@@ -16,6 +16,7 @@ import { validateListingId } from '../validators/listing.validator.js'
 import {
   validateRejectListing,
   validateRejectSeller,
+  validateApproveListing,
 } from '../validators/admin.validator.js'
 import { validateSellerId } from '../validators/seller.validator.js'
 import { summary as feedbackSummary } from '../controllers/feedback.controller.js'
@@ -45,7 +46,7 @@ router.patch(
   resolve,
 )
 router.get('/listings/pending', pendingListings)
-router.patch('/listings/:id/approve', validateListingId, approveListing)
+router.patch('/listings/:id/approve', validateListingId, validateApproveListing, approveListing)
 router.patch(
   '/listings/:id/reject',
   validateListingId,
