@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { isValidImei, normalizeImei } from '../utils/imei.js'
 import {
   validate,
   validateParams,
@@ -134,15 +133,14 @@ const listingSchema = z
       .array(inspectionCheckSchema)
       .max(CONDITION_GRADES.inspectionCheckIds.length)
       .optional(),
-    // The full IMEI, typed once by the seller. Only its last four digits and a
-    // keyed fingerprint are stored. A seller cannot mark it verified: that is a
-    // moderator's check at approval.
-    imei: z
+    imeiVerified: z.boolean().optional(),
+    imeiLast4: z
       .string()
-      .transform(normalizeImei)
-      .refine((value) => value === '' || /^\d{15}$/.test(value), 'An IMEI has exactly 15 digits. Dial *#06# to see it.')
-      .refine((value) => value === '' || isValidImei(value), 'That IMEI is not valid. Check each digit against *#06# and try again.')
-      .optional(),
+      .trim()
+      .regex(/^[0-9]{4}$/, 'IMEI must be exactly four digits.')
+      .optional()
+      .or(z.literal(''))
+      .or(z.literal('null')),
     quantity: z.number().int().min(0).max(999).optional(),
     isFeatured: z.boolean().optional(),
     color: z

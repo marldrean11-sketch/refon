@@ -17,8 +17,8 @@ const standard = [
   },
   {
     icon: ScanSearch,
-    title: 'IMEI kept private',
-    body: 'Only the last four digits are stored; a moderator verifies it before the badge shows.',
+    title: 'IMEI checked, never published',
+    body: 'Only the last four digits are ever stored.',
   },
   {
     icon: BadgeCheck,

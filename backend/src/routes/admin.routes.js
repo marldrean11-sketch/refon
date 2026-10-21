@@ -23,7 +23,6 @@ import { validateListingId } from '../validators/listing.validator.js'
 import {
   validateRejectListing,
   validateRejectSeller,
-  validateApproveListing,
   validateAdminListingsQuery,
   validateAdminUsersQuery,
   validateSuspendBody,
@@ -86,7 +85,7 @@ router.patch('/users/:id/suspend', validateUserId, validateSuspendBody, suspendU
 router.patch('/users/:id/unsuspend', validateUserId, unsuspendUser)
 router.get('/trade-ins', validateTradeInQuery, adminTradeIns)
 router.patch('/trade-ins/:id', validateTradeInId, validateTradeInUpdate, adminUpdateTradeIn)
-router.patch('/listings/:id/approve', validateListingId, validateApproveListing, approveListing)
+router.patch('/listings/:id/approve', validateListingId, approveListing)
 router.patch(
   '/listings/:id/reject',
   validateListingId,

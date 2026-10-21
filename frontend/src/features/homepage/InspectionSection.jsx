@@ -23,7 +23,7 @@ export function InspectionSection() {
       <SectionHeading
         eyebrow="Quality tested"
         title="Eleven checks run before a phone can be listed"
-        description="A listing only goes live after a moderator review, and each one shows its inspection results and whether ReFon verified its IMEI and lock status. This is the checklist, written out."
+        description="A listing only goes live after the device passes a functional inspection, a lock and IMEI check, and a moderator review. This is the checklist, written out."
         className="max-w-3xl"
         action={
           <span className="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-strong">

@@ -57,9 +57,7 @@ export const pendingListings = asyncHandler(async (_req, res) => {
 })
 
 export const approveListing = asyncHandler(async (req, res) => {
-  const listing = await reviewListing(req.validatedParams.id, 'APPROVED', '', {
-    imeiChecked: req.validatedBody?.imeiChecked ?? false,
-  })
+  const listing = await reviewListing(req.validatedParams.id, 'APPROVED')
   return res.status(200).json({ listing })
 })
 
