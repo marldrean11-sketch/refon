@@ -1,7 +1,6 @@
 import { prisma } from '../config/prisma.js'
 import { storage } from './storage.service.js'
 import { ApiError } from '../utils/api-error.js'
-import { fingerprintImei } from '../utils/imei.js'
 import { notifyStoreFollowers } from './store.service.js'
 import { presentListing, presentPagination } from '../utils/listing-presenter.js'
 import { RAM_GB, STORAGE_GB, categoryWhere } from '../utils/catalog-taxonomy.js'
@@ -214,43 +213,11 @@ function listingData(values) {
     cameraSpec: optionalText(values.cameraSpec),
     categoryTags: values.categoryTags ?? [],
     inspectionChecks: values.inspectionChecks ?? [],
-    // A new or edited listing always waits for a moderator's IMEI check again.
-    imeiVerified: false,
-    imeiCheckedAt: null,
-    // Absent `imei` keeps what is stored (an edit that does not retype it); an
-    // empty string clears it.
-    ...(values.imei === undefined
-      ? {}
-      : values.imei
-        ? { imeiLast4: values.imei.slice(-4), imeiHash: fingerprintImei(values.imei) }
-        : { imeiLast4: null, imeiHash: null }),
+    imeiVerified: values.imeiVerified ?? false,
+    imeiLast4: values.imeiLast4 ? values.imeiLast4 : null,
     quantity: values.quantity ?? 1,
     isFeatured: values.isFeatured ?? false,
     photos: orderedPhotos,
-  }
-}
-
-/**
- * One physical phone, one live listing: refuses an IMEI that already sits on
- * another pending or live listing. A sold or rejected listing does not count,
- * so a phone can be listed again by its next owner.
- */
-async function assertImeiAvailable(imeiHash, exceptListingId = null) {
-  if (!imeiHash) return
-  const clash = await prisma.listing.findFirst({
-    where: {
-      imeiHash,
-      status: { in: ['PENDING', 'APPROVED'] },
-      ...(exceptListingId ? { id: { not: exceptListingId } } : {}),
-    },
-    select: { id: true },
-  })
-  if (clash) {
-    throw new ApiError(
-      409,
-      'This IMEI is already on another pending or live listing. Each phone can only be listed once.',
-      'IMEI_ALREADY_LISTED',
-    )
   }
 }
 
@@ -275,7 +242,6 @@ async function getApprovedSeller(userId) {
 export async function createListing(userId, values) {
   const seller = await getApprovedSeller(userId)
   const data = listingData(values)
-  await assertImeiAvailable(data.imeiHash)
   const slug = await resolveSlug({ ...values, color: data.color })
 
   const listing = await prisma.listing.create({
@@ -332,7 +298,6 @@ export async function updateListing(id, userId, values) {
   }
 
   const data = listingData(values)
-  await assertImeiAvailable(data.imeiHash, listing.id)
   const slug = await resolveSlug({ ...values, color: data.color }, listing.id)
 
   const updatedListing = await prisma.listing.update({
@@ -1051,7 +1016,7 @@ export async function getPendingListings() {
   return listings.map(presentListing)
 }
 
-export async function reviewListing(id, decision, feedback = '', { imeiChecked = false } = {}) {
+export async function reviewListing(id, decision, feedback = '') {
   if (!['APPROVED', 'REJECTED'].includes(decision)) {
     throw new ApiError(422, 'Listing decision must be APPROVED or REJECTED.')
   }
@@ -1067,7 +1032,6 @@ export async function reviewListing(id, decision, feedback = '', { imeiChecked =
         brand: true,
         model: true,
         storage: true,
-        imeiHash: true,
         seller: { select: { id: true, userId: true, businessName: true } },
       },
     })
@@ -1080,24 +1044,12 @@ export async function reviewListing(id, decision, feedback = '', { imeiChecked =
       throw new ApiError(409, 'Only pending listings can be reviewed.')
     }
 
-    // The moderator's IMEI and lock check can only be recorded on approval, and
-    // only for a listing whose seller entered an IMEI.
-    const recordImeiCheck = decision === 'APPROVED' && imeiChecked === true
-    if (recordImeiCheck && !existingListing.imeiHash) {
-      throw new ApiError(
-        422,
-        'This listing has no IMEI on file, so an IMEI check cannot be recorded.',
-        'IMEI_NOT_PROVIDED',
-      )
-    }
-
     const listing = await transaction.listing.update({
       where: { id },
       data: {
         status: decision,
         moderatorFeedback:
           decision === 'REJECTED' ? feedbackText || null : null,
-        ...(recordImeiCheck ? { imeiVerified: true, imeiCheckedAt: new Date() } : {}),
       },
       include: listingInclude,
     })

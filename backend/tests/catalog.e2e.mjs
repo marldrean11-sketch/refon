@@ -184,8 +184,8 @@ async function main() {
       color: 'Blue',
       categoryTags: ['gaming-phones', 'under-20000'],
       inspectionChecks: ['display', 'touchscreen', 'camera', 'battery'],
-      // A valid example IMEI (correct Luhn check digit), typed with dashes.
-      imei: '35-209900-176148-1',
+      imeiVerified: true,
+      imeiLast4: '4821',
       isFeatured: true,
     }),
   })
@@ -203,12 +203,8 @@ async function main() {
   assert.equal(listing.warrantyLabel, '6-month warranty')
   assert.equal(listing.discountPercent, 50)
   assert.equal(listing.savings, 23000)
-  // The seller's IMEI is on file but not verified until a moderator checks it.
-  assert.equal(listing.imeiVerified, false, 'a seller cannot mark the IMEI verified')
-  assert.equal(listing.imeiOnFile, true)
-  assert.equal(listing.imeiLast4, '1481', 'only the last four digits are kept')
-  assert.equal(listing.imeiHash, undefined, 'the fingerprint never leaves the API')
-  assert.ok(!JSON.stringify(listing).includes('352099001761481'), 'the full IMEI is never returned')
+  assert.equal(listing.imeiVerified, true)
+  assert.equal(listing.imeiLast4, '4821')
   assert.equal(listing.inspectionRecorded, true)
   assert.equal(listing.inspectionChecks.length, 4)
   assert.equal(listing.inspectionComplete, false, 'partial inspection is not complete')
@@ -269,16 +265,10 @@ async function main() {
     body: JSON.stringify({
       ...BASE_LISTING,
       price: 23990,
-      imei: '352099001761482',
+      imeiLast4: '12ab',
     }),
   })
-  assert.equal(badImei.status, 422, 'an IMEI with the wrong check digit is rejected')
-
-  const sellerClaimsVerified = await json('/api/listings', {
-    method: 'POST',
-    body: JSON.stringify({ ...BASE_LISTING, price: 23990, imeiVerified: true }),
-  })
-  assert.equal(sellerClaimsVerified.status, 422, 'a seller cannot send imeiVerified')
+  assert.equal(badImei.status, 422, 'IMEI suffix must be four digits')
 
   const unknownField = await json('/api/listings', {
     method: 'POST',

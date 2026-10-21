@@ -22,8 +22,7 @@
     "uploads:cleanup": "node scripts/cleanup-uploads.js",
     "uploads:cleanup:dry": "node scripts/cleanup-uploads.js --dry-run",
     "test:health-check": "node tests/health-check.test.mjs",
-    "test:booth": "node tests/booth.e2e.mjs",
-    "test:imei": "node tests/imei.e2e.mjs"
+    "test:booth": "node tests/booth.e2e.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",
